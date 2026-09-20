@@ -10,3 +10,7 @@ dist/
 
 # macOS
 .DS_Store
+
+# supabase local state
+supabase/.branches
+supabase/.temp

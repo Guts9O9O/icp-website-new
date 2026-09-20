@@ -19,7 +19,7 @@ function Cell({ item }) {
   if (item.type === 'image') {
     return (
       <div className={`flex items-center justify-center ${border}`} style={{ height: v(ROW_H), padding: u(30) }}>
-        <img src={`/images/clients/${item.file}`} alt={item.name} className="max-h-full max-w-full object-contain" />
+        <img src={item.src} alt={item.name} className="max-h-full max-w-full object-contain" />
       </div>
     );
   }
