@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import HomePage from './components/HomePage';
 import AboutPage from './components/AboutPage';
@@ -7,6 +7,9 @@ import PortfolioPage from './components/PortfolioPage';
 import PortfolioCategoryPage from './components/PortfolioCategoryPage';
 import ProjectDetailPage from './components/ProjectDetailPage';
 import EnquiryPage from './components/EnquiryPage';
+
+// Admin panel is loaded only when someone opens /admin.
+const AdminApp = lazy(() => import('./admin/AdminApp'));
 
 const SLIDE_MS = 500;
 
@@ -67,6 +70,20 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  const location = useLocation();
+  if (location.pathname.startsWith('/admin')) {
+    return (
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/admin/*" element={<AdminApp />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+  return <PublicSite />;
+}
+
+function PublicSite() {
   const { isHome, overlay, shown } = useOverlayTransition();
 
   return (
