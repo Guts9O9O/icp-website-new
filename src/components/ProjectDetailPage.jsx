@@ -1,18 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router';
+import { Navigate, useParams } from 'react-router';
 import { getCategory, getProject } from '../lib/api';
 import { useData } from '../lib/useData';
+import { fs, u, v } from '../lib/units';
+import EdgeBars from './chrome/EdgeBars';
+import SiteNav from './chrome/SiteNav';
+import SiteFooter from './chrome/SiteFooter';
+
+// Image frame and controls from R3 (design px).
+const FRAME_TOP = 274;
+const FRAME_W = 1948;
+const FRAME_H = 1054;
+const CAPTION_H = 90;
+const CONTROLS_TOP = 1388;
+const AUTOPLAY_MS = 4000;
+
+// First paragraph of the description, for the one-line caption.
+function summary(text) {
+  return (text ?? '').split(/\n+/).map((s) => s.trim()).filter(Boolean).slice(-1)[0] ?? '';
+}
 
 // Single project view with image carousel: /portfolio/:category/:slug
 export default function ProjectDetailPage() {
   const { category: categorySlug, slug } = useParams();
-  const navigate = useNavigate();
 
   const { data: category } = useData(() => getCategory(categorySlug), [categorySlug]);
-  const { data: project, loading } = useData(
-    () => getProject(categorySlug, slug),
-    [categorySlug, slug]
-  );
+  const { data: project, loading } = useData(() => getProject(categorySlug, slug), [categorySlug, slug]);
 
   const images = project?.images ?? [];
   const count = images.length;
@@ -26,138 +39,106 @@ export default function ProjectDetailPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (count === 0) return undefined;
-    const onKey = (event) => {
-      if (event.key === 'ArrowRight') setIndex((prev) => (prev + 1) % count);
-      if (event.key === 'ArrowLeft') setIndex((prev) => (prev - 1 + count) % count);
+    if (count < 2) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'ArrowRight') setIndex((i) => (i + 1) % count);
+      if (e.key === 'ArrowLeft') setIndex((i) => (i - 1 + count) % count);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [count]);
 
   useEffect(() => {
-    if (count === 0) return undefined;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), 3500);
+    if (count < 2) return undefined;
+    const timer = setInterval(() => setIndex((i) => (i + 1) % count), AUTOPLAY_MS);
     return () => clearInterval(timer);
-  }, [count]);
+  }, [count, index]);
 
-  if (!loading && !project) {
-    return <Navigate to={`/portfolio/${categorySlug}`} replace />;
-  }
+  if (!loading && !project) return <Navigate to={`/portfolio/${categorySlug}`} replace />;
 
-  const handlePointerDown = (event) => {
+  const onPointerDown = (e) => {
     dragging.current = true;
-    startX.current = event.clientX;
+    startX.current = e.clientX;
   };
-
-  const handlePointerUp = (event) => {
-    if (!dragging.current || count === 0) return;
+  const onPointerUp = (e) => {
+    if (!dragging.current || count < 2) return;
     dragging.current = false;
-    const delta = event.clientX - startX.current;
+    const delta = e.clientX - startX.current;
     if (Math.abs(delta) < 40) return;
-    if (delta < 0) setIndex((prev) => (prev + 1) % count);
-    else setIndex((prev) => (prev - 1 + count) % count);
+    setIndex((i) => (delta < 0 ? (i + 1) % count : (i - 1 + count) % count));
   };
 
   return (
-    <div className="min-h-screen font-brand text-[#f3ece4]" style={{ background: '#6f6257' }}>
-      <div className="fixed inset-y-0 left-0 z-30 w-[14.5px] bg-[#781F1C]" />
-      <div className="fixed inset-y-0 right-0 z-30 w-[14.5px] bg-[#C3BDB4]" />
+    <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
+      <EdgeBars />
+      <SiteNav title="portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
 
-      <nav className="fixed left-0 right-0 top-0 z-20 flex items-center">
-        <div className="flex w-[30%] min-w-[280px] items-center gap-3 bg-[#8b2c23] px-6 py-4 text-[15px] font-semilight tracking-wide text-[#f3ece4]">
-          <span className="h-[30px] w-[7.5px] bg-[#781F1C]" />
-          <button type="button" onClick={() => navigate('/')} className="transition hover:text-white">
-            home
-          </button>
-          <span className="text-[#d0b8ad]">|</span>
-          <button type="button" onClick={() => navigate('/portfolio')} className="transition hover:text-white">
-            portfolio
-          </button>
-          <span className="text-[#d0b8ad]">|</span>
-          <button
-            type="button"
-            onClick={() => navigate(`/portfolio/${categorySlug}`)}
-            className="transition hover:text-white"
-          >
-            {category?.label ?? ''}
-          </button>
-        </div>
-        <div className="flex w-[70%] items-center justify-end bg-[#6f6257] px-6 py-4 text-[14px] font-semilight tracking-wide text-[#e6ddd4]">
-          <button type="button" onClick={() => navigate('/enquiry')} className="transition hover:text-white">
-            contact us
-          </button>
-          <span className="ml-3 h-[30px] w-[7.5px] bg-[#781F1C]" />
-        </div>
-      </nav>
-
-      <main className="relative flex min-h-screen pt-16">
-        <div className="absolute inset-0 bg-[#6f6257]" />
-        <section className="relative z-10 flex w-[30%] min-w-[280px] items-start bg-[#8b2c23] px-8 pt-12">
-          <div className="max-w-[320px] space-y-4">
-            <p className="text-[18px] font-semilight tracking-[0.12em] text-[#f6efe8]">{project?.name}</p>
-            <p className="text-[13px] leading-relaxed text-[#f2e7dd]/90 whitespace-pre-line">
-              {project?.description}
-            </p>
-          </div>
-        </section>
-
-        <section className="relative z-10 w-[70%] bg-[#6f6257]" style={{ height: 'calc(100vh - 4rem)' }}>
+      <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(FRAME_TOP) }}>
+        <div
+          className="relative select-none overflow-hidden bg-black/10"
+          style={{ width: u(FRAME_W), height: v(FRAME_H), touchAction: 'pan-y' }}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerLeave={onPointerUp}
+        >
           <div
-            className="relative h-full w-full overflow-hidden"
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
+            className="flex h-full transition-transform duration-700 ease-in-out"
+            style={{ width: `${Math.max(count, 1) * 100}%`, transform: `translateX(-${(100 / Math.max(count, 1)) * index}%)` }}
           >
-            <div
-              className="flex flex-col transition-transform duration-700 ease-in-out"
-              style={{ transform: `translateY(calc(-${index} * (100vh - 4rem)))` }}
-            >
-              {images.map((src, i) => (
-                <div key={i} className="w-full flex-shrink-0" style={{ height: 'calc(100vh - 4rem)' }}>
-                  <img src={src} alt={`${project?.name ?? 'Project'} ${i + 1}`} className="h-full w-full object-cover object-center" />
-                </div>
-              ))}
-            </div>
+            {images.map((src, i) => (
+              <div key={i} className="h-full" style={{ width: `${100 / count}%` }}>
+                <img src={src} alt={`${project?.name ?? 'Project'} ${i + 1}`} className="h-full w-full object-cover" draggable={false} />
+              </div>
+            ))}
           </div>
 
-          {count > 1 && (
-            <div className="absolute right-6 top-1/2 z-20 -translate-y-1/2 flex flex-col items-center gap-3 rounded-full border border-[#cbbf74] bg-[#6f6257]/80 px-3 py-4">
-              {images.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setIndex(i)}
-                  className={[
-                    'block rounded-full transition-all duration-300',
-                    i === index ? 'h-4 w-3 bg-[#781F1C]' : 'h-3 w-3 bg-[#cbbf74]',
-                  ].join(' ')}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ))}
+          {project && (
+            <div
+              className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center bg-icp-slate/60 text-center text-white"
+              style={{ minHeight: v(CAPTION_H), paddingLeft: u(40), paddingRight: u(40), paddingTop: v(12), paddingBottom: v(12), gap: v(6) }}
+            >
+              <p style={{ fontSize: fs(16, 12) }}>
+                {project.name}
+                {project.location ? `, ${project.location}` : ''}
+              </p>
+              <p className="w-full truncate text-white/85" style={{ fontSize: fs(14, 11) }}>
+                {summary(project.description)}
+              </p>
             </div>
           )}
-        </section>
-
-        <div className="fixed bottom-0 left-0 right-0 z-20">
-          <div className="relative px-8">
-            <div className="relative flex items-center justify-between pb-6">
-              <div className="flex items-center gap-4 text-[12px] uppercase tracking-[0.18em] text-[#cbbf74]">
-                <div className="flex h-[58px] w-[86px] items-center justify-center rounded-[18px] border border-[#cbbf74]">
-                  <span className="text-[14px] tracking-[0.2em] text-[#e3dad0]">iC+P</span>
-                </div>
-                <span>Animated Logo, Will Be Provided To You</span>
-              </div>
-              <span className="text-[40px] leading-none text-[#9b251f] [font-family:'Brush_Script_MT','Segoe_Script',cursive]">
-                design to live
-              </span>
-            </div>
-          </div>
-          <div className="border-t border-[#c8c2ba]/60 bg-[#f5f1ec]/90 py-4 text-center text-[13px] font-semilight text-[#9b9490]">
-            <p>Website designed by adiz · 2026 iConcepts+Partners. All Rights Reserved</p>
-          </div>
         </div>
       </main>
+
+      {count > 1 && (
+        <nav
+          className="absolute left-0 right-0 flex items-center justify-center text-icp-mist"
+          style={{ top: v(CONTROLS_TOP), fontSize: fs(20, 12), gap: u(60) }}
+          aria-label="Images"
+        >
+          <button type="button" onClick={() => setIndex((i) => (i - 1 + count) % count)} className="flex items-center" style={{ gap: u(10) }}>
+            <span aria-hidden="true">‹</span>
+            <span>previous</span>
+          </button>
+          <div className="flex items-center" style={{ gap: u(25) }}>
+            {images.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIndex(i)}
+                aria-label={`Image ${i + 1}`}
+                className={`rounded-full transition-colors ${i === index ? 'bg-icp-red' : 'bg-icp-mist/70 hover:bg-icp-mist'}`}
+                style={{ width: u(10), height: u(10), minWidth: 6, minHeight: 6 }}
+              />
+            ))}
+          </div>
+          <button type="button" onClick={() => setIndex((i) => (i + 1) % count)} className="flex items-center" style={{ gap: u(10) }}>
+            <span>next</span>
+            <span aria-hidden="true">›</span>
+          </button>
+        </nav>
+      )}
+
+      <SiteFooter />
     </div>
   );
 }

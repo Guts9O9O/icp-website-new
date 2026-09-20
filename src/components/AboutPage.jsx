@@ -1,398 +1,214 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
 import { getAbout, getTeam } from '../lib/api';
 import { useData } from '../lib/useData';
+import { EDGE_BAR, fs, u, v } from '../lib/units';
+import EdgeBars from './chrome/EdgeBars';
+import SiteNav from './chrome/SiteNav';
+import SiteFooter from './chrome/SiteFooter';
 
 const ABOUT_CARD_ID = 'about-icp';
 
-function LottieLogo() {
-  const containerRef = useRef(null);
+// Column geometry from R3 (design px).
+const COL_W = 229.81;
+const COL_H = 675;
+const COL_TOP = 500;
+const PHOTO_H = 455;
+const NAME_H = 95;
+const RULE_H = 6;
 
-  useEffect(() => {
-    let animation;
-    let cancelled = false;
-
-    const startAnimation = async () => {
-      const response = await fetch('/animations/short-logo-icp.json');
-      const animationData = await response.json();
-      if (cancelled || !containerRef.current || !window.lottie) return;
-      animation = window.lottie.loadAnimation({
-        container: containerRef.current,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        animationData,
-        assetsPath: '/animations/images/',
-      });
-    };
-
-    const loadPlayer = async () => {
-      if (window.lottie) { await startAnimation(); return; }
-      await new Promise((resolve, reject) => {
-        const existing = document.querySelector('script[data-lottie-web="true"]');
-        if (existing) {
-          existing.addEventListener('load', resolve, { once: true });
-          existing.addEventListener('error', reject, { once: true });
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/lottie-web@5.12.2/build/player/lottie.min.js';
-        script.async = true;
-        script.dataset.lottieWeb = 'true';
-        script.addEventListener('load', resolve, { once: true });
-        script.addEventListener('error', reject, { once: true });
-        document.body.appendChild(script);
-      });
-      if (!cancelled) await startAnimation();
-    };
-
-    loadPlayer().catch(() => {});
-    return () => { cancelled = true; if (animation) animation.destroy(); };
-  }, []);
-
-  return <div ref={containerRef} className="h-[400px] w-[400px]" aria-label="iC+P Logo" />;
-}
-
-function LottieSignature() {
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    let animation;
-    let cancelled = false;
-
-    const startAnimation = async () => {
-      const response = await fetch('/animations/signature.json');
-      const animationData = await response.json();
-
-      if (cancelled || !containerRef.current || !window.lottie) return;
-
-      animation = window.lottie.loadAnimation({
-        container: containerRef.current,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        animationData,
-      });
-    };
-
-    const loadPlayer = async () => {
-      if (window.lottie) {
-        await startAnimation();
-        return;
-      }
-
-      await new Promise((resolve, reject) => {
-        const existing = document.querySelector('script[data-lottie-web="true"]');
-        if (existing) {
-          existing.addEventListener('load', resolve, { once: true });
-          existing.addEventListener('error', reject, { once: true });
-          return;
-        }
-
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/lottie-web@5.12.2/build/player/lottie.min.js';
-        script.async = true;
-        script.dataset.lottieWeb = 'true';
-        script.addEventListener('load', resolve, { once: true });
-        script.addEventListener('error', reject, { once: true });
-        document.body.appendChild(script);
-      });
-
-      if (!cancelled) {
-        await startAnimation();
-      }
-    };
-
-    loadPlayer().catch(() => {});
-
-    return () => {
-      cancelled = true;
-      if (animation) animation.destroy();
-    };
-  }, []);
-
-  return <div ref={containerRef} className="h-[260px] w-[680px]" aria-label="Signature" />;
-}
-
-function TeamCard({
-  id,
-  firstName,
-  lastName,
-  role,
-  image,
-  isActive,
-  isMuted,
-  onHoverStart,
-  onHoverEnd,
-  isAbout,
-  cardRef,
-}) {
+function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, cardRef }) {
   return (
     <div
-      className={[
-        'relative flex w-[133.36px] flex-col border-x-[1px] border-x-[#C3BDB4] transition-[opacity,transform] duration-500 ease-in-out',
-        isActive ? 'z-40 scale-[1.02]' : 'z-10',
-        isMuted ? 'opacity-25 grayscale pointer-events-none' : 'opacity-100',
-        onHoverStart ? 'cursor-pointer' : '',
-      ].join(' ')}
       ref={cardRef}
-      onMouseEnter={onHoverStart}
-      onMouseLeave={onHoverEnd}
-      onKeyDown={(event) => {
-        if (!onHoverStart) return;
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onHoverStart();
-        }
-      }}
-      onFocus={onHoverStart}
-      onBlur={onHoverEnd}
-      role={onHoverStart ? 'button' : undefined}
-      tabIndex={onHoverStart ? 0 : undefined}
+      className={[
+        'relative flex cursor-pointer flex-col transition-opacity duration-500',
+        isActive ? 'z-40' : 'z-10',
+        isMuted ? 'opacity-40' : 'opacity-100',
+      ].join(' ')}
+      style={{ width: u(COL_W), height: v(COL_H) }}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onFocus={onEnter}
+      onBlur={onLeave}
+      role="button"
+      tabIndex={0}
     >
-      {!isAbout && (
+      <div className="absolute inset-y-0 left-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
+
+      {isAbout ? (
+        <div className="flex items-center justify-center" style={{ height: v(PHOTO_H + NAME_H) }}>
+          <div className="flex -rotate-90 items-center text-icp-slate" style={{ gap: u(24) }}>
+            <span className="font-normal" style={{ fontSize: fs(22, 13), letterSpacing: '0.45em' }}>
+              abou<span className="text-icp-red">+</span>
+            </span>
+            <span className="font-normal" style={{ fontSize: fs(22, 13), letterSpacing: '0.45em' }}>
+              iC+P
+            </span>
+          </div>
+        </div>
+      ) : (
         <>
-          <div
-            className={[
-              'relative z-10 overflow-hidden',
-              'bg-white/60'
-            ].join(' ')}
-            style={{ height: '327.3px' }}
-          >
-            {image ? (
+          <div className="relative overflow-hidden bg-white" style={{ height: v(PHOTO_H) }}>
+            {member.image ? (
               <img
-                src={image}
-                alt={`${firstName} ${lastName}`}
+                src={member.image}
+                alt={`${member.firstName} ${member.lastName}`}
                 className="h-full w-full object-cover object-top"
               />
             ) : (
-              <div className="h-full w-full bg-[#e8e4df]" />
+              <div className="h-full w-full bg-icp-mist/40" />
             )}
-            <div className="absolute bottom-0 left-0 right-0 z-30 flex h-[40px] items-center justify-center bg-[rgba(102,89,77,0.5)] px-3 text-center">
-              <p className="text-[12px] leading-tight tracking-[0.16em] text-[#f4efe8]">
-                <span className="font-semilight">{firstName} </span>
-                <span className="font-semibold">{lastName}</span>
-              </p>
-            </div>
           </div>
-          <div className="mx-auto h-[4px] w-[132.65px] bg-[#781F1C]" />
-          <div className="flex h-[72.7px] flex-col items-center justify-center px-5 text-center">
-            {role.map((line, i) => (
-              <p key={i} className="whitespace-nowrap text-[12px] font-semilight leading-[1.35] tracking-[0.18em] text-[#47433E]">
-                {line}
-              </p>
-            ))}
-          </div>
-        </>
-      )}
-      {isAbout && (
-        <>
           <div
-            className={[
-              'relative z-10 flex items-center justify-center',
-              'bg-white/60'
-            ].join(' ')}
-            style={{ height: '327.3px' }}
+            className="flex items-center justify-center bg-icp-taupe/50 text-center text-white"
+            style={{ height: v(NAME_H), fontSize: fs(14, 11), letterSpacing: '0.12em' }}
           >
-            <div className="flex rotate-[-90deg] items-center gap-[18px] text-[#47433E]">
-              <span className="text-[13px] font-semilight lowercase tracking-[0.5em]">about</span>
-              <span className="text-[22px] font-semilight leading-none tracking-[0.2em]">i C + P</span>
-            </div>
-          </div>
-          <div className="mx-auto h-[4px] w-[132.65px] bg-[#781F1C]" />
-          <div className="flex h-[72.7px] items-center justify-center px-5 text-center">
-            <p className="whitespace-nowrap text-[12px] font-semilight tracking-[0.18em] text-[#47433E]">
-              design <span className="font-semibold">TEAM</span>
-            </p>
+            <span>
+              {member.firstName}{' '}
+              <span className="font-semibold uppercase">{member.lastName}</span>
+            </span>
           </div>
         </>
       )}
+
+      <div className="w-full bg-icp-red" style={{ height: v(RULE_H) }} />
+
+      <div
+        className="flex flex-1 flex-col items-center justify-center text-center text-icp-slate"
+        style={{ fontSize: fs(14, 11), letterSpacing: '0.08em', lineHeight: 1.6 }}
+      >
+        {isAbout ? (
+          <p>
+            design <span className="font-semibold">TEAM</span>
+          </p>
+        ) : (
+          member.role.map((line, i) => <p key={i}>{line}</p>)
+        )}
+      </div>
     </div>
   );
 }
 
 export default function AboutPage() {
-  const navigate = useNavigate();
   const { data: aboutInfo } = useData(getAbout);
   const { data: members } = useData(getTeam);
 
   // The "about iC+P" card sits first in the row and opens the studio write-up.
-  const team = useMemo(
-    () => [
-      { id: ABOUT_CARD_ID, firstName: 'About', lastName: 'iC+P', role: ['Design Team'], image: null },
-      ...(members ?? []),
-    ],
+  const cards = useMemo(
+    () => [{ id: ABOUT_CARD_ID, firstName: 'About', lastName: 'iC+P', role: [], image: null }, ...(members ?? [])],
     [members]
   );
 
   const [activeId, setActiveId] = useState(null);
-  const activeMember = team.find((member) => member.id === activeId);
-  const isPanelOpen = Boolean(activeMember);
-  const [panelWidths, setPanelWidths] = useState({ left: '50vw', right: '50vw' });
+  const active = cards.find((c) => c.id === activeId);
+  const isOpen = Boolean(active);
+  const [panels, setPanels] = useState({ left: 0, right: 0 });
   const cardRefs = useRef({});
 
+  // Panels extend from the page edges to the hovered card's edges.
   useEffect(() => {
-    if (!activeId) {
-      setPanelWidths({ left: '50vw', right: '50vw' });
-      return;
-    }
+    if (!activeId) return undefined;
     const el = cardRefs.current[activeId];
-    if (!el) return;
-    const updateWidths = () => {
+    if (!el) return undefined;
+    const update = () => {
       const rect = el.getBoundingClientRect();
-      const leftPx = Math.max(0, rect.left);
-      const rightPx = Math.max(0, window.innerWidth - rect.right);
-      setPanelWidths({ left: `${leftPx}px`, right: `${rightPx}px` });
+      setPanels({ left: Math.max(0, rect.left), right: Math.max(0, window.innerWidth - rect.right) });
     };
-    updateWidths();
-    window.addEventListener('resize', updateWidths);
-    return () => window.removeEventListener('resize', updateWidths);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
   }, [activeId]);
 
   return (
-    <div className="min-h-screen font-brand" style={{ background: '#f5f1ec' }}>
-      <div className="fixed inset-y-0 left-0 z-30 w-[8.22px] bg-[#781f1c]" />
-      <div className="fixed inset-y-0 right-0 z-30 w-[8.22px] bg-[#c3bdb4]" />
+    <div className="relative min-h-screen bg-white font-brand">
+      <EdgeBars />
+      <SiteNav title="about us" />
 
-      {/* Slide-out left panel */}
+      {/* Left panel: write-up for the hovered card */}
       <aside
         className={[
-          'fixed inset-y-0 left-0 z-10 text-white overflow-y-auto',
-          'bg-[#8a4f47]/95 shadow-[20px_0_60px_rgba(0,0,0,0.25)]',
-          'transform-gpu transition-transform duration-700 ease-in-out',
-          isPanelOpen ? 'translate-x-0' : '-translate-x-full',
+          'fixed inset-y-0 left-0 z-30 overflow-y-auto bg-icp-red/50 text-white backdrop-blur-[1px]',
+          'transition-transform duration-700 ease-in-out',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
-        style={{ width: panelWidths.left }}
+        style={{ width: panels.left }}
       >
-        <div className="flex h-full flex-col gap-5 px-8 py-10 text-[12.5px] leading-[1.75] tracking-wide">
-          {activeMember && activeMember.id === ABOUT_CARD_ID && aboutInfo && (
-            <div className="space-y-6 text-[#C3BDB4]">
-              <div className="border-b border-white/20 pb-5">
-                <p className="mb-3 text-[13px] font-semibold tracking-[0.08em] text-[#C3BDB4]">
-                  {aboutInfo.title}
-                </p>
+        <div
+          className="flex flex-col"
+          style={{
+            paddingLeft: u(EDGE_BAR + 60),
+            paddingRight: u(60),
+            paddingTop: v(320),
+            paddingBottom: v(160),
+            fontSize: fs(14, 12),
+            lineHeight: 1.8,
+            gap: u(40),
+          }}
+        >
+          {active && active.id === ABOUT_CARD_ID && aboutInfo && (
+            <>
+              <section>
+                <h2 className="font-semibold" style={{ marginBottom: u(16) }}>{aboutInfo.title}</h2>
                 <p>{aboutInfo.intro}</p>
-              </div>
-              <div className="border-b border-white/20 pb-5">
-                <p className="mb-3 text-[13px] font-semibold tracking-[0.08em] text-[#C3BDB4]">
-                  Design Team
-                </p>
-                <p className="mb-4">{aboutInfo.teamIntro}</p>
-                <ul className="space-y-2 pl-1">
+              </section>
+              <section>
+                <h2 className="font-semibold" style={{ marginBottom: u(16) }}>Design Team</h2>
+                <p style={{ marginBottom: u(16) }}>{aboutInfo.teamIntro}</p>
+                <ul className="list-disc" style={{ paddingLeft: u(28), display: 'grid', gap: u(10) }}>
                   {aboutInfo.hallmarks.map((item, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="mt-[6px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#C3BDB4]" />
-                      <span>{item}</span>
-                    </li>
+                    <li key={i}>{item}</li>
                   ))}
                 </ul>
-              </div>
-            </div>
+              </section>
+            </>
           )}
-          {activeMember && activeMember.id !== ABOUT_CARD_ID && (
-            <div className="space-y-4 text-[#C3BDB4]">
-              <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-[#C3BDB4]">
-                Design Team
-              </p>
-              <p className="text-[13px] font-semibold tracking-[0.08em] text-[#C3BDB4]">
-                {activeMember.firstName} {activeMember.lastName}
-              </p>
-              <p className="text-[12px] uppercase tracking-[0.14em] text-[#C3BDB4]">
-                {activeMember.role.join(' ')}
-              </p>
-              <div className="space-y-2 text-[12px]">
-                {activeMember.details.map((line, i) => (
+          {active && active.id !== ABOUT_CARD_ID && (
+            <section>
+              <h2 className="font-semibold" style={{ marginBottom: u(6) }}>
+                {active.firstName} <span className="uppercase">{active.lastName}</span>
+              </h2>
+              <p className="text-white/80" style={{ marginBottom: u(24) }}>{active.role.join(' ')}</p>
+              <div style={{ display: 'grid', gap: u(12) }}>
+                {(active.details ?? []).map((line, i) => (
                   <p key={i}>{line}</p>
                 ))}
               </div>
-            </div>
+            </section>
           )}
         </div>
       </aside>
 
-      {/* Slide-out overlay from right */}
+      {/* Right panel: dims everything to the right of the hovered card */}
       <aside
         className={[
-          'fixed inset-y-0 right-0 z-10 bg-[rgba(195,189,180,0.5)]',
-          'shadow-[-20px_0_60px_rgba(0,0,0,0.18)]',
-          'transform-gpu transition-transform duration-700 ease-in-out',
-          isPanelOpen ? 'translate-x-0' : 'translate-x-full',
+          'pointer-events-none fixed inset-y-0 right-0 z-30 bg-icp-taupe/50',
+          'transition-transform duration-700 ease-in-out',
+          isOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
-        style={{ width: panelWidths.right }}
+        style={{ width: panels.right }}
       />
 
-      {/* Top Nav */}
-      <nav className="flex items-center justify-between pb-4 pt-[56px]">
-        <div className="flex items-center">
-          <span className="h-[33px] w-[8.22px] bg-[#781F1C]" />
-          <span className="h-[33px] w-[8.22px] bg-[#c3bdb4]" />
-          <div className="ml-[5px] flex w-[70px] items-center justify-center">
-            <button
-              onClick={() => navigate('/')}
-              className="font-light text-[20px] tracking-wide text-[#c3bdb4] transition hover:text-[#781F1C]"
-            >
-              home
-            </button>
-          </div>
-          <span className="h-[33px] w-[1.2px] bg-[#c8c2ba]" />
-          <span className="ml-[15px] w-[120px] text-[28px] font-light tracking-wide text-[#c3bdb4]">about us</span>
-        </div>
-        <div className="flex items-center gap-4 pr-[7px] pt-[0.65px] text-[20px] font-semilight tracking-[0.02em] text-[#d2ccc4]">
-          <button
-            onClick={() => navigate('/enquiry')}
-            className="transition hover:text-[#781F1C]"
-          >
-            contact us
-          </button>
-          <span className="inline-block h-[33px] w-[8.22px] shrink-0 bg-[#781F1C]" />
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="relative flex flex-col items-center justify-center px-6 py-16">
-        <div className="relative z-30 flex flex-wrap items-start justify-center gap-0">
-          {team.map((member) => (
+      <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(COL_TOP) }}>
+        <div className="relative flex">
+          {cards.map((card) => (
             <TeamCard
-              key={member.id}
-              {...member}
-              isAbout={member.id === ABOUT_CARD_ID}
-              isActive={activeId === member.id}
-              isMuted={isPanelOpen && activeId !== member.id}
-              onHoverStart={() => setActiveId(member.id)}
-              onHoverEnd={() => setActiveId(null)}
+              key={card.id}
+              member={card}
+              isAbout={card.id === ABOUT_CARD_ID}
+              isActive={activeId === card.id}
+              isMuted={isOpen && activeId !== card.id}
+              onEnter={() => setActiveId(card.id)}
+              onLeave={() => setActiveId(null)}
               cardRef={(el) => {
-                if (el) cardRefs.current[member.id] = el;
+                if (el) cardRefs.current[card.id] = el;
               }}
             />
           ))}
+          <div className="absolute inset-y-0 right-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
         </div>
       </main>
 
-      {/* Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-20">
-        <div className="absolute bottom-[50px] left-[50px] z-20">
-          <LottieLogo />
-        </div>
-        <div className="absolute bottom-[-80px] left-[970px] z-20">
-          <LottieSignature />
-        </div>
-        <div className="relative flex h-[40px] items-center justify-center overflow-hidden text-center text-[13px] font-semilight text-[#C3BDB4]">
-          <div className="absolute top-0 left-0 h-[1.5px] w-[1232.42px] bg-[#781F1C]" />
-          {isPanelOpen && (
-            <div
-              className="absolute inset-y-0 left-0 z-0 bg-[#8a4f47]/95 transition-all duration-700 ease-in-out"
-              style={{ width: panelWidths.left }}
-            />
-          )}
-          {isPanelOpen && (
-            <div
-              className="absolute inset-y-0 right-0 z-0 bg-[rgba(195,189,180,0.5)] transition-all duration-700 ease-in-out"
-              style={{ width: panelWidths.right }}
-            />
-          )}
-          <p className="relative z-10">Website designed by adiz · 2026 iConcepts+Partners. All Rights Reserved</p>
-        </div>
-      </div>
+      <SiteFooter />
     </div>
   );
 }

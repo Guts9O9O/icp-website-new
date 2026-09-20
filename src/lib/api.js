@@ -5,6 +5,7 @@ import categories from '../data/categories';
 import projects from '../data/projects';
 import { about, team } from '../data/about';
 import clientGroups from '../data/clients';
+import site from '../data/site';
 
 const bySortOrder = (a, b) => a.sortOrder - b.sortOrder;
 
@@ -38,4 +39,8 @@ export async function getTeam() {
 
 export async function getClientGroups() {
   return clientGroups;
+}
+
+export async function getSite() {
+  return site;
 }

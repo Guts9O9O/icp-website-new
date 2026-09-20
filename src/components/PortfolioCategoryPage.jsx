@@ -2,19 +2,26 @@ import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { getCategory, getProjects } from '../lib/api';
 import { useData } from '../lib/useData';
+import { fs, u, v } from '../lib/units';
+import EdgeBars from './chrome/EdgeBars';
+import SiteNav from './chrome/SiteNav';
+import SiteFooter from './chrome/SiteFooter';
 
 const slideStyles = `
-  @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(28px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-28px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
+  @keyframes icpSlideInRight { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes icpSlideInLeft  { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: translateX(0); } }
 `;
 
 const PAGE_SIZE = 5;
+
+// Column geometry from R3 (design px).
+const COL_W = 229.81;
+const COL_H = 676.3;
+const COL_TOP = 500;
+const PHOTO_TOP = 43;
+const PHOTO_H = 508.71;
+const RULE_H = 6;
+const CONTROLS_TOP = 1291;
 
 function areaLabel(areaSqft) {
   return areaSqft ? `${areaSqft.toLocaleString('en-IN')} Sq.Ft Area` : '0000 Sq.Ft Area';
@@ -25,161 +32,127 @@ export default function PortfolioCategoryPage() {
   const { category: categorySlug } = useParams();
   const navigate = useNavigate();
 
-  const { data: category, loading: categoryLoading } = useData(
-    () => getCategory(categorySlug),
-    [categorySlug]
-  );
+  const { data: category, loading: categoryLoading } = useData(() => getCategory(categorySlug), [categorySlug]);
   const { data: projects } = useData(() => getProjects(categorySlug), [categorySlug]);
 
-  const [startIndex, setStartIndex] = useState(0);
+  const [page, setPage] = useState(0);
   const [exiting, setExiting] = useState(false);
   const [direction, setDirection] = useState('next');
   const [slideKey, setSlideKey] = useState(0);
 
   useEffect(() => {
-    setStartIndex(0);
+    setPage(0);
   }, [categorySlug]);
 
-  if (!categoryLoading && !category) {
-    return <Navigate to="/portfolio" replace />;
-  }
+  if (!categoryLoading && !category) return <Navigate to="/portfolio" replace />;
 
   const list = projects ?? [];
-  const visible = list.slice(startIndex, startIndex + PAGE_SIZE);
-  const hasNext = startIndex + PAGE_SIZE < list.length;
-  const hasPrev = startIndex > 0;
+  const pageCount = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const visible = list.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
-  const go = (dir) => {
-    if (exiting) return;
-    setDirection(dir);
+  const go = (target) => {
+    if (exiting || target === page || target < 0 || target >= pageCount) return;
+    setDirection(target > page ? 'next' : 'prev');
     setExiting(true);
     setTimeout(() => {
-      setStartIndex((i) => i + (dir === 'next' ? PAGE_SIZE : -PAGE_SIZE));
+      setPage(target);
       setSlideKey((k) => k + 1);
       setExiting(false);
     }, 160);
   };
 
   return (
-    <div className="min-h-screen font-brand text-[#e9e1d8]" style={{ background: '#6f6257' }}>
+    <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
       <style>{slideStyles}</style>
-      <div className="fixed inset-y-0 left-0 z-30 w-[7.5px] bg-[#781F1C]" />
-      <div className="fixed inset-y-0 right-0 z-30 w-[7.5px] bg-[#C3BDB4]" />
+      <EdgeBars />
+      <SiteNav title="portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
 
-      <nav className="fixed left-0 right-0 top-0 z-20 flex items-center justify-between bg-[#6f6257] pb-4 pt-[56px]">
-        <div className="flex items-center">
-          <span className="h-[30px] w-[7.5px] bg-[#781F1C]" />
-          <span className="h-[30.25px] w-[7.5px] bg-[#c3bdb4]" />
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="ml-[17px] font-semilight text-[15px] tracking-wide text-[#c3bdb4] transition hover:text-[#781F1C]"
+      <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(COL_TOP) }}>
+        {projects && list.length === 0 ? (
+          <p className="uppercase text-icp-mist/70" style={{ fontSize: fs(16, 12), letterSpacing: '0.3em', marginTop: v(200) }}>
+            Projects coming soon
+          </p>
+        ) : (
+          <div
+            key={slideKey}
+            className={`relative flex transition-all duration-[160ms] ease-in ${
+              exiting ? (direction === 'next' ? '-translate-x-6 opacity-0' : 'translate-x-6 opacity-0') : 'translate-x-0 opacity-100'
+            }`}
+            style={{
+              height: v(COL_H),
+              animation: exiting ? undefined : `${direction === 'next' ? 'icpSlideInRight' : 'icpSlideInLeft'} 200ms ease-out forwards`,
+            }}
           >
-            home
-          </button>
-          <span className="ml-[30px] h-[30.24px] w-px bg-[#c8c2ba]" />
-          <button
-            type="button"
-            onClick={() => navigate('/portfolio')}
-            className="ml-[34px] text-[22px] transition hover:text-[#781F1C]"
-          >
-            portfolio
-          </button>
-          <span className="ml-[24px] text-[15px] text-[#e3dad0]">{category?.label ?? ''}</span>
-        </div>
-        <div className="flex items-center gap-4 pr-[7px] pt-[0.65px] text-[15px] font-semilight tracking-[0.02em] text-[#d2ccc4]">
-          <button type="button" onClick={() => navigate('/enquiry')} className="transition hover:text-[#781F1C]">
-            contact us
-          </button>
-          <span className="inline-block h-[30px] w-[7.5px] shrink-0 bg-[#781F1C]" />
-        </div>
-      </nav>
-
-      <main className="relative flex min-h-screen items-center justify-center pt-16">
-        <div className="absolute inset-0 bg-[#6f6257]" />
-        <div className="relative z-10 flex items-center -mt-20">
-          {hasPrev && (
-            <button
-              type="button"
-              onClick={() => go('prev')}
-              className="mr-[32.48px] flex items-center gap-2 text-[15px] font-semilight tracking-wide text-[#c9c0b6] transition hover:text-[#f1e6da] shrink-0"
-            >
-              <span>prev</span>
-              <span className="h-6 w-[4px] bg-[#781F1C]" />
-            </button>
-          )}
-
-          <section
-            className="w-full overflow-hidden"
-            style={{ marginLeft: '424.59px', marginRight: '424.59px' }}
-          >
-            <div className="flex items-center">
-              {projects && list.length === 0 ? (
-                <p className="flex-1 py-24 text-center text-[13px] uppercase tracking-[0.3em] text-[#e7ddd3]/60">
-                  Projects coming soon
-                </p>
-              ) : (
-                <div
-                  key={slideKey}
-                  className={`grid flex-1 grid-cols-5 transition-all duration-[160ms] ease-in ${
-                    exiting
-                      ? direction === 'next' ? 'opacity-0 -translate-x-6' : 'opacity-0 translate-x-6'
-                      : 'opacity-100 translate-x-0'
-                  }`}
-                  style={!exiting ? {
-                    animation: `${direction === 'next' ? 'slideInRight' : 'slideInLeft'} 200ms ease-out forwards`,
-                  } : undefined}
-                >
-                  {visible.map((project) => (
-                    <div
-                      key={project.id}
-                      className="group relative flex flex-col cursor-pointer"
-                      style={{ height: '420px' }}
-                      onClick={() => navigate(`/portfolio/${categorySlug}/${project.slug}`)}
-                    >
-                      <div className="relative flex-1 overflow-hidden bg-white/5 transition-transform duration-700 ease-in-out group-hover:scale-[1.02]">
-                        {project.thumbnail ? (
-                          <img
-                            src={project.thumbnail}
-                            alt={project.name}
-                            className="h-full w-full object-cover object-top transition-all duration-700 ease-in-out group-hover:brightness-110"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-[11px] uppercase tracking-[0.3em] text-[#d8c577]">Thumbnail</div>
-                        )}
-                      </div>
-
-                      <div className="border-t border-[#781F1C] py-3 space-y-1 text-center text-[11px] uppercase tracking-[0.2em] text-[#e7ddd3]/80">
-                        <p>{project.name}</p>
-                        <p>{project.location}</p>
-                        <p>{areaLabel(project.areaSqft)}</p>
-                      </div>
-                    </div>
-                  ))}
+            {visible.map((project) => (
+              <div
+                key={project.id}
+                className="group relative flex cursor-pointer flex-col"
+                style={{ width: u(COL_W), paddingTop: v(PHOTO_TOP) }}
+                onClick={() => navigate(`/portfolio/${categorySlug}/${project.slug}`)}
+                role="link"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') navigate(`/portfolio/${categorySlug}/${project.slug}`);
+                }}
+              >
+                <div className="absolute inset-y-0 left-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
+                <div className="overflow-hidden bg-black/10" style={{ height: v(PHOTO_H) }}>
+                  {project.thumbnail ? (
+                    <img
+                      src={project.thumbnail}
+                      alt={project.name}
+                      className="h-full w-full object-cover object-top transition-transform duration-700 ease-in-out group-hover:scale-[1.03]"
+                    />
+                  ) : null}
                 </div>
-              )}
-
-              {hasNext && (
-                <button
-                  type="button"
-                  onClick={() => go('next')}
-                  className="ml-[32.48px] flex items-center gap-2 text-[15px] font-semilight tracking-wide text-[#c9c0b6] transition hover:text-[#f1e6da] shrink-0"
+                <div className="w-full bg-icp-red" style={{ height: v(RULE_H) }} />
+                <div
+                  className="flex flex-1 flex-col items-center justify-center text-center"
+                  style={{ fontSize: fs(14, 11), lineHeight: 1.7, letterSpacing: '0.02em' }}
                 >
-                  <span className="h-6 w-[4px] bg-[#781F1C]" />
-                  <span>next</span>
-                </button>
-              )}
-            </div>
-          </section>
-        </div>
-
-        <div className="fixed bottom-0 left-0 right-0 z-20">
-          <p className="absolute bottom-14 right-8 text-[52px] leading-none text-[#9b251f] [font-family:'Brush_Script_MT','Segoe_Script',cursive] lg:right-16">design to live</p>
-          <div className="border-t border-[#c8c2ba]/60 bg-[#f5f1ec]/90 py-4 text-center text-[13px] font-semilight text-[#9b9490]">
-            <p>Website designed by adiz · 2026 iConcepts+Partners. All Rights Reserved</p>
+                  <p className="text-white/90" style={{ fontSize: fs(16, 12) }}>
+                    {project.name}
+                  </p>
+                  <p>{project.location}</p>
+                  <p>{areaLabel(project.areaSqft)}</p>
+                </div>
+              </div>
+            ))}
+            <div className="absolute inset-y-0 right-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
           </div>
-        </div>
+        )}
       </main>
+
+      {pageCount > 1 && (
+        <nav
+          className="absolute left-0 right-0 flex items-center justify-center text-icp-mist"
+          style={{ top: v(CONTROLS_TOP), fontSize: fs(20, 12), gap: u(60) }}
+          aria-label="Pages"
+        >
+          <button type="button" onClick={() => go(page - 1)} disabled={page === 0} className="flex items-center transition-opacity disabled:opacity-30" style={{ gap: u(10) }}>
+            <span aria-hidden="true">‹</span>
+            <span>previous</span>
+          </button>
+          <div className="flex items-center" style={{ gap: u(25) }}>
+            {Array.from({ length: pageCount }).map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => go(i)}
+                aria-label={`Page ${i + 1}`}
+                className={`rounded-full transition-colors ${i === page ? 'bg-icp-red' : 'bg-icp-mist/70 hover:bg-icp-mist'}`}
+                style={{ width: u(10), height: u(10), minWidth: 6, minHeight: 6 }}
+              />
+            ))}
+          </div>
+          <button type="button" onClick={() => go(page + 1)} disabled={page >= pageCount - 1} className="flex items-center transition-opacity disabled:opacity-30" style={{ gap: u(10) }}>
+            <span>next</span>
+            <span aria-hidden="true">›</span>
+          </button>
+        </nav>
+      )}
+
+      <SiteFooter />
     </div>
   );
 }

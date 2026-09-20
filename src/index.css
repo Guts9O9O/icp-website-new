@@ -3,7 +3,16 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  /* One design pixel of the 2560-wide R3 artboard (see src/lib/units.js). */
+  --u: calc(100vw / 2560);
+  --v: calc(100vh / 1600);
+  --v: calc(100dvh / 1600);
+
+  /* Brand palette from the client's colour code. */
+  --icp-red: #781f1c;
+  --icp-mist: #c3bdb4;
+  --icp-slate: #47433e;
+  --icp-taupe: #66594d;
 }
 
 * {
@@ -24,7 +33,8 @@ body {
   font-synthesis-weight: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #151210;
+  background: #ffffff;
+  color: var(--icp-slate);
 }
 
 h1,
@@ -37,14 +47,28 @@ p,
 a,
 span,
 li,
-button {
+button,
+input,
+select,
+textarea {
   font-weight: 300;
 }
 
-.icp-link {
-  letter-spacing: 0.01em;
+/* Recurring R3 type sizes (design px -> scaled, with readable floors). */
+.t-nav {
+  font-size: max(13px, calc(20 * var(--u)));
+}
+.t-title {
+  font-size: max(22px, calc(36 * var(--u)));
+}
+.t-body {
+  font-size: max(11px, calc(14 * var(--u)));
+}
+.t-label {
+  font-size: max(13px, calc(18 * var(--u)));
 }
 
+/* Temporary CSS brand mark on the home page until the animated logo's images arrive. */
 .icp-logo-circle {
   position: relative;
   display: inline-block;
@@ -68,23 +92,4 @@ button {
 
 .icp-logo-circle::after {
   inset: 12px;
-}
-
-@media (max-width: 1280px) {
-  .icp-link {
-    font-size: 36px;
-  }
-}
-
-@media (max-width: 1024px) {
-  body {
-    overflow-x: hidden;
-  }
-}
-
-@media (max-width: 768px) {
-  .icp-logo-circle {
-    height: 32px;
-    width: 32px;
-  }
 }
