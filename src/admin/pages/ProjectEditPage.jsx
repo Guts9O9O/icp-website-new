@@ -50,7 +50,7 @@ export default function ProjectEditPage() {
           published: p.published,
         });
         setSlugTouched(true);
-        setThumb(p.thumbnail_path ? { path: p.thumbnail_path, preview: api.mediaUrl(p.thumbnail_path) } : null);
+        setThumb(p.thumbnail_path ? { path: p.thumbnail_path, preview: api.mediaUrl(p.thumbnail_path, p.updated_at) } : null);
         setGallery(
           [...p.project_images]
             .sort((a, b) => a.sort_order - b.sort_order)

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useParams } from 'react-router';
 import { getCategory, getProject } from '../lib/api';
 import { useData } from '../lib/useData';
@@ -30,13 +30,19 @@ export default function ProjectDetailPage() {
   const images = project?.images ?? [];
   const count = images.length;
 
-  const [index, setIndex] = useState(0);
+  // Carousel position is remembered per project, so a new project starts at image 1.
+  const [indexState, setIndexState] = useState({ slug, index: 0 });
+  const index = indexState.slug === slug ? indexState.index : 0;
+  const setIndex = useCallback(
+    (next) =>
+      setIndexState((s) => {
+        const current = s.slug === slug ? s.index : 0;
+        return { slug, index: typeof next === 'function' ? next(current) : next };
+      }),
+    [slug]
+  );
   const startX = useRef(0);
   const dragging = useRef(false);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [slug]);
 
   useEffect(() => {
     if (count < 2) return undefined;
@@ -46,13 +52,13 @@ export default function ProjectDetailPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [count]);
+  }, [count, setIndex]);
 
   useEffect(() => {
     if (count < 2) return undefined;
     const timer = setInterval(() => setIndex((i) => (i + 1) % count), AUTOPLAY_MS);
     return () => clearInterval(timer);
-  }, [count, index]);
+  }, [count, index, setIndex]);
 
   if (!loading && !project) return <Navigate to={`/portfolio/${categorySlug}`} replace />;
 

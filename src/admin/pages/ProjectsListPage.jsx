@@ -11,15 +11,13 @@ export default function ProjectsListPage() {
   const [categories, setCategories] = useState([]);
   const [filter, setFilter] = useState('all');
 
-  const load = async () => {
-    try {
-      const [p, c] = await Promise.all([api.listProjects(), api.listCategories()]);
-      setProjects(p);
-      setCategories(c);
-    } catch (e) {
-      toast.error(errorMessage(e));
-    }
-  };
+  const load = () =>
+    Promise.all([api.listProjects(), api.listCategories()])
+      .then(([p, c]) => {
+        setProjects(p);
+        setCategories(c);
+      })
+      .catch((e) => toast.error(errorMessage(e)));
 
   useEffect(() => {
     load();
@@ -111,7 +109,7 @@ export default function ProjectsListPage() {
             {visible.map((p) => (
               <li key={p.id} className="flex items-center gap-4 px-4 py-3">
                 <Link to={`/admin/projects/${p.id}`} className="h-16 w-20 shrink-0 overflow-hidden rounded bg-[#efece8]">
-                  {p.thumbnail_path && <img src={api.mediaUrl(p.thumbnail_path)} alt="" className="h-full w-full object-cover" />}
+                  {p.thumbnail_path && <img src={api.mediaUrl(p.thumbnail_path, p.updated_at)} alt="" className="h-full w-full object-cover" />}
                 </Link>
                 <div className="min-w-0 flex-1">
                   <Link to={`/admin/projects/${p.id}`} className="block truncate text-[15px] font-medium text-icp-slate hover:underline">

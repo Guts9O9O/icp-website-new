@@ -26,7 +26,7 @@ const mapProject = (p) => ({
   location: p.location,
   areaSqft: p.area_sqft,
   description: p.description,
-  thumbnail: mediaUrl(p.thumbnail_path),
+  thumbnail: mediaUrl(p.thumbnail_path, p.updated_at),
   images: [...(p.project_images ?? [])].sort(bySortOrder).map((i) => mediaUrl(i.path)),
   published: p.published,
   sortOrder: p.sort_order,
@@ -37,7 +37,7 @@ const mapMember = (m) => ({
   firstName: m.first_name,
   lastName: m.last_name,
   role: m.role_lines ?? [],
-  image: mediaUrl(m.photo_path),
+  image: mediaUrl(m.photo_path, m.updated_at),
   details: (m.bio ?? '').split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean),
   sortOrder: m.sort_order,
 });

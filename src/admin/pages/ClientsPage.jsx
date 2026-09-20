@@ -99,8 +99,13 @@ export default function ClientsPage() {
         : await api.insertRow(TABLE, { ...base, sort_order: inCategory.length + 1 });
       if (form.kind === 'logo' && file) {
         const ext = file.type === 'image/svg+xml' ? 'svg' : file.type === 'image/png' ? 'png' : 'webp';
-        const path = await api.uploadMedia(`clients/${form.category_slug}/${row.id}.${ext}`, file);
+        const path = await api.uploadMedia(`clients/${form.category_slug}/${row.id}-${api.shortId()}.${ext}`, file);
         await api.updateRow(TABLE, row.id, { logo_path: path });
+        if (existing?.logo_path && existing.logo_path !== path) await api.removeMedia([existing.logo_path]).catch(() => {});
+      } else if (form.kind === 'logo' && existing?.logo_path && existing.category_slug !== form.category_slug) {
+        // Category changed: keep the folder hierarchy accurate.
+        const moved = await api.moveMedia(existing.logo_path, existing.logo_path.replace(`clients/${existing.category_slug}/`, `clients/${form.category_slug}/`));
+        await api.updateRow(TABLE, row.id, { logo_path: moved });
       } else if (form.kind === 'text' && existing?.logo_path) {
         await api.removeMedia([existing.logo_path]);
         await api.updateRow(TABLE, row.id, { logo_path: null });

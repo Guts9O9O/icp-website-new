@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { getCategory, getProjects } from '../lib/api';
 import { useData } from '../lib/useData';
@@ -35,14 +35,13 @@ export default function PortfolioCategoryPage() {
   const { data: category, loading: categoryLoading } = useData(() => getCategory(categorySlug), [categorySlug]);
   const { data: projects } = useData(() => getProjects(categorySlug), [categorySlug]);
 
-  const [page, setPage] = useState(0);
+  // Page number is remembered per category, so switching category starts at page 1.
+  const [pageState, setPageState] = useState({ category: categorySlug, page: 0 });
+  const page = pageState.category === categorySlug ? pageState.page : 0;
+  const setPage = (n) => setPageState({ category: categorySlug, page: n });
   const [exiting, setExiting] = useState(false);
   const [direction, setDirection] = useState('next');
   const [slideKey, setSlideKey] = useState(0);
-
-  useEffect(() => {
-    setPage(0);
-  }, [categorySlug]);
 
   if (!categoryLoading && !category) return <Navigate to="/portfolio" replace />;
 

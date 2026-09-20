@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import HomePage from './components/HomePage';
 import AboutPage from './components/AboutPage';
@@ -22,43 +22,44 @@ const SLIDE_MS = 500;
 function useOverlayTransition() {
   const location = useLocation();
   const isHome = location.pathname === '/';
-  const [overlay, setOverlay] = useState(isHome ? null : location);
-  const [shown, setShown] = useState(!isHome);
-  const lastKey = useRef(location.key);
-  const overlayPath = useRef(isHome ? null : location.pathname);
+
+  // Location changes are folded into state during render (React's pattern for
+  // state derived from props); the effect below only runs the animation timers.
+  const [state, setState] = useState(() => ({
+    key: location.key,
+    overlay: isHome ? null : location,
+    shown: !isHome,
+    phase: 'idle', // 'enter' = slide the overlay in next frame, 'leave' = unmount after the slide-out
+  }));
+
+  if (state.key !== location.key) {
+    if (isHome) {
+      setState({ key: location.key, overlay: state.overlay, shown: false, phase: state.overlay ? 'leave' : 'idle' });
+    } else {
+      const samePage = state.overlay?.pathname === location.pathname;
+      setState({ key: location.key, overlay: location, shown: samePage ? state.shown : false, phase: samePage ? 'idle' : 'enter' });
+    }
+  }
 
   useEffect(() => {
-    // Skip the initial mount (and StrictMode's re-run of it).
-    if (lastKey.current === location.key) return undefined;
-    lastKey.current = location.key;
-
-    if (isHome) {
-      setShown(false);
-      const timer = setTimeout(() => {
-        setOverlay(null);
-        overlayPath.current = null;
-      }, SLIDE_MS);
+    if (state.phase === 'enter') {
+      let raf2;
+      const raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => setState((s) => ({ ...s, shown: true, phase: 'idle' })));
+      });
+      return () => {
+        cancelAnimationFrame(raf1);
+        if (raf2) cancelAnimationFrame(raf2);
+      };
+    }
+    if (state.phase === 'leave') {
+      const timer = setTimeout(() => setState((s) => (s.phase === 'leave' ? { ...s, overlay: null, phase: 'idle' } : s)), SLIDE_MS);
       return () => clearTimeout(timer);
     }
+    return undefined;
+  }, [state.phase, state.key]);
 
-    const samePage = overlayPath.current === location.pathname;
-    overlayPath.current = location.pathname;
-    setOverlay(location);
-    if (samePage) return undefined;
-
-    // Mount off-screen first, then slide in on the next frame.
-    setShown(false);
-    let raf2;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => setShown(true));
-    });
-    return () => {
-      cancelAnimationFrame(raf1);
-      if (raf2) cancelAnimationFrame(raf2);
-    };
-  }, [location, isHome]);
-
-  return { isHome, overlay, shown };
+  return { isHome, overlay: state.overlay, shown: state.shown };
 }
 
 function ScrollToTop() {

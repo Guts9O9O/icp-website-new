@@ -7,7 +7,7 @@ import { Badge, Button, Card, EmptyState, Field, Input, PageHeader, Spinner, Tex
 const TABLE = 'team_members';
 const EMPTY = { first_name: '', last_name: '', role_text: '', bio: '', published: true };
 
-function MemberForm({ initial, onSave, onCancel }) {
+function MemberForm({ initial, onSave, onCancel, toast }) {
   const [form, setForm] = useState(initial);
   const [photo, setPhoto] = useState(null); // { file, preview }
   const [busy, setBusy] = useState(false);
@@ -18,13 +18,13 @@ function MemberForm({ initial, onSave, onCancel }) {
       const webp = await toWebp(file, SIZES.photo);
       setPhoto({ file: webp, preview: previewUrl(webp) });
     } catch (e) {
-      onSave.toast.error(errorMessage(e));
+      toast.error(errorMessage(e));
     }
   };
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.first_name.trim() || !form.last_name.trim()) return onSave.toast.error('Please enter first and last name.');
+    if (!form.first_name.trim() || !form.last_name.trim()) return toast.error('Please enter first and last name.');
     setBusy(true);
     try {
       await onSave(form, photo?.file);
@@ -47,7 +47,7 @@ function MemberForm({ initial, onSave, onCancel }) {
       </Field>
       <div className="flex items-start gap-4">
         <div className="h-28 w-20 shrink-0 overflow-hidden rounded bg-[#efece8]">
-          {(photo?.preview || initial.photo_path) && <img src={photo?.preview ?? api.mediaUrl(initial.photo_path)} alt="" className="h-full w-full object-cover object-top" />}
+          {(photo?.preview || initial.photo_path) && <img src={photo?.preview ?? api.mediaUrl(initial.photo_path, initial.updated_at)} alt="" className="h-full w-full object-cover object-top" />}
         </div>
         <div className="flex-1">
           <ImageDrop multiple={false} accept={ACCEPT_PHOTOS} compact label="Choose a photo" hint="Portrait, black & white matches the site" onFiles={choosePhoto} />
@@ -98,7 +98,6 @@ export default function TeamPage() {
       toast.error(errorMessage(e));
     }
   };
-  save.toast = toast;
 
   const remove = async (row) => {
     if (!(await confirm({ title: `Remove ${row.first_name} ${row.last_name}?`, confirmLabel: 'Remove', danger: true }))) return;
@@ -125,7 +124,7 @@ export default function TeamPage() {
     }
   };
 
-  const formFor = (row) => (row ? { first_name: row.first_name, last_name: row.last_name, role_text: (row.role_lines ?? []).join('\n'), bio: row.bio ?? '', published: row.published, photo_path: row.photo_path } : EMPTY);
+  const formFor = (row) => (row ? { first_name: row.first_name, last_name: row.last_name, role_text: (row.role_lines ?? []).join('\n'), bio: row.bio ?? '', published: row.published, photo_path: row.photo_path, updated_at: row.updated_at } : EMPTY);
 
   return (
     <>
@@ -133,7 +132,7 @@ export default function TeamPage() {
       {editing === 'new' && (
         <Card className="mb-6 overflow-hidden">
           <p className="px-5 pt-4 text-[15px] font-medium">New team member</p>
-          <MemberForm initial={EMPTY} onSave={Object.assign((f, file) => save(f, file, null), { toast })} onCancel={() => setEditing(null)} />
+          <MemberForm initial={EMPTY} toast={toast} onSave={(f, file) => save(f, file, null)} onCancel={() => setEditing(null)} />
         </Card>
       )}
       {!rows ? (
@@ -147,7 +146,7 @@ export default function TeamPage() {
               <li key={r.id}>
                 <div className="flex items-center gap-4 px-4 py-3">
                   <div className="h-16 w-12 shrink-0 overflow-hidden rounded bg-[#efece8]">
-                    {r.photo_path && <img src={api.mediaUrl(r.photo_path)} alt="" className="h-full w-full object-cover object-top" />}
+                    {r.photo_path && <img src={api.mediaUrl(r.photo_path, r.updated_at)} alt="" className="h-full w-full object-cover object-top" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[15px] font-medium">{r.first_name} <span className="uppercase">{r.last_name}</span></p>
@@ -161,7 +160,7 @@ export default function TeamPage() {
                   <Button size="sm" onClick={() => setEditing(editing === r.id ? null : r.id)}>{editing === r.id ? 'Close' : 'Edit'}</Button>
                   <Button size="sm" variant="ghost" className="text-red-700" onClick={() => remove(r)}>Remove</Button>
                 </div>
-                {editing === r.id && <MemberForm initial={formFor(r)} onSave={Object.assign((f, file) => save(f, file, r), { toast })} onCancel={() => setEditing(null)} />}
+                {editing === r.id && <MemberForm initial={formFor(r)} toast={toast} onSave={(f, file) => save(f, file, r)} onCancel={() => setEditing(null)} />}
               </li>
             ))}
           </ul>
