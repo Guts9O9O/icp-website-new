@@ -1,65 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { getAbout, getTeam } from '../lib/api';
+import { useData } from '../lib/useData';
 
-const aboutInfo = {
-  id: 'about-icp',
-  title: 'About iC+P',
-  intro: 'iConcepts + Partners is a Mumbai Based Interior Design Consultancy Firm, founded in the year 2007. iC+P is proud to have designed a whole host of successful projects of varied nature and possibilities i.e. Hospitality, Residential, Commercial to Recreational spaces/clubhouses, from prestige settings to building lobbies, sales galleries and many more — all of which has equipped Team iC+P with a unique perspective to craft a collaborative space that is entirely fit for purpose, centred and tailored around the Clients needs, budgets & style preferences thereby creating functional, soulful & aesthetically elevated spaces that have a unique and unmatched narrative quality.',
-  teamIntro: 'We possess above two decades of extensive experience to back our work and have designed for a wide range of scales. Our team consists of Creative thinkers like Architects, Interior Designers, Visualisers, Contractors and Fabrication crews, all possessing varied strengths & viewpoints. Our foundation is deep rooted in a passion for Design, substantial material research & intricate detailing. Team iC+P works with a cohesive design approach catering to such a diverse range of projects working closely in collaboration with our clients. iC+P Hallmarks are —',
-  hallmarks: [
-    'Give emphasis to space planning, proportions & optimizing the space before developing any concept.',
-    'Creating functional & aesthetically distinctive elevated spaces that are immersive and impactful.',
-    'Focus on Bespoke & refined detailing.',
-    'Sensitively chosen material palettes intertwining them with artistic sensibilities through the lens of Interior, Art & Architecture.',
-    "Emphasis is to keep Client's vision & narrative intact and control budgets and timelines.",
-  ],
-  footer: [
-    'Design Team',
-    'Architects & Interior Designers',
-  ],
-};
-
-const team = [
-  {
-    id: aboutInfo.id,
-    firstName: 'About',
-    lastName: 'iC+P',
-    role: ['Design Team'],
-    image: '/images/teams/about iC+P.png',
-  },
-  {
-    id: 'ik',
-    firstName: 'Imran',
-    lastName: 'Khan',
-    role: ['Founder', '&', 'Design Director'],
-    image: '/images/teams/IK.png',
-    details: [
-      'Imran Khan is the founder and design director of iC+P.',
-      'He leads concept development, spatial planning, and overall studio direction.',
-    ],
-  },
-  {
-    id: 'pl',
-    firstName: 'Prachi',
-    lastName: 'Laud',
-    role: ['Co-Founder', '&', 'Design Partner'],
-    image: '/images/teams/PL.png',
-    details: [
-      'Prachi Laud co-leads design delivery and client collaboration.',
-      'She focuses on detail design, execution strategy, and brand alignment.',
-    ],
-  },
-  {
-    id: 'as',
-    firstName: 'Archna',
-    lastName: 'Shinghal',
-    role: ['Admin', '&', 'Design Partner'],
-    image: '/images/teams/AS.png',
-    details: [
-      'Archna Shinghal oversees administration and studio coordination.',
-      'She supports project timelines, vendor management, and documentation.',
-    ],
-  },
-];
+const ABOUT_CARD_ID = 'about-icp';
 
 function LottieLogo() {
   const containerRef = useRef(null);
@@ -267,7 +211,20 @@ function TeamCard({
   );
 }
 
-export default function AboutPage({ onNavigate }) {
+export default function AboutPage() {
+  const navigate = useNavigate();
+  const { data: aboutInfo } = useData(getAbout);
+  const { data: members } = useData(getTeam);
+
+  // The "about iC+P" card sits first in the row and opens the studio write-up.
+  const team = useMemo(
+    () => [
+      { id: ABOUT_CARD_ID, firstName: 'About', lastName: 'iC+P', role: ['Design Team'], image: null },
+      ...(members ?? []),
+    ],
+    [members]
+  );
+
   const [activeId, setActiveId] = useState(null);
   const activeMember = team.find((member) => member.id === activeId);
   const isPanelOpen = Boolean(activeMember);
@@ -308,7 +265,7 @@ export default function AboutPage({ onNavigate }) {
         style={{ width: panelWidths.left }}
       >
         <div className="flex h-full flex-col gap-5 px-8 py-10 text-[12.5px] leading-[1.75] tracking-wide">
-          {activeMember && activeMember.id === aboutInfo.id && (
+          {activeMember && activeMember.id === ABOUT_CARD_ID && aboutInfo && (
             <div className="space-y-6 text-[#C3BDB4]">
               <div className="border-b border-white/20 pb-5">
                 <p className="mb-3 text-[13px] font-semibold tracking-[0.08em] text-[#C3BDB4]">
@@ -332,7 +289,7 @@ export default function AboutPage({ onNavigate }) {
               </div>
             </div>
           )}
-          {activeMember && activeMember.id !== aboutInfo.id && (
+          {activeMember && activeMember.id !== ABOUT_CARD_ID && (
             <div className="space-y-4 text-[#C3BDB4]">
               <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-[#C3BDB4]">
                 Design Team
@@ -371,7 +328,7 @@ export default function AboutPage({ onNavigate }) {
           <span className="h-[33px] w-[8.22px] bg-[#c3bdb4]" />
           <div className="ml-[5px] flex w-[70px] items-center justify-center">
             <button
-              onClick={() => onNavigate('home')}
+              onClick={() => navigate('/')}
               className="font-light text-[20px] tracking-wide text-[#c3bdb4] transition hover:text-[#781F1C]"
             >
               home
@@ -382,7 +339,7 @@ export default function AboutPage({ onNavigate }) {
         </div>
         <div className="flex items-center gap-4 pr-[7px] pt-[0.65px] text-[20px] font-semilight tracking-[0.02em] text-[#d2ccc4]">
           <button
-            onClick={() => onNavigate('enquiry')}
+            onClick={() => navigate('/enquiry')}
             className="transition hover:text-[#781F1C]"
           >
             contact us
@@ -398,7 +355,7 @@ export default function AboutPage({ onNavigate }) {
             <TeamCard
               key={member.id}
               {...member}
-              isAbout={member.id === aboutInfo.id}
+              isAbout={member.id === ABOUT_CARD_ID}
               isActive={activeId === member.id}
               isMuted={isPanelOpen && activeId !== member.id}
               onHoverStart={() => setActiveId(member.id)}

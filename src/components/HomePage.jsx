@@ -1,14 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router';
 
 const leftLinks = ['about us', 'portfolio', 'clients'];
 const rightLinks = ['enquiry', 'instagram', 'linkedin'];
 
 const linkRoutes = {
-  'about us': 'about',
-  clients: 'clients',
-  portfolio: 'portfolio',
-  enquiry: 'enquiry',
+  'about us': '/about',
+  clients: '/clients',
+  portfolio: '/portfolio',
+  enquiry: '/enquiry',
 };
+
+// Links with a route become router links; the rest stay inert until wired up.
+function NavLink({ to, className, children, onMouseEnter }) {
+  if (to) {
+    return (
+      <Link to={to} className={className} onMouseEnter={onMouseEnter}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <a href="#" onClick={(e) => e.preventDefault()} className={className} onMouseEnter={onMouseEnter}>
+      {children}
+    </a>
+  );
+}
 
 const counters = [
   { label: 'Hospitality', target: 48 },
@@ -68,7 +85,7 @@ function BrandMark() {
   );
 }
 
-function LeftMenu({ active, onEnter, onLeave, onNavigate }) {
+function LeftMenu({ active, onEnter, onLeave }) {
   return (
     <aside className="absolute inset-y-0 left-0 z-30 hidden w-[321.25px] lg:block" onMouseLeave={onLeave}>
       <button
@@ -93,20 +110,14 @@ function LeftMenu({ active, onEnter, onLeave, onNavigate }) {
           <ul className="space-y-[80px]">
             {leftLinks.map((link) => (
               <li key={link}>
-                <a
-                  href="#"
+                <NavLink
+                  to={linkRoutes[link]}
                   onMouseEnter={onEnter}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (linkRoutes[link] && typeof onNavigate === 'function') {
-                      onNavigate(linkRoutes[link]);
-                    }
-                  }}
                   className="group relative flex justify-end pr-[35px] text-[36px] font-light leading-none tracking-[0.01em] text-[#d7d1ca] transition-colors duration-300 hover:text-[#f1eadf]"
                 >
                   <span className="absolute right-0 top-1/2 h-0 w-0 -translate-y-1/2 bg-[#C3BDB4] transition-all duration-300 group-hover:h-[10px] group-hover:w-[20px]" />
                   <span>{link}</span>
-                </a>
+                </NavLink>
               </li>
             ))}
           </ul>
@@ -116,7 +127,7 @@ function LeftMenu({ active, onEnter, onLeave, onNavigate }) {
   );
 }
 
-function RightRail({ active, onEnter, onLeave, onNavigate }) {
+function RightRail({ active, onEnter, onLeave }) {
   return (
     <aside className="absolute inset-y-0 right-0 z-30 hidden w-[321.25px] min-w-[280px] lg:block xl:min-w-[320px]">
       <div className="absolute inset-y-0 right-0 w-[14.5px] bg-[#c3bdb4]" />
@@ -150,14 +161,8 @@ function RightRail({ active, onEnter, onLeave, onNavigate }) {
 
               return (
                 <li key={link}>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (linkRoutes[link] && typeof onNavigate === 'function') {
-                        onNavigate(linkRoutes[link]);
-                      }
-                    }}
+                  <NavLink
+                    to={linkRoutes[link]}
                     className={[
                       'group relative flex items-center pl-[35px] text-[36px] font-semilight leading-none transition-colors duration-300',
                       isPrimary ? 'text-[#d6d0c8]' : 'text-[#d6d0c8]/78 hover:text-[#f1eadf]',
@@ -170,7 +175,7 @@ function RightRail({ active, onEnter, onLeave, onNavigate }) {
                       ].join(' ')}
                     />
                     <span>{link}</span>
-                  </a>
+                  </NavLink>
                 </li>
               );
             })}
@@ -185,7 +190,7 @@ function RightRail({ active, onEnter, onLeave, onNavigate }) {
   );
 }
 
-export default function HomePage({ onNavigate }) {
+export default function HomePage() {
   const [activePanel, setActivePanel] = useState(null);
   const [countersStarted, setCountersStarted] = useState(false);
   const countersRef = useRef(null);
@@ -224,14 +229,12 @@ export default function HomePage({ onNavigate }) {
           active={activePanel === 'left'}
           onEnter={() => setActivePanel('left')}
           onLeave={() => setActivePanel((prev) => (prev === 'left' ? null : prev))}
-          onNavigate={onNavigate}
         />
 
         <RightRail
           active={activePanel === 'right'}
           onEnter={() => setActivePanel('right')}
           onLeave={() => setActivePanel((prev) => (prev === 'right' ? null : prev))}
-          onNavigate={onNavigate}
         />
 
         <div className="relative z-10 flex min-h-screen flex-col px-6 pt-6 sm:px-8 lg:px-10">
@@ -272,19 +275,13 @@ export default function HomePage({ onNavigate }) {
 
             <nav className="space-y-3">
               {[...leftLinks, ...rightLinks].map((item) => (
-                <a
+                <NavLink
                   key={item}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (linkRoutes[item] && typeof onNavigate === 'function') {
-                      onNavigate(linkRoutes[item]);
-                    }
-                  }}
+                  to={linkRoutes[item]}
                   className="block text-[20px] font-semilight text-[#d6d0c8]"
                 >
                   {item}
-                </a>
+                </NavLink>
               ))}
             </nav>
 

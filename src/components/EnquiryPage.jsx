@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router';
+
 const requestOptions = [
   'Design Request',
   'Staff Recruitment',
@@ -11,7 +13,9 @@ const categories = [
   'Private Residence',
 ];
 
-export default function EnquiryPage({ onNavigate }) {
+export default function EnquiryPage() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen font-brand text-[#d8d0c6]" style={{ background: '#514a43' }}>
       <div className="fixed inset-y-0 left-0 z-30 w-[14.5px] bg-[#781F1C]" />
@@ -22,7 +26,7 @@ export default function EnquiryPage({ onNavigate }) {
           <span className="h-[30px] w-[7.5px] bg-[#781F1C]" />
           <button
             type="button"
-            onClick={() => onNavigate('home')}
+            onClick={() => navigate('/')}
             className="transition hover:text-[#f1e6da]"
           >
             Home
@@ -33,7 +37,7 @@ export default function EnquiryPage({ onNavigate }) {
           <span className="text-[#8c8177]">|</span>
           <button
             type="button"
-            onClick={() => onNavigate('home')}
+            onClick={() => navigate('/')}
             className="transition hover:text-[#f1e6da]"
           >
             contact us

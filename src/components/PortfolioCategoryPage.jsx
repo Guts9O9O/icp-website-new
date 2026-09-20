@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router';
+import { getCategory, getProjects } from '../lib/api';
+import { useData } from '../lib/useData';
 
 const slideStyles = `
   @keyframes slideInRight {
@@ -11,29 +14,39 @@ const slideStyles = `
   }
 `;
 
-const slots = [
-  { id: 'h1', image: '/images/HH_-Thumbnail.png', name: 'Hotel Hilton', location: 'Mumbai' },
-  { id: 'h2', image: '/images/SS_Thumbnail.png', name: 'Hotel Sahara Star', location: 'Mumbai' },
-  { id: 'h3', image: '/images/AV_Thumbnail.png', name: 'Aamby Valley', location: 'Lonavala' },
-  { id: 'h4', image: '/images/GC_Thumbnail.png', name: 'Golden Chariott', location: 'Mumbai' },
-  { id: 'h5', image: '/images/BM_Thumbnail.png', name: 'Brass Monkey', location: 'Mumbai' },
-   { id: 'h6', image: '/images/AV_Thumbnail.png', name: 'Hotel Hilton', location: 'Mumbai' },
-  { id: 'h7', image: '/images/BM_Thumbnail.png', name: 'Hotel Sahara Star', location: 'Mumbai' },
-  { id: 'h8', image: '/images/HH_-Thumbnail.png', name: 'Aamby Valley', location: 'Lonavala' },
-  { id: 'h9', image: '/images/GC_Thumbnail.png', name: 'Golden Chariott', location: 'Mumbai' },
-  { id: 'h10', image: '/images/SS_Thumbnail.png', name: 'Brass Monkey', location: 'Mumbai' },
-];
-
 const PAGE_SIZE = 5;
 
-export default function HospitalityPortfolioPage({ onNavigate }) {
+function areaLabel(areaSqft) {
+  return areaSqft ? `${areaSqft.toLocaleString('en-IN')} Sq.Ft Area` : '0000 Sq.Ft Area';
+}
+
+// Project listing for one portfolio category: /portfolio/:category
+export default function PortfolioCategoryPage() {
+  const { category: categorySlug } = useParams();
+  const navigate = useNavigate();
+
+  const { data: category, loading: categoryLoading } = useData(
+    () => getCategory(categorySlug),
+    [categorySlug]
+  );
+  const { data: projects } = useData(() => getProjects(categorySlug), [categorySlug]);
+
   const [startIndex, setStartIndex] = useState(0);
   const [exiting, setExiting] = useState(false);
   const [direction, setDirection] = useState('next');
   const [slideKey, setSlideKey] = useState(0);
 
-  const visibleSlots = slots.slice(startIndex, startIndex + PAGE_SIZE);
-  const hasNext = startIndex + PAGE_SIZE < slots.length;
+  useEffect(() => {
+    setStartIndex(0);
+  }, [categorySlug]);
+
+  if (!categoryLoading && !category) {
+    return <Navigate to="/portfolio" replace />;
+  }
+
+  const list = projects ?? [];
+  const visible = list.slice(startIndex, startIndex + PAGE_SIZE);
+  const hasNext = startIndex + PAGE_SIZE < list.length;
   const hasPrev = startIndex > 0;
 
   const go = (dir) => {
@@ -59,7 +72,7 @@ export default function HospitalityPortfolioPage({ onNavigate }) {
           <span className="h-[30.25px] w-[7.5px] bg-[#c3bdb4]" />
           <button
             type="button"
-            onClick={() => onNavigate('home')}
+            onClick={() => navigate('/')}
             className="ml-[17px] font-semilight text-[15px] tracking-wide text-[#c3bdb4] transition hover:text-[#781F1C]"
           >
             home
@@ -67,15 +80,15 @@ export default function HospitalityPortfolioPage({ onNavigate }) {
           <span className="ml-[30px] h-[30.24px] w-px bg-[#c8c2ba]" />
           <button
             type="button"
-            onClick={() => onNavigate('portfolio')}
+            onClick={() => navigate('/portfolio')}
             className="ml-[34px] text-[22px] transition hover:text-[#781F1C]"
           >
             portfolio
           </button>
-          <span className="ml-[24px] text-[15px] text-[#e3dad0]">Hospitality</span>
+          <span className="ml-[24px] text-[15px] text-[#e3dad0]">{category?.label ?? ''}</span>
         </div>
         <div className="flex items-center gap-4 pr-[7px] pt-[0.65px] text-[15px] font-semilight tracking-[0.02em] text-[#d2ccc4]">
-          <button type="button" onClick={() => onNavigate('enquiry')} className="transition hover:text-[#781F1C]">
+          <button type="button" onClick={() => navigate('/enquiry')} className="transition hover:text-[#781F1C]">
             contact us
           </button>
           <span className="inline-block h-[30px] w-[7.5px] shrink-0 bg-[#781F1C]" />
@@ -101,35 +114,50 @@ export default function HospitalityPortfolioPage({ onNavigate }) {
             style={{ marginLeft: '424.59px', marginRight: '424.59px' }}
           >
             <div className="flex items-center">
-              <div
-                key={slideKey}
-                className={`grid flex-1 grid-cols-5 transition-all duration-[160ms] ease-in ${
-                  exiting
-                    ? direction === 'next' ? 'opacity-0 -translate-x-6' : 'opacity-0 translate-x-6'
-                    : 'opacity-100 translate-x-0'
-                }`}
-                style={!exiting ? {
-                  animation: `${direction === 'next' ? 'slideInRight' : 'slideInLeft'} 200ms ease-out forwards`,
-                } : undefined}
-              >
-                {visibleSlots.map((slot) => (
-                  <div key={slot.id} className="group relative flex flex-col cursor-pointer" style={{ height: '420px' }} onClick={() => onNavigate(`portfolio-hospitality-detail:${slot.id}`)}>
-                    <div className="relative flex-1 overflow-hidden bg-white/5 transition-transform duration-700 ease-in-out group-hover:scale-[1.02]">
-                      {slot.image ? (
-                        <img src={slot.image} alt="Hospitality thumbnail" className="h-full w-full object-cover object-top transition-all duration-700 ease-in-out group-hover:brightness-110" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[11px] uppercase tracking-[0.3em] text-[#d8c577]">Thumbnail</div>
-                      )}
-                    </div>
+              {projects && list.length === 0 ? (
+                <p className="flex-1 py-24 text-center text-[13px] uppercase tracking-[0.3em] text-[#e7ddd3]/60">
+                  Projects coming soon
+                </p>
+              ) : (
+                <div
+                  key={slideKey}
+                  className={`grid flex-1 grid-cols-5 transition-all duration-[160ms] ease-in ${
+                    exiting
+                      ? direction === 'next' ? 'opacity-0 -translate-x-6' : 'opacity-0 translate-x-6'
+                      : 'opacity-100 translate-x-0'
+                  }`}
+                  style={!exiting ? {
+                    animation: `${direction === 'next' ? 'slideInRight' : 'slideInLeft'} 200ms ease-out forwards`,
+                  } : undefined}
+                >
+                  {visible.map((project) => (
+                    <div
+                      key={project.id}
+                      className="group relative flex flex-col cursor-pointer"
+                      style={{ height: '420px' }}
+                      onClick={() => navigate(`/portfolio/${categorySlug}/${project.slug}`)}
+                    >
+                      <div className="relative flex-1 overflow-hidden bg-white/5 transition-transform duration-700 ease-in-out group-hover:scale-[1.02]">
+                        {project.thumbnail ? (
+                          <img
+                            src={project.thumbnail}
+                            alt={project.name}
+                            className="h-full w-full object-cover object-top transition-all duration-700 ease-in-out group-hover:brightness-110"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[11px] uppercase tracking-[0.3em] text-[#d8c577]">Thumbnail</div>
+                        )}
+                      </div>
 
-                    <div className="border-t border-[#781F1C] py-3 space-y-1 text-center text-[11px] uppercase tracking-[0.2em] text-[#e7ddd3]/80">
-                      <p>{slot.name}</p>
-                      <p>{slot.location}</p>
-                      <p>0000 Sq.Ft Area</p>
+                      <div className="border-t border-[#781F1C] py-3 space-y-1 text-center text-[11px] uppercase tracking-[0.2em] text-[#e7ddd3]/80">
+                        <p>{project.name}</p>
+                        <p>{project.location}</p>
+                        <p>{areaLabel(project.areaSqft)}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {hasNext && (
                 <button

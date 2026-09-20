@@ -1,149 +1,102 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router';
 import HomePage from './components/HomePage';
 import AboutPage from './components/AboutPage';
 import ClientsPage from './components/ClientsPage';
 import PortfolioPage from './components/PortfolioPage';
+import PortfolioCategoryPage from './components/PortfolioCategoryPage';
+import ProjectDetailPage from './components/ProjectDetailPage';
 import EnquiryPage from './components/EnquiryPage';
-import HospitalityPortfolioPage from './components/HospitalityPortfolioPage';
-import BuildersPortfolioPage from './components/BuildersPortfolioPage';
-import CommercialPortfolioPage from './components/CommercialPortfolioPage';
-import PrivateResidencesPortfolioPage from './components/PrivateResidencesPortfolioPage';
-import HospitalityProjectPage from './components/HospitalityProjectPage';
 
-function App() {
-  const [page, setPage] = useState('home');
-  const [visible, setVisible] = useState('home'); // which page is rendered
-  const [detailId, setDetailId] = useState(null);
+const SLIDE_MS = 500;
 
-  const navigate = (target) => {
-    if (target === page) return;
-    if (typeof target === 'string' && target.startsWith('portfolio-hospitality-detail:')) {
-      const id = target.split(':')[1] || null;
-      setDetailId(id);
-      setVisible('portfolio-hospitality-detail');
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setPage('portfolio-hospitality-detail'));
-      });
-      return;
+/**
+ * Page transition state driven by the URL.
+ * Home is always mounted and slides right when another page opens. Any other
+ * route renders in an overlay that slides in from the left; navigating back
+ * to "/" slides the overlay out and unmounts it after the animation.
+ */
+function useOverlayTransition() {
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+  const [overlay, setOverlay] = useState(isHome ? null : location);
+  const [shown, setShown] = useState(!isHome);
+  const lastKey = useRef(location.key);
+  const overlayPath = useRef(isHome ? null : location.pathname);
+
+  useEffect(() => {
+    // Skip the initial mount (and StrictMode's re-run of it).
+    if (lastKey.current === location.key) return undefined;
+    lastKey.current = location.key;
+
+    if (isHome) {
+      setShown(false);
+      const timer = setTimeout(() => {
+        setOverlay(null);
+        overlayPath.current = null;
+      }, SLIDE_MS);
+      return () => clearTimeout(timer);
     }
-    if (
-      target === 'about' ||
-      target === 'clients' ||
-      target === 'portfolio' ||
-      target === 'enquiry' ||
-      target === 'portfolio-hospitality' ||
-      target === 'portfolio-builders' ||
-      target === 'portfolio-commercial' ||
-      target === 'portfolio-private' ||
-      target === 'portfolio-hospitality-detail'
-    ) {
-      setVisible(target); // mount target page (starts off-screen left)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setPage(target)); // trigger slide-in
-      });
-    } else {
-      setPage('home'); // trigger slide-out
-      setTimeout(() => setVisible('home'), 500); // unmount after transition
-    }
-  };
+
+    const samePage = overlayPath.current === location.pathname;
+    overlayPath.current = location.pathname;
+    setOverlay(location);
+    if (samePage) return undefined;
+
+    // Mount off-screen first, then slide in on the next frame.
+    setShown(false);
+    let raf2;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setShown(true));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, [location, isHome]);
+
+  return { isHome, overlay, shown };
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
+export default function App() {
+  const { isHome, overlay, shown } = useOverlayTransition();
 
   return (
     <div className="relative overflow-hidden">
-      {/* HomePage — always mounted, slides right when about opens */}
+      <ScrollToTop />
+
       <div
         className="transition-transform duration-500 ease-in-out"
-        style={{ transform: page !== 'home' ? 'translateX(100%)' : 'translateX(0)' }}
+        style={{ transform: isHome ? 'translateX(0)' : 'translateX(100%)' }}
       >
-        <HomePage onNavigate={navigate} />
+        <HomePage />
       </div>
 
-      {/* AboutPage — slides in from left */}
-      {visible === 'about' && (
+      {overlay && (
         <div
+          key={overlay.pathname}
           className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: page === 'about' ? 'translateX(0)' : 'translateX(-100%)' }}
+          style={{ transform: shown ? 'translateX(0)' : 'translateX(-100%)' }}
         >
-          <AboutPage onNavigate={navigate} />
-        </div>
-      )}
-
-      {/* ClientsPage — slides in from left */}
-      {visible === 'clients' && (
-        <div
-          className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: page === 'clients' ? 'translateX(0)' : 'translateX(-100%)' }}
-        >
-          <ClientsPage onNavigate={navigate} />
-        </div>
-      )}
-
-      {/* PortfolioPage — slides in from left */}
-      {visible === 'portfolio' && (
-        <div
-          className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: page === 'portfolio' ? 'translateX(0)' : 'translateX(-100%)' }}
-        >
-          <PortfolioPage onNavigate={navigate} />
-        </div>
-      )}
-
-      {/* EnquiryPage — slides in from left */}
-      {visible === 'enquiry' && (
-        <div
-          className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: page === 'enquiry' ? 'translateX(0)' : 'translateX(-100%)' }}
-        >
-          <EnquiryPage onNavigate={navigate} />
-        </div>
-      )}
-
-      {/* Hospitality Portfolio Page — slides in from left */}
-      {visible === 'portfolio-hospitality' && (
-        <div
-          className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: page === 'portfolio-hospitality' ? 'translateX(0)' : 'translateX(-100%)' }}
-        >
-          <HospitalityPortfolioPage onNavigate={navigate} />
-        </div>
-      )}
-
-      {visible === 'portfolio-builders' && (
-        <div
-          className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: page === 'portfolio-builders' ? 'translateX(0)' : 'translateX(-100%)' }}
-        >
-          <BuildersPortfolioPage onNavigate={navigate} />
-        </div>
-      )}
-
-      {visible === 'portfolio-commercial' && (
-        <div
-          className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: page === 'portfolio-commercial' ? 'translateX(0)' : 'translateX(-100%)' }}
-        >
-          <CommercialPortfolioPage onNavigate={navigate} />
-        </div>
-      )}
-
-      {visible === 'portfolio-private' && (
-        <div
-          className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: page === 'portfolio-private' ? 'translateX(0)' : 'translateX(-100%)' }}
-        >
-          <PrivateResidencesPortfolioPage onNavigate={navigate} />
-        </div>
-      )}
-
-      {visible === 'portfolio-hospitality-detail' && (
-        <div
-          className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: page === 'portfolio-hospitality-detail' ? 'translateX(0)' : 'translateX(-100%)' }}
-        >
-          <HospitalityProjectPage onNavigate={navigate} projectId={detailId} />
+          <Routes location={overlay}>
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/portfolio" element={<PortfolioPage />} />
+            <Route path="/portfolio/:category" element={<PortfolioCategoryPage />} />
+            <Route path="/portfolio/:category/:slug" element={<ProjectDetailPage />} />
+            <Route path="/enquiry" element={<EnquiryPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
       )}
     </div>
   );
 }
-
-export default App;
