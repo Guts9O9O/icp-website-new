@@ -79,7 +79,7 @@ function must({ error }, what) {
 // ---------------------------------------------------------------------------
 for (const c of categories) {
   const storagePath = await uploadWebp(c.image, `categories/${c.slug}.webp`, GALLERY_MAX);
-  must(await db.from('categories').update({ image_path: storagePath, label: c.label, sort_order: c.sortOrder }).eq('slug', c.slug), `category ${c.slug}`);
+  must(await db.from('categories').update({ image_path: storagePath, label: c.label, description: c.description ?? null, sort_order: c.sortOrder }).eq('slug', c.slug), `category ${c.slug}`);
   console.log(`  category   ${c.slug}`);
 }
 
@@ -131,7 +131,7 @@ for (const m of team) {
     last_name: m.lastName,
     role_lines: m.role,
     photo_path: photo,
-    bio: m.details.join('\n\n'),
+    bio: m.bio,
     published: true,
     sort_order: m.sortOrder,
   };

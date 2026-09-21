@@ -62,6 +62,10 @@ export async function listCategories() {
   return unwrap(await supabase.from('categories').select('*').order('sort_order'));
 }
 
+export async function updateCategory(slug, fields) {
+  return unwrap(await supabase.from('categories').update(fields).eq('slug', slug).select('*').single());
+}
+
 // ---------------------------------------------------------------------------
 // Projects
 // ---------------------------------------------------------------------------

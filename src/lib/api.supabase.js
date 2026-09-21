@@ -15,6 +15,7 @@ const mapCategory = (c) => ({
   slug: c.slug,
   label: c.label,
   image: mediaUrl(c.image_path),
+  description: c.description ?? '',
   sortOrder: c.sort_order,
 });
 
@@ -38,7 +39,7 @@ const mapMember = (m) => ({
   lastName: m.last_name,
   role: m.role_lines ?? [],
   image: mediaUrl(m.photo_path, m.updated_at),
-  details: (m.bio ?? '').split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean),
+  bio: m.bio ?? '',
   sortOrder: m.sort_order,
 });
 

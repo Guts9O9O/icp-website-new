@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getAbout, getTeam } from '../lib/api';
+import RichText from '../lib/richText';
 import { useData } from '../lib/useData';
 import { EDGE_BAR, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
@@ -131,7 +132,7 @@ export default function AboutPage() {
       {/* Left panel: write-up for the hovered card */}
       <aside
         className={[
-          'fixed inset-y-0 left-0 z-30 overflow-y-auto bg-icp-red/50 text-white backdrop-blur-[1px]',
+          'fixed inset-y-0 left-0 z-[35] overflow-y-auto bg-icp-red/50 text-white backdrop-blur-[1px]', // above the footer marks, below the edge bars/nav
           'transition-transform duration-700 ease-in-out',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
@@ -150,33 +151,19 @@ export default function AboutPage() {
           }}
         >
           {active && active.id === ABOUT_CARD_ID && aboutInfo && (
-            <>
-              <section>
-                <h2 className="font-semibold" style={{ marginBottom: u(16) }}>{aboutInfo.title}</h2>
-                <p>{aboutInfo.intro}</p>
-              </section>
-              <section>
-                <h2 className="font-semibold" style={{ marginBottom: u(16) }}>Design Team</h2>
-                <p style={{ marginBottom: u(16) }}>{aboutInfo.teamIntro}</p>
-                <ul className="list-disc" style={{ paddingLeft: u(28), display: 'grid', gap: u(10) }}>
-                  {aboutInfo.hallmarks.map((item, i) => (
-                    <li key={i}>{item}</li>
-                  ))}
-                </ul>
-              </section>
-            </>
+            <section>
+              <RichText text={aboutInfo.text} tone="dark" gap={u(18)} />
+            </section>
           )}
           {active && active.id !== ABOUT_CARD_ID && (
             <section>
-              <h2 className="font-semibold" style={{ marginBottom: u(6) }}>
+              <h2 className="font-semibold" style={{ marginBottom: u(6), letterSpacing: '0.08em' }}>
                 {active.firstName} <span className="uppercase">{active.lastName}</span>
               </h2>
-              <p className="text-white/80" style={{ marginBottom: u(24) }}>{active.role.join(' ')}</p>
-              <div style={{ display: 'grid', gap: u(12) }}>
-                {(active.details ?? []).map((line, i) => (
-                  <p key={i}>{line}</p>
-                ))}
-              </div>
+              <p className="uppercase text-white/80" style={{ marginBottom: u(28), letterSpacing: '0.16em', fontSize: fs(13, 11) }}>
+                {active.role.join(' ')}
+              </p>
+              <RichText text={active.bio} tone="dark" gap={u(18)} />
             </section>
           )}
         </div>
@@ -185,7 +172,7 @@ export default function AboutPage() {
       {/* Right panel: dims everything to the right of the hovered card */}
       <aside
         className={[
-          'pointer-events-none fixed inset-y-0 right-0 z-30 bg-icp-taupe/50',
+          'pointer-events-none fixed inset-y-0 right-0 z-[35] bg-icp-taupe/50',
           'transition-transform duration-700 ease-in-out',
           isOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}

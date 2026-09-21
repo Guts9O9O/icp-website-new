@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import * as api from '../api';
 import { Button, Card, Field, Input, PageHeader, Spinner, Textarea, errorMessage, useToast } from '../components/ui';
 
-const ABOUT_DEFAULT = { title: 'About iC+P', intro: '', teamIntro: '', hallmarks: [] };
+const ABOUT_DEFAULT = { title: 'About iC+P', text: '' };
+const FORMAT_HINT = 'Write it like a document: a blank line starts a new paragraph; a line in CAPITALS on its own becomes a heading; start lines with "- " (or "1. ") for a list, and use "TITLE — text" inside a list line to make the title bold; wrap a paragraph in quotes for a highlighted quote.';
 const CONTACT_DEFAULT = {
   phone: '',
   email: '',
@@ -18,11 +19,13 @@ export default function SettingsPage() {
   const toast = useToast();
   const [about, setAbout] = useState(null);
   const [contact, setContact] = useState(null);
+  const [categories, setCategories] = useState(null);
   const [saving, setSaving] = useState('');
 
   useEffect(() => {
-    Promise.all([api.getSetting('about'), api.getSetting('contact')])
-      .then(([a, c]) => {
+    Promise.all([api.getSetting('about'), api.getSetting('contact'), api.listCategories()])
+      .then(([a, c, cats]) => {
+        setCategories(cats);
         setAbout({ ...ABOUT_DEFAULT, ...(a ?? {}) });
         setContact({ ...CONTACT_DEFAULT, ...(c ?? {}), socials: CONTACT_DEFAULT.socials.map((d) => ({ ...d, ...((c?.socials ?? []).find((s) => s.name === d.name) ?? {}) })) });
       })
@@ -33,8 +36,20 @@ export default function SettingsPage() {
   const saveAbout = async () => {
     setSaving('about');
     try {
-      await api.setSetting('about', { ...about, hallmarks: about.hallmarks.map((h) => h.trim()).filter(Boolean) });
+      await api.setSetting('about', { title: about.title.trim() || 'About iC+P', text: about.text.trim() });
       toast.success('About text saved.');
+    } catch (e) {
+      toast.error(errorMessage(e));
+    } finally {
+      setSaving('');
+    }
+  };
+
+  const saveCategories = async () => {
+    setSaving('categories');
+    try {
+      await Promise.all(categories.map((c) => api.updateCategory(c.slug, { description: (c.description ?? '').trim() || null })));
+      toast.success('Category introductions saved.');
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {
@@ -60,22 +75,33 @@ export default function SettingsPage() {
     }
   };
 
-  if (!about || !contact) return <div className="flex justify-center py-16"><Spinner /></div>;
+  if (!about || !contact || !categories) return <div className="flex justify-center py-16"><Spinner /></div>;
 
   return (
     <>
-      <PageHeader title="Site text & contact" description="The studio write-up on the About Us page, and the details on the Enquiry page." />
+      <PageHeader title="Site text & contact" description="The About Us write-up, the introduction on each portfolio category page, and the details on the Enquiry page." />
 
       <Card className="mb-6 space-y-4 p-6">
         <h2 className="text-[16px] font-semibold">About Us — studio write-up</h2>
-        <Field label="Heading"><Input value={about.title} onChange={(e) => setAbout({ ...about, title: e.target.value })} /></Field>
-        <Field label="Introduction"><Textarea rows={6} value={about.intro} onChange={(e) => setAbout({ ...about, intro: e.target.value })} /></Field>
-        <Field label="Design team paragraph"><Textarea rows={6} value={about.teamIntro} onChange={(e) => setAbout({ ...about, teamIntro: e.target.value })} /></Field>
-        <Field label="Hallmarks" hint="One per line — shown as a bullet list.">
-          <Textarea rows={6} value={about.hallmarks.join('\n')} onChange={(e) => setAbout({ ...about, hallmarks: e.target.value.split('\n') })} />
+        <p className="text-[13px] text-icp-slate/60">Shown in the panel that slides out when a visitor hovers the “about iC+P” column.</p>
+        <Field label="Write-up" hint={FORMAT_HINT}>
+          <Textarea rows={22} value={about.text} onChange={(e) => setAbout({ ...about, text: e.target.value })} className="font-mono text-[13px]" />
         </Field>
         <div className="flex justify-end">
           <Button variant="primary" onClick={saveAbout} disabled={saving === 'about'}>{saving === 'about' ? 'Saving…' : 'Save about text'}</Button>
+        </div>
+      </Card>
+
+      <Card className="mb-6 space-y-4 p-6">
+        <h2 className="text-[16px] font-semibold">Portfolio — category introductions</h2>
+        <p className="text-[13px] text-icp-slate/60">Short text shown above the projects on each category page. Blank line between paragraphs.</p>
+        {categories.map((c, i) => (
+          <Field key={c.slug} label={c.label}>
+            <Textarea rows={5} value={c.description ?? ''} onChange={(e) => setCategories(categories.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))} />
+          </Field>
+        ))}
+        <div className="flex justify-end">
+          <Button variant="primary" onClick={saveCategories} disabled={saving === 'categories'}>{saving === 'categories' ? 'Saving…' : 'Save introductions'}</Button>
         </div>
       </Card>
 

@@ -42,8 +42,8 @@ function MemberForm({ initial, onSave, onCancel, toast }) {
       <Field label="Role" hint="One line per row, e.g. Founder / & / Design Director — shown under the photo exactly as typed.">
         <Textarea rows={3} value={form.role_text} onChange={set('role_text')} placeholder={'Founder\n&\nDesign Director'} />
       </Field>
-      <Field label="Write-up" hint="Shown in the slide-out panel when a visitor hovers the photo. Blank line between paragraphs.">
-        <Textarea rows={6} value={form.bio} onChange={set('bio')} />
+      <Field label="Write-up" hint="Shown in the slide-out panel when a visitor hovers the photo. Blank line between paragraphs; a line in CAPITALS on its own (e.g. DESIGN PHILOSOPHY) becomes a heading; wrap a paragraph in quotes for a highlighted quote.">
+        <Textarea rows={12} value={form.bio} onChange={set('bio')} />
       </Field>
       <div className="flex items-start gap-4">
         <div className="h-28 w-20 shrink-0 overflow-hidden rounded bg-[#efece8]">

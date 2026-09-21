@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router';
 import { getCategory, getProjects } from '../lib/api';
 import { useData } from '../lib/useData';
 import { fs, u, v } from '../lib/units';
+import RichText from '../lib/richText';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
@@ -65,6 +66,15 @@ export default function PortfolioCategoryPage() {
       <style>{slideStyles}</style>
       <EdgeBars />
       <SiteNav title="portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
+
+      {category?.description && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 text-center text-icp-mist"
+          style={{ top: v(230), width: `min(${u(1500)}, calc(100vw - ${u(200)}))`, maxHeight: v(240), overflow: 'hidden', fontSize: fs(15, 11), lineHeight: 1.7 }}
+        >
+          <RichText text={category.description} tone="dark" gap={v(12)} />
+        </div>
+      )}
 
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(COL_TOP) }}>
         {projects && list.length === 0 ? (
