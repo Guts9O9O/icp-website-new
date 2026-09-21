@@ -7,6 +7,7 @@ import { PORTRAIT_QUERY, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import { useSeo } from '../lib/seo';
 
 const EMPTY = {
   subject: 'Design Request',
@@ -110,6 +111,7 @@ function SocialLink({ social }) {
 }
 
 export default function EnquiryPage() {
+  useSeo({ title: 'Enquiry', description: 'Get in touch with iConcepts + Partners for design requests or career opportunities. Studio in Dahisar East, Mumbai.' });
   const { data: site } = useData(getSite);
   const portrait = useMediaQuery(PORTRAIT_QUERY);
   const m = portrait ? PORTRAIT : LANDSCAPE;

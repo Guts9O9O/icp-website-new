@@ -5,10 +5,12 @@ import { EDGE_BAR, FOOTER_H, NAV_BAR_H, NAV_TOP, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import { useSeo } from '../lib/seo';
 
 // Four category columns fill the page between the nav and the footer rule (R3).
 // A translucent red bar covers each image and slides away on hover.
 export default function PortfolioPage() {
+  useSeo({ title: 'Portfolio', description: 'Interior design projects by iConcepts + Partners across hospitality, builders & developers, commercial and private residences.' });
   const navigate = useNavigate();
   const { data: categories } = useData(getCategories);
   const open = (slug) => navigate(`/portfolio/${slug}`);

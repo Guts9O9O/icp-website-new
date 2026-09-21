@@ -6,6 +6,7 @@ import { EDGE_BAR, PORTRAIT_QUERY, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import { useSeo } from '../lib/seo';
 
 // Grid geometry from R3 (design px): red header row, then logo rows of two
 // columns per category. Landscape shows the four categories side by side;
@@ -63,6 +64,7 @@ function CategoryBlock({ group, rows, rowH }) {
 }
 
 export default function ClientsPage() {
+  useSeo({ title: 'Clients', description: 'Hospitality, developer, commercial and private clients of iConcepts + Partners, Mumbai.' });
   const { data } = useData(getClientGroups);
   const groups = useMemo(() => data ?? [], [data]);
   const portrait = useMediaQuery(PORTRAIT_QUERY);

@@ -4,6 +4,7 @@ import { EDGE_BAR, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/u
 import { useMediaQuery } from '../lib/useMediaQuery';
 import EdgeBars from './chrome/EdgeBars';
 import SiteFooter from './chrome/SiteFooter';
+import { useSeo } from '../lib/seo';
 
 // Geometry from R3 (design px).
 const PANEL_W = 643;
@@ -55,7 +56,7 @@ function MenuLink({ link, side }) {
   );
 }
 
-function Panel({ side, links, open, onEnter, onLeave }) {
+function Panel({ side, links, open, onEnter, onLeave, hoverable }) {
   const isLeft = side === 'left';
   return (
     <aside
@@ -65,8 +66,9 @@ function Panel({ side, links, open, onEnter, onLeave }) {
         open ? 'translate-x-0' : isLeft ? '-translate-x-full' : 'translate-x-full',
       ].join(' ')}
       style={{ width: u(PANEL_W) }}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
+      onMouseEnter={hoverable ? onEnter : undefined}
+      onMouseLeave={hoverable ? onLeave : undefined}
+      onClick={(e) => e.stopPropagation()}
     >
       <nav className="absolute left-0 right-0" style={{ top: v(MENU_TOP) }}>
         <ul className="flex flex-col" style={{ gap: v(MENU_GAP - 36) }}>
@@ -98,10 +100,13 @@ function BrandMark() {
 }
 
 export default function HomePage() {
+  useSeo();
   const [panel, setPanel] = useState(null);
-  // On touch screens there is no hover: the first tap on "contact us" opens the
-  // panel (enquiry / testimonial); tapping outside any panel closes it.
+  // Touch screens have no hover, and a tap fires a synthetic mouseenter right
+  // before its click — so on those devices hover handlers are disabled and the
+  // tap alone toggles a panel; tapping outside closes it.
   const noHover = useMediaQuery(NO_HOVER_QUERY);
+  const hoverable = !noHover;
   const openLeft = () => setPanel('left');
   const openRight = () => setPanel('right');
   const close = (side) => () => setPanel((p) => (p === side ? null : p));
@@ -121,9 +126,12 @@ export default function HomePage() {
           type="button"
           className="pointer-events-auto flex items-center text-icp-mist transition-colors hover:text-white"
           style={{ fontSize: fs(20, 13) }}
-          onMouseEnter={openLeft}
-          onFocus={openLeft}
-          onClick={() => setPanel((p) => (p === 'left' ? null : 'left'))}
+          onMouseEnter={hoverable ? openLeft : undefined}
+          onFocus={hoverable ? openLeft : undefined}
+          onClick={(e) => {
+            e.stopPropagation();
+            setPanel((p) => (p === 'left' ? null : 'left'));
+          }}
           aria-expanded={panel === 'left'}
         >
           <span className="bg-icp-mist" style={smallBar} />
@@ -134,11 +142,13 @@ export default function HomePage() {
           to="/enquiry"
           className="pointer-events-auto flex items-center text-icp-mist transition-colors hover:text-white"
           style={{ fontSize: fs(20, 13) }}
-          onMouseEnter={openRight}
-          onFocus={openRight}
+          onMouseEnter={hoverable ? openRight : undefined}
+          onFocus={hoverable ? openRight : undefined}
           onClick={(e) => {
+            // Touch: first tap opens the panel, second tap follows the link.
             if (noHover && panel !== 'right') {
               e.preventDefault();
+              e.stopPropagation();
               openRight();
             }
           }}
@@ -148,8 +158,8 @@ export default function HomePage() {
         </Link>
       </header>
 
-      <Panel side="left" links={leftLinks} open={panel === 'left'} onEnter={openLeft} onLeave={close('left')} />
-      <Panel side="right" links={rightLinks} open={panel === 'right'} onEnter={openRight} onLeave={close('right')} />
+      <Panel side="left" links={leftLinks} open={panel === 'left'} onEnter={openLeft} onLeave={close('left')} hoverable={hoverable} />
+      <Panel side="right" links={rightLinks} open={panel === 'right'} onEnter={openRight} onLeave={close('right')} hoverable={hoverable} />
 
       <main className="relative z-10 flex min-h-screen items-center justify-center" onClick={() => setPanel(null)}>
         <BrandMark />

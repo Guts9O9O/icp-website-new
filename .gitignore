@@ -17,3 +17,4 @@ supabase/.temp
 
 # Apps Script (clasp) — account-specific
 apps-script/.clasp.json
+public/sitemap.xml

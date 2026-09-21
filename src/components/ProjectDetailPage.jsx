@@ -6,6 +6,7 @@ import { fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import { useSeo } from '../lib/seo';
 
 // Image frame and controls from R3 (design px).
 const FRAME_TOP = 274;
@@ -26,6 +27,11 @@ export default function ProjectDetailPage() {
 
   const { data: category } = useData(() => getCategory(categorySlug), [categorySlug]);
   const { data: project, loading } = useData(() => getProject(categorySlug, slug), [categorySlug, slug]);
+  useSeo({
+    title: project ? `${project.name}${project.location ? `, ${project.location}` : ''}` : undefined,
+    description: project ? `${project.name}${project.location ? `, ${project.location}` : ''} — ${category?.label ?? ''} interior design by iConcepts + Partners. ${(project.description ?? '').split(/\n\s*\n/).pop() ?? ''}` : undefined,
+    image: project?.thumbnail?.startsWith('http') ? project.thumbnail : undefined,
+  });
 
   const images = project?.images ?? [];
   const count = images.length;

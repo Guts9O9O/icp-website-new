@@ -5,12 +5,14 @@ import { fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import { useSeo } from '../lib/seo';
 
 const AUTOPLAY_MS = 9000;
 
 // One testimonial at a time with the same previous/dots/next controls as the
 // project carousel. Content is managed from the admin panel.
 export default function TestimonialsPage() {
+  useSeo({ title: 'Testimonials', description: 'What clients say about working with iConcepts + Partners.' });
   const { data: items } = useData(getTestimonials);
   const list = items ?? [];
   const count = list.length;

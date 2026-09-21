@@ -7,6 +7,7 @@ import RichText from '../lib/richText';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import { useSeo } from '../lib/seo';
 
 const slideStyles = `
   @keyframes icpSlideInRight { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }
@@ -35,6 +36,10 @@ export default function PortfolioCategoryPage() {
 
   const { data: category, loading: categoryLoading } = useData(() => getCategory(categorySlug), [categorySlug]);
   const { data: projects } = useData(() => getProjects(categorySlug), [categorySlug]);
+  useSeo({
+    title: category ? `${category.label} projects` : 'Portfolio',
+    description: category?.description?.split(/\n\s*\n/)[0],
+  });
 
   // Page number is remembered per category, so switching category starts at page 1.
   const [pageState, setPageState] = useState({ category: categorySlug, page: 0 });

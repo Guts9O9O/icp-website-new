@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getAbout, getTeam } from '../lib/api';
 import RichText from '../lib/richText';
 import { useData } from '../lib/useData';
-import { EDGE_BAR, fs, u, v } from '../lib/units';
+import { EDGE_BAR, NO_HOVER_QUERY, fs, u, v } from '../lib/units';
+import { useMediaQuery } from '../lib/useMediaQuery';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import { useSeo } from '../lib/seo';
 
 const ABOUT_CARD_ID = 'about-icp';
 
@@ -17,7 +19,7 @@ const PHOTO_H = 455;
 const NAME_H = 95;
 const RULE_H = 6;
 
-function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onToggle, cardRef }) {
+function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onToggle, hoverable, cardRef }) {
   return (
     <div
       ref={cardRef}
@@ -27,13 +29,15 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
         isMuted ? 'opacity-40' : 'opacity-100',
       ].join(' ')}
       style={{ width: u(COL_W), height: v(COL_H) }}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      onFocus={onEnter}
-      onBlur={onLeave}
+      onMouseEnter={hoverable ? onEnter : undefined}
+      onMouseLeave={hoverable ? onLeave : undefined}
+      onFocus={hoverable ? onEnter : undefined}
+      onBlur={hoverable ? onLeave : undefined}
       onClick={(e) => {
+        // Hover devices open on hover; touch devices toggle on tap (a tap's
+        // synthetic mouseenter is ignored above so it cannot cancel itself).
         e.stopPropagation();
-        onToggle();
+        if (!hoverable) onToggle();
       }}
       role="button"
       tabIndex={0}
@@ -95,6 +99,10 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
 }
 
 export default function AboutPage() {
+  useSeo({
+    title: 'About us',
+    description: 'iC+P is a multidisciplinary design studio with Interior Design at its core, extending into Architecture, Product Design and bespoke elements. Meet the team behind Design to live.',
+  });
   const { data: aboutInfo } = useData(getAbout);
   const { data: members } = useData(getTeam);
 
@@ -104,6 +112,7 @@ export default function AboutPage() {
     [members]
   );
 
+  const hoverable = !useMediaQuery(NO_HOVER_QUERY);
   const [activeId, setActiveId] = useState(null);
   const active = cards.find((c) => c.id === activeId);
   const isOpen = Boolean(active);
@@ -191,6 +200,7 @@ export default function AboutPage() {
               onEnter={() => setActiveId(card.id)}
               onLeave={() => setActiveId(null)}
               onToggle={() => setActiveId((prev) => (prev === card.id ? null : card.id))}
+              hoverable={hoverable}
               cardRef={(el) => {
                 if (el) cardRefs.current[card.id] = el;
               }}

@@ -1,8 +1,10 @@
 import { getSite } from '../lib/api';
 import { useData } from '../lib/useData';
+import { useSeo } from '../lib/seo';
 
 // Shown instead of the site on phones (client requirement: desktop/tablet only).
 export default function MobileBlock() {
+  useSeo({ noindex: true });
   const { data: site } = useData(getSite);
 
   return (

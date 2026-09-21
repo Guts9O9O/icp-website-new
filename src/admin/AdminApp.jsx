@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { supabase } from '../lib/supabase';
+import { useSeo } from '../lib/seo';
 import { AuthProvider, RequireAuth } from './auth';
 import AdminLayout from './components/AdminLayout';
 import { ConfirmProvider, ToastProvider } from './components/ui';
@@ -14,6 +15,7 @@ import TestimonialsPage from './pages/TestimonialsPage';
 
 // The admin panel, mounted at /admin/*. Plain layout, no page transitions.
 export default function AdminApp() {
+  useSeo({ title: 'Admin', noindex: true });
   if (!supabase) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f7f5f2] p-6 font-sans text-icp-slate">

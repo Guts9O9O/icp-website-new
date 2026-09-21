@@ -14,7 +14,9 @@
     "seed": "node scripts/seed.mjs",
     "create-admin": "node scripts/create-admin.mjs",
     "lint": "eslint .",
-    "test:enquiry": "node apps-script/test.mjs"
+    "test:enquiry": "node apps-script/test.mjs",
+    "sitemap": "node scripts/sitemap.mjs",
+    "prebuild": "node scripts/sitemap.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
