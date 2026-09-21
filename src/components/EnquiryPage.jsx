@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { getSite } from '../lib/api';
 import { useData } from '../lib/useData';
-import { fs, u, v } from '../lib/units';
+import { useMediaQuery } from '../lib/useMediaQuery';
+import { PORTRAIT_QUERY, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
@@ -35,11 +36,16 @@ const ROW_GAP = 46;
 
 const fieldClass =
   'w-full border border-icp-mist bg-white text-icp-slate outline-none placeholder:text-icp-mist focus:border-icp-taupe';
-const fieldStyle = { height: v(FIELD_H), paddingLeft: u(16), paddingRight: u(16), fontSize: fs(18, 13) };
+// Portrait tablets: the contact block moves under the form, so the form is
+// packed tighter to leave room for it above the footer.
+const PORTRAIT = { formTop: 300, fieldH: 46, rowGap: 22, textareaH: 110 };
+const LANDSCAPE = { formTop: FORM_TOP, fieldH: FIELD_H, rowGap: ROW_GAP, textareaH: 158 };
 
-function Row({ label, children, align = 'center' }) {
+const fieldStyle = (m) => ({ height: v(m.fieldH), paddingLeft: u(16), paddingRight: u(16), fontSize: fs(18, 13) });
+
+function Row({ label, children, align = 'center', gap }) {
   return (
-    <div className={`flex ${align === 'start' ? 'items-start' : 'items-center'}`} style={{ marginBottom: v(ROW_GAP) }}>
+    <div className={`flex ${align === 'start' ? 'items-start' : 'items-center'}`} style={{ marginBottom: v(gap) }}>
       <label className="shrink-0 text-icp-taupe" style={{ width: u(LABEL_W), fontSize: fs(18, 13) }}>
         {label}
       </label>
@@ -50,14 +56,14 @@ function Row({ label, children, align = 'center' }) {
   );
 }
 
-function Select({ value, onChange, options, style }) {
+function Select({ value, onChange, options, style, field }) {
   return (
     <div className="relative" style={style}>
       <select
         value={value}
         onChange={onChange}
         className={`${fieldClass} appearance-none`}
-        style={{ ...fieldStyle, paddingRight: u(70) }}
+        style={{ ...field, paddingRight: u(70) }}
       >
         {options.map((o) => (
           <option key={o} value={o}>
@@ -111,6 +117,9 @@ function SocialLink({ social }) {
 
 export default function EnquiryPage() {
   const { data: site } = useData(getSite);
+  const portrait = useMediaQuery(PORTRAIT_QUERY);
+  const m = portrait ? PORTRAIT : LANDSCAPE;
+  const field = fieldStyle(m);
   const [form, setForm] = useState(EMPTY);
   const detailOptions = SUBJECTS[form.subject] ?? [];
 
@@ -130,33 +139,35 @@ export default function EnquiryPage() {
       <EdgeBars />
       <SiteNav rightTitle="enquiry" />
 
-      <main className="absolute left-0 right-0" style={{ top: v(FORM_TOP) }}>
-        <form onSubmit={onSubmit} className="absolute" style={{ left: u(FORM_LEFT) }} noValidate>
-          <Row label="Subject">
+      <main className="absolute left-0 right-0 tall:flex tall:flex-col" style={{ top: v(m.formTop), paddingLeft: u(FORM_LEFT) }}>
+        <form onSubmit={onSubmit} className="absolute tall:static" style={{ left: u(FORM_LEFT) }} noValidate>
+          <Row label="Subject" gap={m.rowGap}>
             <Select
               value={form.subject}
               onChange={setSubject}
               options={Object.keys(SUBJECTS)}
               style={{ width: detailOptions.length ? u(459) : '100%' }}
+              field={field}
             />
             {detailOptions.length > 0 && (
-              <Select value={form.detail} onChange={set('detail')} options={detailOptions} style={{ flex: 1 }} />
+              <Select value={form.detail} onChange={set('detail')} options={detailOptions} style={{ flex: 1 }} field={field} />
             )}
           </Row>
 
-          <Row label="Your Name">
-            <input className={fieldClass} style={fieldStyle} value={form.name} onChange={set('name')} autoComplete="name" />
+          <Row label="Your Name" gap={m.rowGap}>
+            <input className={fieldClass} style={field} value={form.name} onChange={set('name')} autoComplete="name" />
           </Row>
 
-          <Row label="Company Name">
-            <input className={fieldClass} style={fieldStyle} value={form.company} onChange={set('company')} autoComplete="organization" />
+          <Row label="Company Name" gap={m.rowGap}>
+            <input className={fieldClass} style={field} value={form.company} onChange={set('company')} autoComplete="organization" />
           </Row>
 
-          <Row label="Email Address">
-            <input className={fieldClass} style={fieldStyle} type="email" value={form.email} onChange={set('email')} autoComplete="email" />
+          <Row label="Email Address" gap={m.rowGap}>
+            <input className={fieldClass} style={field} type="email" value={form.email} onChange={set('email')} autoComplete="email" />
           </Row>
 
           <Row
+            gap={m.rowGap}
             label={
               <span className="flex" style={{ gap: u(48) }}>
                 <span>Address</span>
@@ -166,7 +177,7 @@ export default function EnquiryPage() {
           >
             <input
               className={`${fieldClass} text-center`}
-              style={{ ...fieldStyle, width: u(221), flex: 'none' }}
+              style={{ ...field, width: u(221), flex: 'none' }}
               placeholder="Zip Code"
               value={form.zip}
               onChange={set('zip')}
@@ -174,7 +185,7 @@ export default function EnquiryPage() {
             />
             <input
               className={`${fieldClass} text-center`}
-              style={{ ...fieldStyle, flex: 1 }}
+              style={{ ...field, flex: 1 }}
               placeholder="Address"
               value={form.address1}
               onChange={set('address1')}
@@ -182,10 +193,10 @@ export default function EnquiryPage() {
             />
           </Row>
 
-          <Row label="">
+          <Row label="" gap={m.rowGap}>
             <input
               className={`${fieldClass} text-center`}
-              style={fieldStyle}
+              style={field}
               placeholder="Address"
               value={form.address2}
               onChange={set('address2')}
@@ -193,10 +204,10 @@ export default function EnquiryPage() {
             />
           </Row>
 
-          <Row label="Requirement" align="start">
+          <Row label="Requirement" align="start" gap={m.rowGap}>
             <textarea
               className={`${fieldClass} resize-none`}
-              style={{ ...fieldStyle, height: v(158), paddingTop: v(12) }}
+              style={{ ...field, height: v(m.textareaH), paddingTop: v(12) }}
               value={form.requirement}
               onChange={set('requirement')}
             />
@@ -215,22 +226,22 @@ export default function EnquiryPage() {
 
         {site && (
           <div
-            className="absolute text-icp-taupe"
-            style={{ left: u(1525), top: v(187), fontSize: fs(18, 13), lineHeight: 1.5 }}
+            className="absolute text-icp-taupe tall:static tall:mt-[calc(40*var(--v))] tall:grid tall:grid-cols-2 tall:gap-x-[calc(40*var(--u))]"
+            style={{ left: u(1525), top: v(187), fontSize: fs(18, 13), lineHeight: 1.5, width: portrait ? u(LABEL_W + FIELD_W) : undefined }}
           >
-            <div className="flex items-center" style={{ gap: u(42), marginBottom: v(34) }}>
+            <div className="flex items-center" style={{ gap: u(42), marginBottom: v(portrait ? 20 : 34) }}>
               <ContactIcon src="/images/icons/Mobile.png" alt="" />
               <a href={`tel:${site.phone.replace(/\s+/g, '')}`} className="hover:text-icp-red">
                 {site.phone}
               </a>
             </div>
-            <div className="flex items-center" style={{ gap: u(42), marginBottom: v(34) }}>
+            <div className="flex items-center" style={{ gap: u(42), marginBottom: v(portrait ? 20 : 34) }}>
               <ContactIcon src="/images/icons/Email.png" alt="" />
               <a href={`mailto:${site.email}`} className="hover:text-icp-red">
                 {site.email}
               </a>
             </div>
-            <div className="flex items-center" style={{ gap: u(42), marginBottom: v(60) }}>
+            <div className="flex items-center" style={{ gap: u(42), marginBottom: v(portrait ? 20 : 60) }}>
               <ContactIcon src="/images/icons/Location.png" alt="" />
               <p>
                 {site.addressLines.map((line, i) => (

@@ -16,7 +16,7 @@ const PHOTO_H = 455;
 const NAME_H = 95;
 const RULE_H = 6;
 
-function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, cardRef }) {
+function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onToggle, cardRef }) {
   return (
     <div
       ref={cardRef}
@@ -30,6 +30,10 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, cardRe
       onMouseLeave={onLeave}
       onFocus={onEnter}
       onBlur={onLeave}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
       role="button"
       tabIndex={0}
     >
@@ -120,7 +124,7 @@ export default function AboutPage() {
   }, [activeId]);
 
   return (
-    <div className="relative min-h-screen bg-white font-brand">
+    <div className="relative min-h-screen bg-white font-brand" onClick={() => setActiveId(null)}>
       <EdgeBars />
       <SiteNav title="about us" />
 
@@ -199,6 +203,7 @@ export default function AboutPage() {
               isMuted={isOpen && activeId !== card.id}
               onEnter={() => setActiveId(card.id)}
               onLeave={() => setActiveId(null)}
+              onToggle={() => setActiveId((prev) => (prev === card.id ? null : card.id))}
               cardRef={(el) => {
                 if (el) cardRefs.current[card.id] = el;
               }}

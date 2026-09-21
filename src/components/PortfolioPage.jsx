@@ -19,7 +19,7 @@ export default function PortfolioPage() {
       <SiteNav title="portfolio" />
 
       <main
-        className="absolute grid grid-cols-4"
+        className="absolute grid grid-cols-4 tall:grid-cols-2 tall:grid-rows-2"
         style={{
           top: v(NAV_TOP + NAV_BAR_H),
           bottom: v(FOOTER_H),
@@ -44,6 +44,7 @@ export default function PortfolioPage() {
             <img src={item.image} alt={item.label} className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 bg-icp-red/50 transition-transform duration-700 ease-in-out group-hover:-translate-x-full" />
             {idx < all.length - 1 && <div className="absolute inset-y-0 right-0 w-px bg-icp-mist/40" />}
+            <div className="absolute inset-x-0 bottom-0 hidden h-px bg-icp-mist/40 tall:block" />
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-white drop-shadow-md" style={{ fontSize: fs(38, 18) }}>
                 {item.label}

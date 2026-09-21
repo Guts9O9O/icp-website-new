@@ -7,6 +7,14 @@
   --u: calc(100vw / 2560);
   --v: calc(100vh / 1600);
   --v: calc(100dvh / 1600);
+}
+
+/* Portrait tablets: treat the viewport as a 1600-wide artboard so the
+   composition scales up to a usable size (pages adapt their layout via `tall:`). */
+@media (orientation: portrait) and (max-width: 1100px) {
+  :root {
+    --u: calc(100vw / 1600);
+  }
 
   /* Brand palette from the client's colour code. */
   --icp-red: #781f1c;

@@ -7,6 +7,10 @@ import PortfolioPage from './components/PortfolioPage';
 import PortfolioCategoryPage from './components/PortfolioCategoryPage';
 import ProjectDetailPage from './components/ProjectDetailPage';
 import EnquiryPage from './components/EnquiryPage';
+import TestimonialsPage from './components/TestimonialsPage';
+import MobileBlock from './components/MobileBlock';
+import { useMediaQuery } from './lib/useMediaQuery';
+import { MOBILE_QUERY } from './lib/units';
 
 // Admin panel is loaded only when someone opens /admin.
 const AdminApp = lazy(() => import('./admin/AdminApp'));
@@ -72,6 +76,7 @@ function ScrollToTop() {
 
 export default function App() {
   const location = useLocation();
+  const isMobile = useMediaQuery(MOBILE_QUERY);
   if (location.pathname.startsWith('/admin')) {
     return (
       <Suspense fallback={null}>
@@ -81,6 +86,8 @@ export default function App() {
       </Suspense>
     );
   }
+  // The public site is desktop/tablet only (client requirement).
+  if (isMobile) return <MobileBlock />;
   return <PublicSite />;
 }
 
@@ -111,6 +118,7 @@ function PublicSite() {
             <Route path="/portfolio/:category" element={<PortfolioCategoryPage />} />
             <Route path="/portfolio/:category/:slug" element={<ProjectDetailPage />} />
             <Route path="/enquiry" element={<EnquiryPage />} />
+            <Route path="/testimonials" element={<TestimonialsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

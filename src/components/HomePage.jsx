@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { EDGE_BAR, NAV_BAR_H, NAV_TOP, fs, u, v } from '../lib/units';
+import { EDGE_BAR, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/units';
+import { useMediaQuery } from '../lib/useMediaQuery';
 import EdgeBars from './chrome/EdgeBars';
 import SiteFooter from './chrome/SiteFooter';
 
@@ -16,7 +17,7 @@ const leftLinks = [
 ];
 const rightLinks = [
   { label: 'enquiry', to: '/enquiry' },
-  { label: 'testimonial', to: null }, // page arrives with the CMS
+  { label: 'testimonial', to: '/testimonials' },
 ];
 
 const smallBar = { width: u(EDGE_BAR), height: v(NAV_BAR_H) };
@@ -98,6 +99,9 @@ function BrandMark() {
 
 export default function HomePage() {
   const [panel, setPanel] = useState(null);
+  // On touch screens there is no hover: the first tap on "contact us" opens the
+  // panel (enquiry / testimonial); tapping outside any panel closes it.
+  const noHover = useMediaQuery(NO_HOVER_QUERY);
   const openLeft = () => setPanel('left');
   const openRight = () => setPanel('right');
   const close = (side) => () => setPanel((p) => (p === side ? null : p));
@@ -132,6 +136,12 @@ export default function HomePage() {
           style={{ fontSize: fs(20, 13) }}
           onMouseEnter={openRight}
           onFocus={openRight}
+          onClick={(e) => {
+            if (noHover && panel !== 'right') {
+              e.preventDefault();
+              openRight();
+            }
+          }}
         >
           <span style={{ marginRight: u(20) }}>contact us</span>
           <span className="bg-icp-red" style={smallBar} />
@@ -141,7 +151,7 @@ export default function HomePage() {
       <Panel side="left" links={leftLinks} open={panel === 'left'} onEnter={openLeft} onLeave={close('left')} />
       <Panel side="right" links={rightLinks} open={panel === 'right'} onEnter={openRight} onLeave={close('right')} />
 
-      <main className="relative z-10 flex min-h-screen items-center justify-center">
+      <main className="relative z-10 flex min-h-screen items-center justify-center" onClick={() => setPanel(null)}>
         <BrandMark />
       </main>
 

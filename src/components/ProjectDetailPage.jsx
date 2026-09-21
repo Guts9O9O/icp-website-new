@@ -82,7 +82,7 @@ export default function ProjectDetailPage() {
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(FRAME_TOP) }}>
         <div
           className="relative select-none overflow-hidden bg-black/10"
-          style={{ width: u(FRAME_W), height: v(FRAME_H), touchAction: 'pan-y' }}
+          style={{ width: `min(${u(FRAME_W)}, calc(100vw - ${u(120)}))`, height: v(FRAME_H), touchAction: 'pan-y' }}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}

@@ -16,3 +16,9 @@ export const EDGE_BAR = 14.5; // full-height side bars
 export const NAV_TOP = 100; // top of the nav row
 export const NAV_BAR_H = 56.65; // height of the small nav bars
 export const FOOTER_H = 100; // rule to bottom of page
+
+// Media queries shared by CSS (index.css / tailwind `tall:`) and JS.
+export const PORTRAIT_QUERY = '(orientation: portrait) and (max-width: 1100px)';
+// Phones: narrow screens, or touch devices held sideways (short and wide).
+export const MOBILE_QUERY = '(max-width: 699px), ((pointer: coarse) and (max-height: 500px))';
+export const NO_HOVER_QUERY = '(hover: none)';

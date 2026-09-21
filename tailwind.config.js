@@ -3,6 +3,10 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      screens: {
+        // Portrait tablets (same query as the --u override in index.css)
+        tall: { raw: '(orientation: portrait) and (max-width: 1100px)' },
+      },
       colors: {
         icp: {
           red: '#781f1c',
