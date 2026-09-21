@@ -143,6 +143,18 @@ export async function reorderRows(table, ids) {
 }
 
 // ---------------------------------------------------------------------------
+// Enquiries (leads / recruitment) — written by the form backend, worked here
+// ---------------------------------------------------------------------------
+export async function listEnquiries(kind) {
+  return unwrap(await supabase.from('enquiries').select('*').eq('kind', kind).order('created_at', { ascending: false }));
+}
+
+export async function countNewEnquiries() {
+  const rows = unwrap(await supabase.from('enquiries').select('kind').eq('status', 'new'));
+  return rows.reduce((acc, r) => ({ ...acc, [r.kind]: (acc[r.kind] ?? 0) + 1 }), { lead: 0, recruitment: 0 });
+}
+
+// ---------------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------------
 export async function getSetting(key) {

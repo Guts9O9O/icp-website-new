@@ -1,7 +1,11 @@
-import { NavLink, Outlet } from 'react-router';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../auth';
+import { countNewEnquiries } from '../api';
 
 const links = [
+  { to: '/admin/leads', label: 'Leads', badge: 'lead' },
+  { to: '/admin/recruitment', label: 'Recruitment', badge: 'recruitment' },
   { to: '/admin/projects', label: 'Projects' },
   { to: '/admin/team', label: 'Team' },
   { to: '/admin/clients', label: 'Clients' },
@@ -11,6 +15,21 @@ const links = [
 
 export default function AdminLayout() {
   const { user, signOut } = useAuth();
+  const location = useLocation();
+  const [counts, setCounts] = useState({ lead: 0, recruitment: 0 });
+
+  // Unread counts for the sidebar; refreshed on navigation and when an
+  // enquiry's status changes.
+  useEffect(() => {
+    let active = true;
+    const refresh = () => countNewEnquiries().then((c) => active && setCounts(c)).catch(() => {});
+    refresh();
+    window.addEventListener('icp:enquiries-changed', refresh);
+    return () => {
+      active = false;
+      window.removeEventListener('icp:enquiries-changed', refresh);
+    };
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-[#f7f5f2] font-sans text-icp-slate md:flex">
@@ -29,12 +48,15 @@ export default function AdminLayout() {
               key={l.to}
               to={l.to}
               className={({ isActive }) =>
-                `whitespace-nowrap rounded-md px-3 py-2 text-[14px] transition-colors ${
+                `flex items-center justify-between gap-3 whitespace-nowrap rounded-md px-3 py-2 text-[14px] transition-colors ${
                   isActive ? 'bg-icp-red text-white' : 'text-icp-slate hover:bg-[#f0edea]'
                 }`
               }
             >
-              {l.label}
+              <span>{l.label}</span>
+              {l.badge && counts[l.badge] > 0 && (
+                <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white">{counts[l.badge]}</span>
+              )}
             </NavLink>
           ))}
         </nav>

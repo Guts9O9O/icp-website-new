@@ -34,6 +34,18 @@ clients/{category}/{client-id}-{id}.{png|svg|webp}
 
 Photos uploaded through the admin are converted to WebP in the browser (max 2400 px; thumbnails 1200 px).
 
+## Enquiry form backend
+
+`apps-script/Code.gs` is a Google Apps Script web app. It sorts submissions
+into **leads** (Design Request, Other) and **recruitment** (Staff Recruitment),
+each with its own Google Sheet and notification address, emails the studio and
+the sender, applies a honeypot + rate limiting, and mirrors every entry into
+the `enquiries` table so it appears under Leads / Recruitment in the admin.
+Deployment steps (clasp or browser) are in `apps-script/SETUP.md`. The site
+posts to `VITE_ENQUIRY_ENDPOINT`; in development a mock at `/api/enquiry` (see
+`vite.config.js`) stands in for it and writes to the local database.
+`npm run test:enquiry` checks the script's validation rules in Node.
+
 ## Deploying to a Supabase cloud project
 
 ```bash

@@ -4,6 +4,7 @@ import { AuthProvider, RequireAuth } from './auth';
 import AdminLayout from './components/AdminLayout';
 import { ConfirmProvider, ToastProvider } from './components/ui';
 import ClientsPage from './pages/ClientsPage';
+import EnquiriesPage from './pages/EnquiriesPage';
 import LoginPage from './pages/LoginPage';
 import ProjectEditPage from './pages/ProjectEditPage';
 import ProjectsListPage from './pages/ProjectsListPage';
@@ -43,6 +44,8 @@ export default function AdminApp() {
               <Route path="clients" element={<ClientsPage />} />
               <Route path="testimonials" element={<TestimonialsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="leads" element={<EnquiriesPage kind="lead" />} />
+              <Route path="recruitment" element={<EnquiriesPage kind="recruitment" />} />
               <Route path="*" element={<Navigate to="projects" replace />} />
             </Route>
           </Routes>

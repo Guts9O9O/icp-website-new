@@ -14,3 +14,6 @@ dist/
 # supabase local state
 supabase/.branches
 supabase/.temp
+
+# Apps Script (clasp) — account-specific
+apps-script/.clasp.json

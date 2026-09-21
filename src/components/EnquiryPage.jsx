@@ -1,18 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getSite } from '../lib/api';
+import { SUBJECTS, sendEnquiry, validateEnquiry } from '../lib/enquiry';
 import { useData } from '../lib/useData';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { PORTRAIT_QUERY, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
-
-// Second dropdown depends on the subject (client spec).
-const SUBJECTS = {
-  'Design Request': ['Hospitality', 'Builders & Developers', 'Commercial', 'Private Residence'],
-  'Staff Recruitment': ['Interior Designer', '3D Developer', 'Graphics Designer'],
-  Other: [],
-};
 
 const EMPTY = {
   subject: 'Design Request',
@@ -121,18 +115,52 @@ export default function EnquiryPage() {
   const m = portrait ? PORTRAIT : LANDSCAPE;
   const field = fieldStyle(m);
   const [form, setForm] = useState(EMPTY);
+  const [errors, setErrors] = useState({});
+  const [status, setStatus] = useState({ state: 'idle' }); // idle | sending | sent | error
+  const [website, setWebsite] = useState(''); // honeypot: humans never see or fill this
+  const openedAt = useRef(0);
+  useEffect(() => {
+    openedAt.current = Date.now();
+  }, []);
   const detailOptions = SUBJECTS[form.subject] ?? [];
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, [key]: value }));
+    if (errors[key]) setErrors((er) => ({ ...er, [key]: undefined }));
+  };
   const setSubject = (e) => {
     const subject = e.target.value;
     setForm((f) => ({ ...f, subject, detail: SUBJECTS[subject][0] ?? '' }));
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    // Submission (Google Sheet + email) is wired in Phase 6.
+    if (status.state === 'sending') return;
+    const problems = validateEnquiry(form);
+    setErrors(problems);
+    if (Object.keys(problems).length) return;
+    // A form completed in under two seconds is a bot: treat like the honeypot.
+    if (website || Date.now() - openedAt.current < 2000) {
+      setStatus({ state: 'sent' });
+      return;
+    }
+    setStatus({ state: 'sending' });
+    try {
+      await sendEnquiry({ ...form, website });
+      setStatus({ state: 'sent' });
+      setForm(EMPTY);
+    } catch (err) {
+      setStatus({ state: 'error', message: err.message });
+    }
   };
+
+  const errorText = (key) =>
+    errors[key] ? (
+      <span className="absolute left-0 top-full text-icp-red" style={{ fontSize: fs(14, 11), marginTop: v(4) }}>
+        {errors[key]}
+      </span>
+    ) : null;
 
   return (
     <div className="relative min-h-screen bg-white font-brand">
@@ -155,7 +183,10 @@ export default function EnquiryPage() {
           </Row>
 
           <Row label="Your Name" gap={m.rowGap}>
-            <input className={fieldClass} style={field} value={form.name} onChange={set('name')} autoComplete="name" />
+            <span className="relative flex-1">
+              <input className={`${fieldClass} ${errors.name ? '!border-icp-red' : ''}`} style={field} value={form.name} onChange={set('name')} autoComplete="name" aria-invalid={!!errors.name} />
+              {errorText('name')}
+            </span>
           </Row>
 
           <Row label="Company Name" gap={m.rowGap}>
@@ -163,7 +194,10 @@ export default function EnquiryPage() {
           </Row>
 
           <Row label="Email Address" gap={m.rowGap}>
-            <input className={fieldClass} style={field} type="email" value={form.email} onChange={set('email')} autoComplete="email" />
+            <span className="relative flex-1">
+              <input className={`${fieldClass} ${errors.email ? '!border-icp-red' : ''}`} style={field} type="email" value={form.email} onChange={set('email')} autoComplete="email" aria-invalid={!!errors.email} />
+              {errorText('email')}
+            </span>
           </Row>
 
           <Row
@@ -205,21 +239,44 @@ export default function EnquiryPage() {
           </Row>
 
           <Row label="Requirement" align="start" gap={m.rowGap}>
-            <textarea
-              className={`${fieldClass} resize-none`}
-              style={{ ...field, height: v(m.textareaH), paddingTop: v(12) }}
-              value={form.requirement}
-              onChange={set('requirement')}
-            />
+            <span className="relative flex-1">
+              <textarea
+                className={`${fieldClass} resize-none ${errors.requirement ? '!border-icp-red' : ''}`}
+                style={{ ...field, height: v(m.textareaH), paddingTop: v(12) }}
+                value={form.requirement}
+                onChange={set('requirement')}
+                aria-invalid={!!errors.requirement}
+              />
+              {errorText('requirement')}
+            </span>
           </Row>
 
-          <div className="flex justify-end" style={{ width: u(LABEL_W + FIELD_W) }}>
+          {/* Honeypot: off-screen, not focusable; bots that fill every field reveal themselves. */}
+          <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
+            <label>
+              Website
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end" style={{ width: u(LABEL_W + FIELD_W), gap: u(30) }}>
+            {status.state === 'sent' && (
+              <p className="text-icp-taupe" style={{ fontSize: fs(16, 12) }} role="status">
+                Thank you — your enquiry has been sent. We will get back to you shortly.
+              </p>
+            )}
+            {status.state === 'error' && (
+              <p className="text-icp-red" style={{ fontSize: fs(16, 12) }} role="alert">
+                {status.message} {site?.email && <>You can also email us at <a href={`mailto:${site.email}`} className="underline">{site.email}</a>.</>}
+              </p>
+            )}
             <button
               type="submit"
-              className="font-semibold text-icp-red transition-opacity hover:opacity-70"
+              disabled={status.state === 'sending'}
+              className="font-semibold text-icp-red transition-opacity hover:opacity-70 disabled:opacity-50"
               style={{ fontSize: fs(18, 13) }}
             >
-              Submit
+              {status.state === 'sending' ? 'Sending…' : 'Submit'}
             </button>
           </div>
         </form>
