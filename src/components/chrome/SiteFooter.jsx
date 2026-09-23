@@ -1,12 +1,13 @@
 import { EDGE_BAR, FOOTER_H, u, v } from '../../lib/units';
-import LottieMark, { SHORT_LOGO_ART, SIGNATURE_ART } from './LottieMark';
+import LottieMark, { MARKS } from './LottieMark';
 
-// Visible artwork sizes from R3 (design px); the Lottie canvases are larger
-// than their artwork, so box sizes/offsets are derived from the measured art bounds.
+// Visible artwork sizes from R3 (design px). Each Lottie canvas is larger than
+// its artwork, so box sizes and offsets are derived from the measured bounds
+// in MARKS — that way the drawn mark lands exactly where the design puts it.
 const LOGO_ART_H = 45;
-const LOGO_BOX = LOGO_ART_H / SHORT_LOGO_ART.h;
+const LOGO_BOX = LOGO_ART_H / MARKS.shortLogo.art.h;
 const SIG_ART_W = 330;
-const SIG_BOX = SIG_ART_W / SIGNATURE_ART.w;
+const SIG_BOX = SIG_ART_W / MARKS.signature.art.w;
 
 /**
  * Footer shared by every page (R3): a 1.5px red rule 100 design px from the
@@ -33,29 +34,27 @@ export default function SiteFooter({ showLogo = true }) {
 
       {showLogo && (
         <LottieMark
-          src="/animations/short-logo-icp.json"
-          assetsPath="/animations/images/"
+          mark="shortLogo"
           still
           className="absolute"
           style={{
             width: u(LOGO_BOX),
-            height: u(LOGO_BOX),
-            left: u(50 - SHORT_LOGO_ART.x * LOGO_BOX),
-            top: u(-(50 + (SHORT_LOGO_ART.y + SHORT_LOGO_ART.h) * LOGO_BOX)),
+            height: u(LOGO_BOX * MARKS.shortLogo.ratio),
+            left: u(50 - MARKS.shortLogo.art.x * LOGO_BOX),
+            top: u(-(50 + (MARKS.shortLogo.art.y + MARKS.shortLogo.art.h) * LOGO_BOX * MARKS.shortLogo.ratio)),
           }}
         />
       )}
 
       <LottieMark
-        src="/animations/signature.json"
-        hideImages // the "to" raster (images/img_0.png) has not been supplied yet
+        mark="signature"
         loop={false}
         className="absolute"
         style={{
           width: u(SIG_BOX),
-          height: u(SIG_BOX),
-          right: u(30 - (1 - SIGNATURE_ART.x - SIGNATURE_ART.w) * SIG_BOX),
-          top: u(-17 - (SIGNATURE_ART.y + SIGNATURE_ART.h / 2) * SIG_BOX),
+          height: u(SIG_BOX * MARKS.signature.ratio),
+          right: u(30 - (1 - MARKS.signature.art.x - MARKS.signature.art.w) * SIG_BOX),
+          top: u(-17 - (MARKS.signature.art.y + MARKS.signature.art.h / 2) * SIG_BOX * MARKS.signature.ratio),
         }}
       />
     </footer>

@@ -1,6 +1,7 @@
 import { getSite } from '../lib/api';
 import { useData } from '../lib/useData';
 import { useSeo } from '../lib/seo';
+import LottieMark, { MARKS } from './chrome/LottieMark';
 
 // Shown instead of the site on phones (client requirement: desktop/tablet only).
 export default function MobileBlock() {
@@ -15,12 +16,14 @@ export default function MobileBlock() {
       <div className="absolute inset-y-0 right-0 w-2 bg-icp-mist" />
 
       <div className="relative">
-        <div className="mb-5 flex items-center justify-center gap-1.5">
-          <span className="icp-logo-circle" />
-          <span className="h-[2px] w-9 bg-icp-red" />
-          <span className="icp-logo-circle" />
-        </div>
-        <h1 className="text-[26px] tracking-[0.06em]">iConcepts + Partners</h1>
+        {/* The logo artwork already contains the wordmark. */}
+        <LottieMark
+          mark="logo"
+          loop={false}
+          className="mx-auto"
+          style={{ width: `${260 / MARKS.logo.art.w}px`, height: `${(260 / MARKS.logo.art.w) * MARKS.logo.ratio}px`, marginTop: `${-0.33 * (260 / MARKS.logo.art.w)}px`, marginBottom: `${-0.33 * (260 / MARKS.logo.art.w)}px` }}
+        />
+        <h1 className="sr-only">iConcepts + Partners</h1>
         <p className="mx-auto mt-6 max-w-[300px] text-[15px] leading-relaxed text-icp-mist/90">
           This website is designed for larger screens. Please visit us on a tablet or desktop.
         </p>

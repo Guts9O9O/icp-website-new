@@ -76,28 +76,16 @@ textarea {
   font-size: max(13px, calc(18 * var(--u)));
 }
 
-/* Temporary CSS brand mark on the home page until the animated logo's images arrive. */
-.icp-logo-circle {
-  position: relative;
-  display: inline-block;
-  height: 40px;
-  width: 40px;
-  border: 2px solid #d6d1c9;
-  border-radius: 999px;
-}
-
-.icp-logo-circle::before,
-.icp-logo-circle::after {
-  content: '';
+/* Visible to screen readers and search engines only (e.g. the home page title,
+   whose wordmark lives inside the animated logo). */
+.sr-only {
   position: absolute;
-  border: 2px solid #d6d1c9;
-  border-radius: 999px;
-}
-
-.icp-logo-circle::before {
-  inset: 6px;
-}
-
-.icp-logo-circle::after {
-  inset: 12px;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

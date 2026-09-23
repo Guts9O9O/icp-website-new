@@ -4,6 +4,7 @@ import { EDGE_BAR, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/u
 import { useMediaQuery } from '../lib/useMediaQuery';
 import EdgeBars from './chrome/EdgeBars';
 import SiteFooter from './chrome/SiteFooter';
+import LottieMark, { MARKS } from './chrome/LottieMark';
 import { useSeo } from '../lib/seo';
 
 // Geometry from R3 (design px).
@@ -83,19 +84,23 @@ function Panel({ side, links, open, onEnter, onLeave, hoverable }) {
   );
 }
 
-// Placeholder mark until the animated logo's image assets arrive from the designer.
+// The animated logo the designer supplied, sized so its drawn artwork matches
+// the R3 centrepiece width; the canvas around it is transparent.
+const LOGO_ART_W = 620;
+const LOGO_BOX = LOGO_ART_W / MARKS.logo.art.w;
+
 function BrandMark() {
   return (
-    <div className="flex flex-col items-center justify-center">
-      <div className="flex items-center justify-center" style={{ gap: u(6), marginBottom: v(28) }}>
-        <span className="icp-logo-circle" style={{ width: u(90), height: u(90), minWidth: 40, minHeight: 40 }} />
-        <span className="bg-icp-red" style={{ width: u(80), height: `max(2px, ${u(3)})` }} />
-        <span className="icp-logo-circle" style={{ width: u(90), height: u(90), minWidth: 40, minHeight: 40 }} />
-      </div>
-      <h1 className="text-center text-icp-mist" style={{ fontSize: fs(48, 26), letterSpacing: '0.06em' }}>
-        iConcepts + Partners
-      </h1>
-    </div>
+    <>
+      {/* The logo artwork contains the wordmark; the heading is for screen
+          readers and search engines. */}
+      <h1 className="sr-only">iConcepts + Partners</h1>
+      <LottieMark
+        mark="logo"
+        loop={false}
+        style={{ width: u(LOGO_BOX), height: u(LOGO_BOX * MARKS.logo.ratio) }}
+      />
+    </>
   );
 }
 
