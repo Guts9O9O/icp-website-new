@@ -95,7 +95,9 @@ function PublicSite() {
   const { isHome, overlay, shown } = useOverlayTransition();
 
   return (
-    <div className="relative overflow-hidden">
+    /* overflow-clip, not hidden: a hidden box is still scrollable in script, so
+       focusing something near its edge could shunt the whole page sideways. */
+    <div className="relative overflow-clip">
       <ScrollToTop />
 
       <div

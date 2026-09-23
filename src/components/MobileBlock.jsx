@@ -1,7 +1,7 @@
 import { getSite } from '../lib/api';
 import { useData } from '../lib/useData';
 import { useSeo } from '../lib/seo';
-import LottieMark, { MARKS } from './chrome/LottieMark';
+import LottieMark, { artAspect } from './chrome/LottieMark';
 
 // Shown instead of the site on phones (client requirement: desktop/tablet only).
 export default function MobileBlock() {
@@ -19,9 +19,9 @@ export default function MobileBlock() {
         {/* The logo artwork already contains the wordmark. */}
         <LottieMark
           mark="logo"
-          loop={false}
+          mode="intro"
           className="mx-auto"
-          style={{ width: `${260 / MARKS.logo.art.w}px`, height: `${(260 / MARKS.logo.art.w) * MARKS.logo.ratio}px`, marginTop: `${-0.33 * (260 / MARKS.logo.art.w)}px`, marginBottom: `${-0.33 * (260 / MARKS.logo.art.w)}px` }}
+          style={{ width: '260px', height: `${260 / artAspect('logo')}px` }}
         />
         <h1 className="sr-only">iConcepts + Partners</h1>
         <p className="mx-auto mt-6 max-w-[300px] text-[15px] leading-relaxed text-icp-mist/90">

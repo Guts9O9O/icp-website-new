@@ -1,20 +1,21 @@
 import { EDGE_BAR, FOOTER_H, u, v } from '../../lib/units';
-import LottieMark, { MARKS } from './LottieMark';
+import LottieMark, { artAspect } from './LottieMark';
 
-// Visible artwork sizes from R3 (design px). Each Lottie canvas is larger than
-// its artwork, so box sizes and offsets are derived from the measured bounds
-// in MARKS — that way the drawn mark lands exactly where the design puts it.
-const LOGO_ART_H = 45;
-const LOGO_BOX = LOGO_ART_H / MARKS.shortLogo.art.h;
-const SIG_ART_W = 330;
-const SIG_BOX = SIG_ART_W / MARKS.signature.art.w;
+// Artwork sizes from R3 (design px). LottieMark clips each animation to its
+// own artwork, so these are the sizes of what is actually drawn.
+const LOGO_H = 45; // the "iC+P" mark; hovering expands it to the full wordmark
+const SIG_W = 330;
+const GAP = 50; // R3: the mark sits 50px in from the corner
 
 /**
  * Footer shared by every page (R3): a 1.5px red rule 100 design px from the
- * bottom, the copyright line under it, the small animated iC+P mark above it
- * on the left and the "design to live" signature crossing it on the right.
+ * bottom, the copyright line under it, the animated iC+P mark above it on the
+ * left and the "design to live" signature crossing it on the right.
  */
 export default function SiteFooter({ showLogo = true }) {
+  const logoWidth = LOGO_H * artAspect('shortLogo');
+  const sigHeight = SIG_W / artAspect('signature');
+
   return (
     <footer
       className="pointer-events-none fixed bottom-0 z-30"
@@ -35,26 +36,28 @@ export default function SiteFooter({ showLogo = true }) {
       {showLogo && (
         <LottieMark
           mark="shortLogo"
-          still
-          className="absolute"
+          mode="hover"
+          label="iConcepts + Partners"
+          className="pointer-events-auto cursor-pointer outline-none"
           style={{
-            width: u(LOGO_BOX),
-            height: u(LOGO_BOX * MARKS.shortLogo.ratio),
-            left: u(50 - MARKS.shortLogo.art.x * LOGO_BOX),
-            top: u(-(50 + (MARKS.shortLogo.art.y + MARKS.shortLogo.art.h) * LOGO_BOX * MARKS.shortLogo.ratio)),
+            position: 'absolute',
+            width: u(logoWidth),
+            height: v(LOGO_H),
+            left: u(GAP),
+            bottom: `calc(100% + ${v(GAP)})`, // sits above the rule
           }}
         />
       )}
 
       <LottieMark
         mark="signature"
-        loop={false}
-        className="absolute"
+        mode="intro"
         style={{
-          width: u(SIG_BOX),
-          height: u(SIG_BOX * MARKS.signature.ratio),
-          right: u(30 - (1 - MARKS.signature.art.x - MARKS.signature.art.w) * SIG_BOX),
-          top: u(-17 - (MARKS.signature.art.y + MARKS.signature.art.h / 2) * SIG_BOX * MARKS.signature.ratio),
+          position: 'absolute',
+          width: u(SIG_W),
+          height: v(sigHeight),
+          right: u(GAP),
+          bottom: `calc(100% - ${v(sigHeight * 0.42)})`, // crosses the rule
         }}
       />
     </footer>

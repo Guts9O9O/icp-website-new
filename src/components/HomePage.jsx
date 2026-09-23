@@ -4,7 +4,7 @@ import { EDGE_BAR, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/u
 import { useMediaQuery } from '../lib/useMediaQuery';
 import EdgeBars from './chrome/EdgeBars';
 import SiteFooter from './chrome/SiteFooter';
-import LottieMark, { MARKS } from './chrome/LottieMark';
+import LottieMark, { artAspect } from './chrome/LottieMark';
 import { useSeo } from '../lib/seo';
 
 // Geometry from R3 (design px).
@@ -84,10 +84,8 @@ function Panel({ side, links, open, onEnter, onLeave, hoverable }) {
   );
 }
 
-// The animated logo the designer supplied, sized so its drawn artwork matches
-// the R3 centrepiece width; the canvas around it is transparent.
-const LOGO_ART_W = 620;
-const LOGO_BOX = LOGO_ART_W / MARKS.logo.art.w;
+// The animated logo the designer supplied, at the R3 centrepiece width.
+const LOGO_W = 620;
 
 function BrandMark() {
   return (
@@ -97,8 +95,8 @@ function BrandMark() {
       <h1 className="sr-only">iConcepts + Partners</h1>
       <LottieMark
         mark="logo"
-        loop={false}
-        style={{ width: u(LOGO_BOX), height: u(LOGO_BOX * MARKS.logo.ratio) }}
+        mode="intro"
+        style={{ width: u(LOGO_W), height: u(LOGO_W / artAspect('logo')) }}
       />
     </>
   );
