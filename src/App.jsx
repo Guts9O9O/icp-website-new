@@ -102,7 +102,10 @@ function PublicSite() {
 
       <div
         className="transition-transform duration-500 ease-in-out"
-        style={{ transform: isHome ? 'translateX(0)' : 'translateX(100%)' }}
+        // `none` rather than `translateX(0)` when settled: a transform that
+        // stays put keeps the page on its own composited layer, which Chrome
+        // can redraw from a stale, blurry raster.
+        style={{ transform: isHome ? 'none' : 'translateX(100%)', willChange: isHome ? 'auto' : 'transform' }}
       >
         <HomePage />
       </div>
@@ -111,7 +114,7 @@ function PublicSite() {
         <div
           key={overlay.pathname}
           className="absolute inset-0 transition-transform duration-500 ease-in-out"
-          style={{ transform: shown ? 'translateX(0)' : 'translateX(-100%)' }}
+          style={{ transform: shown ? 'none' : 'translateX(-100%)', willChange: shown ? 'auto' : 'transform' }}
         >
           <Routes location={overlay}>
             <Route path="/about" element={<AboutPage />} />

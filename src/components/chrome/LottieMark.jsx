@@ -7,8 +7,9 @@ import { LottieSvg } from 'lottie-react';
  * The studio's three brand animations, as supplied by the designer.
  *
  * `art` is where the visible artwork sits inside the canvas: x/w as fractions
- * of the canvas width, y/h as fractions of its height, measured from the
- * animation rendered at its own aspect ratio. Callers
+ * of the canvas width, y/h as fractions of its height. Measured from the
+ * painted pixels of a rendered frame, not from element bounds, which include
+ * geometry that is never drawn. Callers
  * size and position the drawn mark from it rather than guessing at the canvas
  * padding. `ratio` is canvas height ÷ width.
  *
@@ -20,25 +21,31 @@ export const MARKS = {
     src: '/animations/logo/logo.json',
     assetsPath: '/animations/logo/images/',
     ratio: 1,
-    art: { x: 0.2506, y: 0.4252, w: 0.4923, h: 0.1829 },
+    art: { x: 0.25, y: 0.4256, w: 0.4933, h: 0.1822 },
   },
   shortLogo: {
     src: '/animations/short-logo/short-logo.json',
     assetsPath: '/animations/short-logo/images/',
     ratio: 1080 / 1920,
-    art: { x: 0.4199, y: 0.4283, w: 0.4465, h: 0.1232 }, // expanded (final frame)
-    artClosed: { x: 0.4001, y: 0.4283, w: 0.1914, h: 0.1232 }, // "iC+P" (first frame)
+    art: { x: 0.42, y: 0.4289, w: 0.4467, h: 0.1225 }, // expanded (final frame)
+    artClosed: { x: 0.42, y: 0.4289, w: 0.1722, h: 0.1225 }, // "iC+P" (first frame)
   },
   signature: {
     src: '/animations/signature/signature.json',
     assetsPath: '/animations/signature/images/',
     ratio: 1,
-    art: { x: 0.0763, y: 0.3725, w: 0.8504, h: 0.2878 },
+    art: { x: 0.0767, y: 0.3744, w: 0.85, h: 0.2811 },
   },
 };
 
-// Fetches a Lottie JSON once per URL. Files live in /public so they are never
-// bundled into the JS.
+// Fetched once per URL and kept as text. Files live in /public so they are
+// never bundled into the JS.
+//
+// Every animation gets its OWN parsed copy: the engine writes into the object
+// it is given (it resolves asset paths and caches layer state there), so two
+// animations sharing one object end up drawing each other's image layers —
+// which looks like a doubled, ghosted logo that gets worse with every extra
+// copy on the page.
 const cache = new Map();
 
 async function load(src) {
@@ -47,11 +54,11 @@ async function load(src) {
       src,
       fetch(src).then((r) => {
         if (!r.ok) throw new Error(`Failed to load ${src}`);
-        return r.json();
+        return r.text();
       })
     );
   }
-  return cache.get(src);
+  return JSON.parse(await cache.get(src));
 }
 
 /**
@@ -77,6 +84,10 @@ export function artAspect(mark) {
   const rect = artRect(mark);
   return rect.w / (rect.h * MARKS[mark].ratio);
 }
+
+// How much faster than authored the hover open/close runs. The mark is a small
+// footer detail: at its natural 2.3s it feels sluggish to open.
+const HOVER_SPEED = 2.4;
 
 // Which marks have already played their intro in this browser session. The
 // footer remounts on every page change; without this the signature would
@@ -131,6 +142,7 @@ export default function LottieMark({ mark, mode = 'intro', label, className, sty
     const h = handle.current;
     if (!h) return;
     if (mode === 'hover') {
+      h.setSpeed(HOVER_SPEED);
       h.seek(0);
       h.pause();
       setProgress(0);
@@ -177,6 +189,7 @@ export default function LottieMark({ mark, mode = 'intro', label, className, sty
     hovering.current = true;
     const h = handle.current;
     if (!h) return;
+    h.setSpeed(HOVER_SPEED);
     h.setDirection('forward');
     h.play();
     setState('opening');
@@ -187,21 +200,17 @@ export default function LottieMark({ mark, mode = 'intro', label, className, sty
     hovering.current = false;
     const h = handle.current;
     if (!h) return;
+    h.setSpeed(HOVER_SPEED);
     h.setDirection('reverse');
     h.play();
     setState('closing');
   }, [mode]);
 
   const interactive = mode === 'hover';
-  // The element is the artwork, not the canvas: the canvas is several times
-  // larger and mostly empty, which would make the hover target huge and let a
-  // scroll-into-view (hover, or tabbing to it) shove the whole page sideways.
   const rect = artRect(mark);
   const commonProps = {
     className,
-    // `position` defaults to relative so the canvas inside can be absolute;
-    // callers that place the mark themselves pass their own position.
-    style: { position: 'relative', overflow: 'hidden', ...style },
+    style,
     'data-lottie': state,
     'data-lottie-mark': mark,
     ...(interactive
@@ -220,27 +229,28 @@ export default function LottieMark({ mark, mode = 'intro', label, className, sty
   // Before the JSON arrives, reserve the same box so nothing shifts.
   if (!data) return <div {...commonProps} ref={element} />;
 
-  // The canvas is scaled and offset so its artwork exactly fills this box.
-  const canvas = {
-    position: 'absolute',
-    width: `calc(100% / ${rect.w})`,
-    height: `calc(100% / ${rect.h})`,
-    left: `calc(${-rect.x} * 100% / ${rect.w})`,
-    top: `calc(${-rect.y} * 100% / ${rect.h})`,
-  };
+  // Crop to the artwork with the SVG's own viewBox rather than by scaling a
+  // bigger element inside a clipped box. The element then holds exactly what
+  // is drawn, at its natural size: nothing to upscale, so the browser cannot
+  // hand back a blurry or doubled raster of it.
+  const viewBoxSize = [
+    Math.round(rect.x * data.w),
+    Math.round(rect.y * data.h),
+    Math.round(rect.w * data.w),
+    Math.round(rect.h * data.h),
+  ].join(' ');
 
   return (
-    <div {...commonProps} ref={element}>
-      <LottieSvg
-        style={canvas}
-        src={data}
-        assetsPath={config.assetsPath}
-        loop={false}
-        autoplay={false}
-        lottieRef={handle}
-        subscriptions={{ ready: onReady, complete: onComplete, frame: onFrame }}
-        aria-hidden="true"
-      />
-    </div>
+    <LottieSvg
+      {...commonProps}
+      ref={element}
+      src={data}
+      assetsPath={config.assetsPath}
+      loop={false}
+      autoplay={false}
+      lottieRef={handle}
+      rendererSettings={{ viewBoxSize, viewBoxOnly: true, preserveAspectRatio: 'xMidYMid meet' }}
+      subscriptions={{ ready: onReady, complete: onComplete, frame: onFrame }}
+    />
   );
 }
