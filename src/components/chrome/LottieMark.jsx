@@ -21,7 +21,10 @@ export const MARKS = {
     src: '/animations/logo/logo.json',
     assetsPath: '/animations/logo/images/',
     ratio: 1,
-    art: { x: 0.25, y: 0.4256, w: 0.4933, h: 0.1822 },
+    // Starts at the "i", not at the stray dot the export draws ~16px further
+    // left (a duplicate of the i's tittle, on its own shape layer): the viewBox
+    // leaves it outside, so it is never painted.
+    art: { x: 0.266, y: 0.426, w: 0.477, h: 0.182 },
   },
   shortLogo: {
     src: '/animations/short-logo/short-logo.json',
@@ -48,6 +51,29 @@ export const MARKS = {
 // copy on the page.
 const cache = new Map();
 
+/**
+ * Works around a fault in the supplied logo export.
+ *
+ * Its wordmark is two text layers of the same words at different sizes ("50"
+ * and "54"), the larger one flagged as track-matted by the smaller. After
+ * Effects shows that as one masked word; players draw both, so the letters
+ * come out doubled with a stray mark. Hiding the matted copy leaves the plain
+ * text, which matches the short logo's wordmark exactly.
+ *
+ * Narrow on purpose: it only touches a text layer that claims a track matte,
+ * which no other animation here has. Delete it once the designer re-exports.
+ */
+function repairDuplicateMattedText(json) {
+  const comps = Object.fromEntries((json.assets ?? []).filter((a) => a.layers).map((a) => [a.id, a]));
+  const walk = (layers = []) =>
+    layers.forEach((layer) => {
+      if (layer.ty === 5 && layer.tt) layer.hd = true;
+      if (layer.ty === 0 && comps[layer.refId]) walk(comps[layer.refId].layers);
+    });
+  walk(json.layers);
+  return json;
+}
+
 async function load(src) {
   if (!cache.has(src)) {
     cache.set(
@@ -58,7 +84,7 @@ async function load(src) {
       })
     );
   }
-  return JSON.parse(await cache.get(src));
+  return repairDuplicateMattedText(JSON.parse(await cache.get(src)));
 }
 
 /**
