@@ -1,7 +1,7 @@
 // Writes public/sitemap.xml before each build: the fixed pages plus every
 // published project. Reads the database when VITE_SUPABASE_URL /
-// VITE_SUPABASE_ANON_KEY are set (Cloudflare Pages passes them at build
-// time), otherwise falls back to the local seed data.
+// VITE_SUPABASE_ANON_KEY are set (the host passes them at build time),
+// otherwise falls back to the local seed data.
 //   SITE_URL=https://www.icp.firm.in node scripts/sitemap.mjs
 import { writeFile } from 'node:fs/promises';
 import { createClient } from '@supabase/supabase-js';

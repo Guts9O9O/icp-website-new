@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router';
 import { EDGE_BAR, FOOTER_H, u, v } from '../../lib/units';
 import LottieMark, { artAspect } from './LottieMark';
 
@@ -13,6 +14,10 @@ const GAP = 50; // R3: the mark sits 50px in from the corner
  * left and the "design to live" signature crossing it on the right.
  */
 export default function SiteFooter({ showLogo = true }) {
+  // The home page stays mounted under the sliding overlay, so its footer is
+  // never rebuilt. Keying the signature to the route makes it draw itself
+  // again on arrival at every page, including a return to home.
+  const { pathname } = useLocation();
   const logoWidth = LOGO_H * artAspect('shortLogo');
   const sigHeight = SIG_W / artAspect('signature');
 
@@ -50,6 +55,7 @@ export default function SiteFooter({ showLogo = true }) {
       )}
 
       <LottieMark
+        key={pathname}
         mark="signature"
         mode="intro"
         style={{

@@ -25,6 +25,7 @@ export const MARKS = {
     // left (a duplicate of the i's tittle, on its own shape layer): the viewBox
     // leaves it outside, so it is never painted.
     art: { x: 0.266, y: 0.426, w: 0.477, h: 0.182 },
+    repairDuplicateWordmark: true,
   },
   shortLogo: {
     src: '/animations/short-logo/short-logo.json',
@@ -52,16 +53,20 @@ export const MARKS = {
 const cache = new Map();
 
 /**
- * Works around a fault in the supplied logo export.
+ * Works around a fault in the supplied logo export, and only that one.
  *
- * Its wordmark is two text layers of the same words at different sizes ("50"
- * and "54"), the larger one flagged as track-matted by the smaller. After
- * Effects shows that as one masked word; players draw both, so the letters
- * come out doubled with a stray mark. Hiding the matted copy leaves the plain
- * text, which matches the short logo's wordmark exactly.
+ * Its wordmark is two text layers of the same words at different sizes (50 and
+ * 54), the larger flagged as track-matted by the smaller. After Effects shows
+ * that as one masked word; players draw both, so the letters come out doubled.
+ * Hiding the matted copy leaves the plain text, which matches the short logo's
+ * wordmark exactly.
  *
- * Narrow on purpose: it only touches a text layer that claims a track matte,
- * which no other animation here has. Delete it once the designer re-exports.
+ * It must not be applied to the other marks: the short logo is built as
+ * i + C + "oncepts" + P + "artners", where the two long pieces are matted
+ * because that is how it opens from "iC+P" to the full name. Hiding those
+ * would leave "iC  +P" with a hole in the middle.
+ *
+ * Delete this once the designer re-exports the logo.
  */
 function repairDuplicateMattedText(json) {
   const comps = Object.fromEntries((json.assets ?? []).filter((a) => a.layers).map((a) => [a.id, a]));
@@ -84,7 +89,7 @@ async function load(src) {
       })
     );
   }
-  return repairDuplicateMattedText(JSON.parse(await cache.get(src)));
+  return JSON.parse(await cache.get(src));
 }
 
 /**
@@ -115,17 +120,13 @@ export function artAspect(mark) {
 // footer detail: at its natural 2.3s it feels sluggish to open.
 const HOVER_SPEED = 2.4;
 
-// Which marks have already played their intro in this browser session. The
-// footer remounts on every page change; without this the signature would
-// redraw itself each time a visitor moves around the site.
-const introPlayed = new Set();
-
 /**
  * Renders one of the brand marks.
  *
  * `mode`:
- *   'intro' — plays once the first time it appears, then holds its final
- *             frame; later mounts show the final frame straight away.
+ *   'intro' — draws itself whenever it appears, then holds its final frame.
+ *             Every mount replays, so the signature animates on each page a
+ *             visitor opens rather than only on the first one they land on.
  *   'still' — always the final frame, never animates.
  *   'hover' — rests on the first frame and plays forward while hovered or
  *             focused, reversing when the pointer leaves. Used for the footer
@@ -155,12 +156,12 @@ export default function LottieMark({ mark, mode = 'intro', label, className, sty
     // previous occupant left behind so it never reports a stale position.
     if (element.current) element.current.dataset.lottieProgress = '';
     load(config.src)
-      .then((json) => active && setData(json))
+      .then((json) => active && setData(config.repairDuplicateWordmark ? repairDuplicateMattedText(json) : json))
       .catch(() => active && setState('error'));
     return () => {
       active = false;
     };
-  }, [config.src]);
+  }, [config]);
 
   // Decide what to show as soon as the engine has built the animation. Until
   // then nothing plays (autoplay is off), so a half-drawn frame can never leak.
@@ -175,18 +176,17 @@ export default function LottieMark({ mark, mode = 'intro', label, className, sty
       setState('closed');
       return;
     }
-    if (mode === 'still' || introPlayed.has(mark)) {
+    if (mode === 'still') {
       h.seek({ percent: 100 });
       h.pause();
       setProgress(100);
       setState('complete');
       return;
     }
-    introPlayed.add(mark);
     h.setDirection('forward');
     h.play();
     setState('playing');
-  }, [mark, mode, setProgress]);
+  }, [mode, setProgress]);
 
   const onFrame = useCallback(
     ({ currentFrame }) => {

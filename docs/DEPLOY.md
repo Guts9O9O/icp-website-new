@@ -6,13 +6,20 @@ studio owns the site outright and can remove the developer's access at handover.
 
 Estimated time: 1–2 hours, mostly waiting on DNS.
 
+There are two stages, and they can be days apart:
+
+- **Stage A — a link to show the client.** Sections 1 and 3 only. That gives a
+  working `…vercel.app` address with the real database behind it, before the
+  domain exists.
+- **Stage B — launch.** Sections 2, 4–7.
+
 ## 0. Accounts needed
 
 | Service | Purpose | Plan | Who signs up |
 |---|---|---|---|
 | GitHub | code hosting; every push deploys | Free | studio (org) or existing `studio329/ICP` repo |
 | Supabase | database, admin login, image storage | Free (upgrade ~₹2,100/mo only if images exceed 1 GB) | studio@icp.firm.in |
-| Cloudflare | hosting (Pages) + DNS | Free | studio@icp.firm.in |
+| Vercel | hosting | Hobby for the preview link; **Pro (US$20/mo) once it serves the studio's domain** — see 3.6 | studio@icp.firm.in, signing in with GitHub |
 | Google (Apps Script) | enquiry form → sheets + email | already done | studio@icp.firm.in |
 | UptimeRobot | free ping so the Supabase free tier never pauses | Free | studio or developer |
 | Google Search Console | tells Google about the site | Free | studio@icp.firm.in |
@@ -52,39 +59,51 @@ Project Settings → Script properties, add:
 From then on every enquiry also appears under Leads / Recruitment in the admin.
 The web app URL stays `https://script.google.com/macros/s/AKfycbxOF_MXvKpGdeAaA-8mcCO4XCQ3rC2SHDOtohflmKcEKOwjYBb8d6W8pWNuofrX7kq-/exec`.
 
-## 3. Cloudflare Pages (hosting)
+## 3. Vercel (hosting)
 
 1. Push the repository to GitHub (`main` branch).
-2. https://dash.cloudflare.com → sign up as studio@icp.firm.in → **Workers &
-   Pages → Create → Pages → Connect to Git** → pick the repo.
-3. Build settings: Framework **None**, build command `npm run build`, output
-   directory `dist`, Node version `22` (Environment variable `NODE_VERSION=22`).
-4. **Environment variables** (Production):
+2. https://vercel.com → **Continue with GitHub** as studio@icp.firm.in →
+   **Add New → Project** → import the repo.
+3. `vercel.json` in the repo already sets the framework (Vite), build command
+   (`npm run build`), output directory (`dist`), caching, and the fallback that
+   makes deep links like `/portfolio/hospitality` work on refresh. Leave the
+   detected settings alone; just set **Node.js Version 22.x** under Settings →
+   General.
+4. **Environment variables** — add each one to *Production*, *Preview* and
+   *Development*:
 
    | Name | Value |
    |---|---|
-   | `VITE_SUPABASE_URL` | Project URL |
-   | `VITE_SUPABASE_ANON_KEY` | anon key |
+   | `VITE_SUPABASE_URL` | Project URL from 1.2 |
+   | `VITE_SUPABASE_ANON_KEY` | anon key from 1.2 |
    | `VITE_ENQUIRY_ENDPOINT` | the Apps Script web app URL above |
    | `SITE_URL` | `https://www.icp.firm.in` (used by the sitemap) |
-   | `NODE_VERSION` | `22` |
 
-5. **Save and Deploy.** The first build gives a `*.pages.dev` address — check
-   every page there (see the QA list below) before touching the domain.
-6. Cloudflare rebuilds and redeploys automatically on every push to `main`.
-   `public/_redirects` is already in the repo so deep links work.
+   The service_role key is **not** among them — it never reaches the browser.
+5. **Deploy.** The first build gives a `*.vercel.app` address. That is the link
+   to send the client. Check every page there (section 7) before touching the
+   domain. Every later push to `main` redeploys automatically, and every branch
+   gets its own preview URL.
+6. **Plan:** Vercel's free *Hobby* plan is for non-commercial use. A
+   `*.vercel.app` link used to show work in progress is within that; the
+   studio's live site on its own domain is not, so at launch either upgrade to
+   **Pro (US$20/mo ≈ ₹1,700/mo)** or move hosting to **Cloudflare Pages**,
+   which is free for commercial sites — see the appendix. Nothing in the code
+   changes either way.
 
 ## 4. Domain
 
-1. Cloudflare → **Add a site** → `icp.firm.in` → Free plan. Cloudflare shows two
-   nameservers; set them at the domain registrar (where icp.firm.in was bought).
-   Propagation takes minutes to a day.
-   - **Before changing nameservers**, copy every existing DNS record (especially
-     `MX` records for email!) into Cloudflare, or email to studio@icp.firm.in
-     will stop. Cloudflare usually imports them automatically — verify.
-2. Workers & Pages → the project → **Custom domains → Set up a custom domain** →
-   `www.icp.firm.in`, then add `icp.firm.in` too (Cloudflare redirects the bare
-   domain to www). SSL is automatic.
+1. Vercel → the project → **Settings → Domains** → add `www.icp.firm.in`, then
+   `icp.firm.in` (Vercel offers to redirect the bare domain to www — accept).
+2. Vercel shows the exact DNS records to create. Add them at the registrar
+   where `icp.firm.in` was bought — typically a `CNAME` for `www` and an `A`
+   record for the bare domain. Use the values Vercel shows, not values copied
+   from elsewhere.
+   - **Do not** replace the domain's nameservers unless you first copy every
+     existing record across, especially `MX` — otherwise email to
+     studio@icp.firm.in stops. Adding the two records above avoids that risk
+     entirely.
+   - Propagation takes minutes to a day. HTTPS is issued automatically.
 3. Supabase → Authentication → URL Configuration → Site URL
    `https://www.icp.firm.in`, add it to Redirect URLs.
 
@@ -98,7 +117,8 @@ https://uptimerobot.com monitor: HTTP(S), URL
 ## 6. Search engines
 
 1. https://search.google.com/search-console → add property
-   `https://www.icp.firm.in` → verify via Cloudflare DNS (TXT record).
+   `https://www.icp.firm.in` → verify with the TXT record it gives you, added
+   at the registrar.
 2. Sitemaps → submit `https://www.icp.firm.in/sitemap.xml`. It is regenerated
    on every deploy with all published projects.
 
@@ -116,12 +136,32 @@ https://uptimerobot.com monitor: HTTP(S), URL
 
 ## 8. Handover
 
-- Invite the developer as a collaborator on GitHub / Cloudflare / Supabase only
+- Invite the developer as a collaborator on GitHub / Vercel / Supabase only
   for the support period, then remove.
 - The admin guide for staff is `docs/ADMIN-GUIDE.md`.
 - Support window: 3 months from go-live (bug fixes, uptime, help using the admin).
 
 ## Costs after launch
 
-Domain renewal (~₹1,200/yr). Everything else is on free tiers: Cloudflare
-Pages, Supabase (until ~1 GB of images), Google Apps Script, UptimeRobot.
+Domain renewal (~₹1,200/yr), plus hosting: Vercel Pro ~₹1,700/mo, or ₹0 on
+Cloudflare Pages. Everything else is on free tiers: Supabase (until ~1 GB of
+images), Google Apps Script, UptimeRobot.
+
+---
+
+## Appendix: hosting on Cloudflare Pages instead
+
+Free for commercial use, and the repo already carries `public/_redirects` for
+deep links. Replaces section 3; section 4 then points the domain at Cloudflare.
+
+1. https://dash.cloudflare.com → sign up as studio@icp.firm.in → **Workers &
+   Pages → Create → Pages → Connect to Git** → pick the repo.
+2. Build settings: Framework **None**, build command `npm run build`, output
+   directory `dist`, and an environment variable `NODE_VERSION=22`.
+3. Add the same four environment variables as 3.4, then **Save and Deploy**.
+4. Domain: Cloudflare → **Add a site** → `icp.firm.in` → Free plan → set the
+   two nameservers it gives you at the registrar. **Copy every existing DNS
+   record, especially `MX`, into Cloudflare first** — Cloudflare usually
+   imports them automatically, but verify before switching. Then Workers &
+   Pages → the project → **Custom domains** → add `www.icp.firm.in` and
+   `icp.firm.in`.

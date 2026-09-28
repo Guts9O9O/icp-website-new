@@ -49,8 +49,10 @@ posts to `VITE_ENQUIRY_ENDPOINT`; in development a mock at `/api/enquiry` (see
 ## Docs
 
 - `docs/ADMIN-GUIDE.md` — for the studio's staff: how to use the admin panel.
-- `docs/DEPLOY.md` — go-live runbook: Supabase cloud, Cloudflare Pages, domain, Apps Script mirror, uptime ping, Search Console, launch QA.
+- `docs/DEPLOY.md` — go-live runbook: Supabase cloud, hosting (Vercel, with Cloudflare Pages as an appendix), domain, Apps Script mirror, uptime ping, Search Console, launch QA.
 - `apps-script/SETUP.md` — the enquiry form backend.
+
+`vercel.json` holds the hosting settings (Vite build, `dist`, SPA fallback for deep links, cache headers); `public/_redirects` does the same job on Cloudflare Pages.
 
 `npm run build` regenerates `public/sitemap.xml` (fixed pages + published projects) first; `index.html` carries the share-preview tags, and each page sets its own title/description via `src/lib/seo.js`.
 
