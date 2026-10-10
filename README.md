@@ -1,9 +1,9 @@
-# iConcepts + Partners — website
+﻿# iConcepts + Partners â€” website
 
 Portfolio site for iC+P (Mumbai interior design studio) with an admin panel for
 managing projects, team, clients, testimonials and site text.
 
-- **Frontend:** React 18 + Vite + Tailwind, `react-router` v7. Design spec: `client-assets/design/iCP_Website UI_R3.pdf` (2560×1600 artboard; see `src/lib/units.js`).
+- **Frontend:** React 18 + Vite + Tailwind, `react-router` v7. Design spec: `client-assets/design/iCP_Website UI_R3.pdf` (2560Ã—1600 artboard; see `src/lib/units.js`).
 - **Backend:** Supabase (Postgres + Auth + Storage). Schema and policies in `supabase/migrations/`.
 - **Admin:** `/admin` (source in `src/admin/`). Anyone with a login is an admin; self-signup is disabled.
 
@@ -48,9 +48,9 @@ posts to `VITE_ENQUIRY_ENDPOINT`; in development a mock at `/api/enquiry` (see
 
 ## Docs
 
-- `docs/ADMIN-GUIDE.md` — for the studio's staff: how to use the admin panel.
-- `docs/DEPLOY.md` — go-live runbook: Supabase cloud, hosting (Vercel, with Cloudflare Pages as an appendix), domain, Apps Script mirror, uptime ping, Search Console, launch QA.
-- `apps-script/SETUP.md` — the enquiry form backend.
+- `docs/ADMIN-GUIDE.md` â€” for the studio's staff: how to use the admin panel.
+- `docs/DEPLOY.md` â€” go-live runbook: Supabase cloud, hosting (Vercel, with Cloudflare Pages as an appendix), domain, Apps Script mirror, uptime ping, Search Console, launch QA.
+- `apps-script/SETUP.md` â€” the enquiry form backend.
 
 `vercel.json` holds the hosting settings (Vite build, `dist`, SPA fallback for deep links, cache headers); `public/_redirects` does the same job on Cloudflare Pages.
 
