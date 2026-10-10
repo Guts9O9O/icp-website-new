@@ -6,19 +6,25 @@ import { fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import CarouselControls from './chrome/CarouselControls';
 import { useSeo } from '../lib/seo';
 
-// Image frame and controls from R3 (design px).
-const FRAME_TOP = 274;
-const FRAME_W = 1948;
-const FRAME_H = 1054;
+// Image frame and controls, measured off R3 page 10 (design px).
+const FRAME_TOP = 310;
+const FRAME_W = 1784;
+const FRAME_H = 989;
 const CAPTION_H = 90;
-const CONTROLS_TOP = 1388;
+const CONTROLS_TOP = 1420;
 const AUTOPLAY_MS = 4000;
 
-// First paragraph of the description, for the one-line caption.
-function summary(text) {
-  return (text ?? '').split(/\n+/).map((s) => s.trim()).filter(Boolean).slice(-1)[0] ?? '';
+// R3 captions each image with the project's area, written as
+// "Area- 000 Sq.Mt/0000 Sq.Ft". The zeroes are the designer's placeholder and
+// stay until the studio fills the real figure in from the admin, which is how
+// the listing pages read too.
+function areaLabel(sqft) {
+  if (!sqft) return 'Area- 000 Sq.Mt/0000 Sq.Ft';
+  const sqm = Math.round(sqft * 0.092903);
+  return `Area- ${sqm.toLocaleString('en-IN')} Sq.Mt/${sqft.toLocaleString('en-IN')} Sq.Ft`;
 }
 
 // Single project view with image carousel: /portfolio/:category/:slug
@@ -83,7 +89,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
       <EdgeBars />
-      <SiteNav title="portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
+      <SiteNav title="Portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
 
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(FRAME_TOP) }}>
         <div
@@ -106,7 +112,7 @@ export default function ProjectDetailPage() {
 
           {project && (
             <div
-              className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center bg-icp-slate/60 text-center text-white"
+              className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center bg-icp-taupe/70 text-center text-white"
               style={{ minHeight: v(CAPTION_H), paddingLeft: u(40), paddingRight: u(40), paddingTop: v(12), paddingBottom: v(12), gap: v(6) }}
             >
               <p style={{ fontSize: fs(16, 12) }}>
@@ -114,7 +120,7 @@ export default function ProjectDetailPage() {
                 {project.location ? `, ${project.location}` : ''}
               </p>
               <p className="w-full truncate text-white/85" style={{ fontSize: fs(14, 11) }}>
-                {summary(project.description)}
+                {areaLabel(project.areaSqft)}
               </p>
             </div>
           )}
@@ -122,32 +128,17 @@ export default function ProjectDetailPage() {
       </main>
 
       {count > 1 && (
-        <nav
-          className="absolute left-0 right-0 flex items-center justify-center text-icp-mist"
-          style={{ top: v(CONTROLS_TOP), fontSize: fs(20, 12), gap: u(60) }}
-          aria-label="Images"
-        >
-          <button type="button" onClick={() => setIndex((i) => (i - 1 + count) % count)} className="flex items-center" style={{ gap: u(10) }}>
-            <span aria-hidden="true">‹</span>
-            <span>previous</span>
-          </button>
-          <div className="flex items-center" style={{ gap: u(25) }}>
-            {images.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setIndex(i)}
-                aria-label={`Image ${i + 1}`}
-                className={`rounded-full transition-colors ${i === index ? 'bg-icp-red' : 'bg-icp-mist/70 hover:bg-icp-mist'}`}
-                style={{ width: u(10), height: u(10), minWidth: 6, minHeight: 6 }}
-              />
-            ))}
-          </div>
-          <button type="button" onClick={() => setIndex((i) => (i + 1) % count)} className="flex items-center" style={{ gap: u(10) }}>
-            <span>next</span>
-            <span aria-hidden="true">›</span>
-          </button>
-        </nav>
+        <div className="absolute left-0 right-0" style={{ top: v(CONTROLS_TOP) }}>
+          <CarouselControls
+            count={count}
+            index={index}
+            onSelect={setIndex}
+            onPrev={() => setIndex((i) => (i - 1 + count) % count)}
+            onNext={() => setIndex((i) => (i + 1) % count)}
+            label="Images"
+            itemLabel={(i) => `Image ${i + 1}`}
+          />
+        </div>
       )}
 
       <SiteFooter />

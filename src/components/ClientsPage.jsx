@@ -17,14 +17,26 @@ const HEADER_H = 70;
 const ROW_H = 181.26;
 const ROW_H_PORTRAIT = 120;
 
+// R3 draws these as a pale rule over the taupe — not the darker slate we had,
+// which read as a shadow rather than a line.
+const RULE = 'border-white/20';
+
 function Cell({ item, rowH }) {
-  const border = 'border-r border-b border-icp-slate';
+  const border = `border-l border-b ${RULE}`;
   if (!item) return <div className={border} style={{ minHeight: v(rowH) }} />;
 
   if (item.type === 'image') {
     return (
       <div className={`flex items-center justify-center ${border}`} style={{ height: v(rowH), minHeight: v(rowH), padding: u(30) }}>
-        <img src={item.src} alt={item.name} className="max-h-full max-w-full object-contain" />
+        {/* Client feedback: the logos were sitting too large in their cells.
+            Capping them well inside the padding keeps every logo to the same
+            visual weight whatever its own aspect ratio. */}
+        <img
+          src={item.src}
+          alt={item.name}
+          className="object-contain"
+          style={{ maxWidth: '84%', maxHeight: '74%' }}
+        />
       </div>
     );
   }
@@ -45,16 +57,19 @@ function Cell({ item, rowH }) {
   );
 }
 
-function CategoryBlock({ group, rows, rowH }) {
+function CategoryBlock({ group, rows, rowH, last }) {
   return (
-    <section className="border-l border-t border-icp-slate">
+    <section>
       <h2
-        className="flex items-center justify-center border-r border-icp-red bg-icp-red text-center text-icp-mist"
+        // R3 keeps the red bar unbroken around the headings: no rule above
+        // them, none below (the red meets the taupe directly), and no outer
+        // edge — only the three dividers between the four categories.
+        className={`flex items-center justify-center bg-icp-red text-center text-white ${last ? '' : `border-r ${RULE}`}`}
         style={{ height: v(HEADER_H), fontSize: fs(24, 14) }}
       >
         {group.label}
       </h2>
-      <div className="grid grid-cols-2">
+      <div className={`grid grid-cols-2 ${last ? `border-r ${RULE}` : ''}`}>
         {Array.from({ length: rows * 2 }).map((_, i) => (
           <Cell key={i} item={group.items[i] ?? null} rowH={rowH} />
         ))}
@@ -79,12 +94,26 @@ export default function ClientsPage() {
 
   return (
     <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
-      <EdgeBars />
-      <SiteNav title="clients" />
+      <div
+        className="absolute top-0 bg-icp-red"
+        style={{ left: u(EDGE_BAR), right: u(EDGE_BAR), height: v(GRID_TOP + HEADER_H) }}
+      />
 
-      <main className="absolute grid grid-cols-4 tall:grid-cols-2" style={{ top: v(GRID_TOP), left: u(EDGE_BAR), right: u(EDGE_BAR) }}>
+      <EdgeBars />
+      <SiteNav title="Clients" tone="red" />
+
+      <main
+        className="absolute grid grid-cols-4 tall:grid-cols-2"
+        style={{ top: v(GRID_TOP), left: u(EDGE_BAR), right: u(EDGE_BAR) }}
+      >
         {groups.map((group, i) => (
-          <CategoryBlock key={group.category} group={group} rows={rowsFor(i)} rowH={rowH} />
+          <CategoryBlock
+            key={group.category}
+            group={group}
+            rows={rowsFor(i)}
+            rowH={rowH}
+            last={portrait ? i % 2 === 1 || i === groups.length - 1 : i === groups.length - 1}
+          />
         ))}
       </main>
 

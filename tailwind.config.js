@@ -9,10 +9,13 @@ export default {
       },
       colors: {
         icp: {
-          red: '#781f1c',
+          // Straight from the colour strip the designer prints on every R3
+          // page. `red` was #781f1c, a touch more crimson than the spec.
+          red: '#793220',
           mist: '#c3bdb4',
           slate: '#47433e',
           taupe: '#66594d',
+          paper: '#ebe9e6', // the light page background R3 labels on About
         },
       },
       fontFamily: {

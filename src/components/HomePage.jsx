@@ -13,26 +13,31 @@ const MENU_TOP = 703; // first menu item
 const MENU_GAP = 150;
 
 const leftLinks = [
-  { label: 'about us', to: '/about' },
-  { label: 'portfolio', to: '/portfolio' },
-  { label: 'clients', to: '/clients' },
+  { label: 'About Us', to: '/about' },
+  { label: 'Portfolio', to: '/portfolio' },
+  { label: 'Clients', to: '/clients' },
 ];
 const rightLinks = [
-  { label: 'enquiry', to: '/enquiry' },
-  { label: 'testimonial', to: '/testimonials' },
+  { label: 'Enquiry', to: '/enquiry' },
+  { label: 'Testimonial', to: '/testimonials' },
 ];
 
 const smallBar = { width: u(EDGE_BAR), height: v(NAV_BAR_H) };
 
 function MenuLink({ link, side }) {
   const isLeft = side === 'left';
+  // R3 annotates this one: "Alignment of the vertical line & height should be
+  // matching the text height." At rest it is a thin vertical rule standing as
+  // tall as the menu capitals (0.72em of the inherited size, Segoe UI Light's
+  // cap height); hovering widens it into a block without changing its height.
   const marker = (
     <span
       className={[
-        'absolute top-1/2 h-0 w-0 -translate-y-1/2 transition-all duration-300 group-hover:w-[var(--mw)] group-hover:h-[var(--mh)]',
+        'absolute top-1/2 -translate-y-1/2 transition-all duration-300',
+        'w-[var(--rest-w)] group-hover:w-[var(--open-w)]',
         isLeft ? 'right-0 bg-icp-mist' : 'left-0 bg-icp-red',
       ].join(' ')}
-      style={{ '--mw': u(20), '--mh': u(10) }}
+      style={{ '--rest-w': `max(2px, ${u(5)})`, '--open-w': u(21), height: '0.72em' }}
     />
   );
   const className = [
@@ -138,7 +143,7 @@ export default function HomePage() {
           aria-expanded={panel === 'left'}
         >
           <span className="bg-icp-mist" style={smallBar} />
-          <span style={{ marginLeft: u(20) }}>menu</span>
+          <span style={{ marginLeft: u(20) }}>Menu</span>
         </button>
 
         <Link
@@ -156,7 +161,7 @@ export default function HomePage() {
             }
           }}
         >
-          <span style={{ marginRight: u(20) }}>contact us</span>
+          <span style={{ marginRight: u(20) }}>Contact Us</span>
           <span className="bg-icp-red" style={smallBar} />
         </Link>
       </header>
@@ -168,7 +173,7 @@ export default function HomePage() {
         <BrandMark />
       </main>
 
-      <SiteFooter showLogo={false} />
+      <SiteFooter showLogo={false} tone="mist" />
     </div>
   );
 }

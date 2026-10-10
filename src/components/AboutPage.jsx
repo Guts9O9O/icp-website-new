@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getAbout, getTeam } from '../lib/api';
 import RichText from '../lib/richText';
 import { useData } from '../lib/useData';
-import { EDGE_BAR, NO_HOVER_QUERY, fs, u, v } from '../lib/units';
+import { EDGE_BAR, FOOTER_H, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/units';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
@@ -12,12 +12,16 @@ import { useSeo } from '../lib/seo';
 const ABOUT_CARD_ID = 'about-icp';
 
 // Column geometry from R3 (design px).
-const COL_W = 229.81;
+const COL_W = 210; // client feedback: slimmer than R3's 236
 const COL_H = 675;
 const COL_TOP = 500;
 const PHOTO_H = 455;
 const NAME_H = 95;
 const RULE_H = 6;
+const ABOUT_MARK_W = 150; // the supplied "abou+ iC+P" lockup
+// R3 keeps the write-up in a fixed column on the left of the panel, centred
+// vertically, whichever card is open and however wide the panel grows.
+const WRITEUP_W = 650;
 
 function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onToggle, hoverable, cardRef }) {
   return (
@@ -34,30 +38,36 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
       onFocus={hoverable ? onEnter : undefined}
       onBlur={hoverable ? onLeave : undefined}
       onClick={(e) => {
-        // Hover devices open on hover; touch devices toggle on tap (a tap's
-        // synthetic mouseenter is ignored above so it cannot cancel itself).
+        // Hover devices open on hover and pin on click, so a long write-up can
+        // be read and scrolled without holding the pointer still. Touch devices
+        // have no hover, so the tap does the opening (its synthetic mouseenter
+        // is ignored above and so cannot cancel itself).
         e.stopPropagation();
-        if (!hoverable) onToggle();
+        onToggle();
       }}
       role="button"
       tabIndex={0}
     >
-      <div className="absolute inset-y-0 left-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
+      {/* z-20: the photo below is positioned and comes later in the DOM, so
+          without this the line is covered for the whole height of the photo
+          and only reappears under it — the divider the client saw as missing. */}
+      <div className="absolute inset-y-0 left-0 z-20 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
 
       {isAbout ? (
         <div className="flex items-center justify-center" style={{ height: v(PHOTO_H + NAME_H) }}>
-          <div className="flex -rotate-90 items-center text-icp-slate" style={{ gap: u(24) }}>
-            <span className="font-normal" style={{ fontSize: fs(22, 13), letterSpacing: '0.45em' }}>
-              abou<span className="text-icp-red">+</span>
-            </span>
-            <span className="font-normal" style={{ fontSize: fs(22, 13), letterSpacing: '0.45em' }}>
-              iC+P
-            </span>
-          </div>
+          {/* The designer's own lockup, supplied as artwork — it was previously
+              rebuilt out of rotated text, which could not match the spacing. */}
+          <img
+            src="/images/about-icp.png"
+            alt="about iC+P"
+            style={{ width: u(ABOUT_MARK_W), height: 'auto' }}
+          />
         </div>
       ) : (
         <>
-          <div className="relative overflow-hidden bg-white" style={{ height: v(PHOTO_H) }}>
+          {/* The team photographs are cut-outs, so the cell takes the page
+              colour and they sit on it rather than on a white card. */}
+          <div className="relative overflow-hidden bg-icp-paper" style={{ height: v(PHOTO_H) }}>
             {member.image ? (
               <img
                 src={member.image}
@@ -69,7 +79,7 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
             )}
           </div>
           <div
-            className="flex items-center justify-center bg-icp-taupe/50 text-center text-white"
+            className="flex items-center justify-center bg-icp-red/80 text-center text-white"
             style={{ height: v(NAME_H), fontSize: fs(14, 11), letterSpacing: '0.12em' }}
           >
             <span>
@@ -80,7 +90,8 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
         </>
       )}
 
-      <div className="w-full bg-icp-red" style={{ height: v(RULE_H) }} />
+      {/* R3 runs this rule under the photographs only, not under the lockup */}
+      {!isAbout && <div className="w-full bg-icp-red" style={{ height: v(RULE_H) }} />}
 
       <div
         className="flex flex-1 flex-col items-center justify-center text-center text-icp-slate"
@@ -114,10 +125,44 @@ export default function AboutPage() {
 
   const hoverable = !useMediaQuery(NO_HOVER_QUERY);
   const [activeId, setActiveId] = useState(null);
+  // Pinned by a click. The studio write-up runs long enough to scroll, and a
+  // panel that closes the moment the pointer leaves the card cannot be read:
+  // reaching its scrollbar means leaving the card. Clicking holds it open.
+  const [pinned, setPinned] = useState(false);
   const active = cards.find((c) => c.id === activeId);
   const isOpen = Boolean(active);
   const [panels, setPanels] = useState({ left: 0, right: 0 });
   const cardRefs = useRef({});
+  const closeTimer = useRef(null);
+
+  // A grace period before closing, so the pointer can cross from the card into
+  // the panel without the panel vanishing underneath it.
+  const cancelClose = () => clearTimeout(closeTimer.current);
+  const openCard = (id) => {
+    cancelClose();
+    setActiveId(id);
+  };
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setActiveId((id) => (pinned ? id : null)), 180);
+  };
+  const dismiss = () => {
+    cancelClose();
+    setPinned(false);
+    setActiveId(null);
+  };
+
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+
+  // Escape closes a pinned panel — otherwise it could only be dismissed by
+  // clicking away, which is not obvious and is unreachable from the keyboard.
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKey = (e) => e.key === 'Escape' && dismiss();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Panels extend from the page edges to the hovered card's edges.
   useEffect(() => {
@@ -134,26 +179,41 @@ export default function AboutPage() {
   }, [activeId]);
 
   return (
-    <div className="relative min-h-screen bg-white font-brand" onClick={() => setActiveId(null)}>
+    <div className="relative min-h-screen bg-icp-paper font-brand" onClick={dismiss}>
       <EdgeBars />
-      <SiteNav title="about us" />
+      <SiteNav title="About Us" tone={isOpen ? 'dark' : 'light'} />
 
       {/* Left panel: write-up for the hovered card */}
       <aside
+        onMouseEnter={hoverable ? cancelClose : undefined}
+        onMouseLeave={hoverable ? scheduleClose : undefined}
+        onClick={(e) => e.stopPropagation()}
+        data-panel="writeup"
         className={[
-          'fixed inset-y-0 left-0 z-[35] overflow-y-auto bg-icp-red/50 text-white backdrop-blur-[1px]', // above the footer marks, below the edge bars/nav
+          // Translucent, not solid: R3 lets the lockup and the team photos show
+          // through the panel, tinted red. At 80% over the pale page this lands
+          // on the #945643 the client asked for.
+          'fixed inset-y-0 left-0 z-[35] bg-icp-red/80 text-white', // above the footer marks, below the edge bars/nav
           'transition-transform duration-700 ease-in-out',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
         style={{ width: panels.left }}
       >
+        {/* The panel fills the height, but only this inner band scrolls, and it
+            starts below the nav. Scrolling the whole panel ran the write-up up
+            underneath "Home | About Us", which is what made the two collide. */}
         <div
-          className="flex flex-col"
+          className="scroll-slim absolute inset-x-0 overflow-y-auto"
+          style={{ top: v(NAV_TOP + NAV_BAR_H + 30), bottom: v(FOOTER_H) }}
+        >
+        <div
+          className="flex min-h-full flex-col justify-center"
           style={{
             paddingLeft: u(EDGE_BAR + 60),
             paddingRight: u(60),
-            paddingTop: v(320),
-            paddingBottom: v(160),
+            paddingTop: v(40),
+            paddingBottom: v(40),
+            width: `min(${u(WRITEUP_W + EDGE_BAR + 120)}, 100%)`,
             fontSize: fs(14, 12),
             lineHeight: 1.8,
             gap: u(40),
@@ -176,12 +236,13 @@ export default function AboutPage() {
             </section>
           )}
         </div>
+        </div>
       </aside>
 
       {/* Right panel: dims everything to the right of the hovered card */}
       <aside
         className={[
-          'pointer-events-none fixed inset-y-0 right-0 z-[35] bg-icp-taupe/50',
+          'pointer-events-none fixed inset-y-0 right-0 z-[35] bg-icp-taupe/70',
           'transition-transform duration-700 ease-in-out',
           isOpen ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
@@ -197,16 +258,19 @@ export default function AboutPage() {
               isAbout={card.id === ABOUT_CARD_ID}
               isActive={activeId === card.id}
               isMuted={isOpen && activeId !== card.id}
-              onEnter={() => setActiveId(card.id)}
-              onLeave={() => setActiveId(null)}
-              onToggle={() => setActiveId((prev) => (prev === card.id ? null : card.id))}
+              onEnter={() => openCard(card.id)}
+              onLeave={scheduleClose}
+              onToggle={() => {
+                openCard(card.id);
+                setPinned(true);
+              }}
               hoverable={hoverable}
               cardRef={(el) => {
                 if (el) cardRefs.current[card.id] = el;
               }}
             />
           ))}
-          <div className="absolute inset-y-0 right-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
+          <div className="absolute inset-y-0 right-0 z-20 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
         </div>
       </main>
 

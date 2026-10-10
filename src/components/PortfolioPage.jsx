@@ -1,13 +1,15 @@
 import { useNavigate } from 'react-router';
 import { getCategories } from '../lib/api';
 import { useData } from '../lib/useData';
-import { EDGE_BAR, FOOTER_H, NAV_BAR_H, NAV_TOP, fs, u, v } from '../lib/units';
+import { EDGE_BAR, fs, u } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
 import { useSeo } from '../lib/seo';
 
-// Four category columns fill the page between the nav and the footer rule (R3).
+// Four category columns fill the page top to bottom (R3, revised): the client
+// asked for the category image to run the full height, with the nav and the
+// footer sitting over it rather than cropping it between them.
 // A translucent red bar covers each image and slides away on hover.
 export default function PortfolioPage() {
   useSeo({ title: 'Portfolio', description: 'Interior design projects by iConcepts + Partners across hospitality, builders & developers, commercial and private residences.' });
@@ -18,13 +20,13 @@ export default function PortfolioPage() {
   return (
     <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
       <EdgeBars />
-      <SiteNav title="portfolio" />
+      <SiteNav title="Portfolio" />
 
       <main
         className="absolute grid grid-cols-4 tall:grid-cols-2 tall:grid-rows-2"
         style={{
-          top: v(NAV_TOP + NAV_BAR_H),
-          bottom: v(FOOTER_H),
+          top: 0,
+          bottom: 0,
           left: u(EDGE_BAR),
           right: u(EDGE_BAR),
         }}
@@ -56,7 +58,7 @@ export default function PortfolioPage() {
         ))}
       </main>
 
-      <SiteFooter />
+      <SiteFooter tone="mist" />
     </div>
   );
 }

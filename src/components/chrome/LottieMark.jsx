@@ -34,13 +34,32 @@ export const MARKS = {
     art: { x: 0.42, y: 0.4289, w: 0.4467, h: 0.1225 }, // expanded (final frame)
     artClosed: { x: 0.42, y: 0.4289, w: 0.1722, h: 0.1225 }, // "iC+P" (first frame)
   },
+  // The signature is painted twice over: vector strokes write it on, and a
+  // matted PNG fills it in. Both ship in a red of their own (#85271F) which is
+  // neither the brand red nor the mist the client asked for on Home and
+  // Portfolio — so the strokes are tinted from the JSON and the PNG is a
+  // pre-tinted copy per variant. Same JSON, parsed separately per mark.
   signature: {
     src: '/animations/signature/signature.json',
-    assetsPath: '/animations/signature/images/',
+    assetsPath: '/animations/signature/images-red/',
     ratio: 1,
     art: { x: 0.0767, y: 0.3744, w: 0.85, h: 0.2811 },
+    tint: '#793220',
+  },
+  signatureMist: {
+    src: '/animations/signature/signature.json',
+    assetsPath: '/animations/signature/images-mist/',
+    ratio: 1,
+    art: { x: 0.0767, y: 0.3744, w: 0.85, h: 0.2811 },
+    tint: '#c3bdb4',
   },
 };
+
+// Where the rule that runs along the footer has to stop: the "g" of "design"
+// throws its tail down and to the left, and the client asked for the line to
+// end just before it rather than run through it. Measured off R3 as a fraction
+// of the signature's own box, so it holds whatever size the signature is drawn.
+export const SIGNATURE_RULE_STOP = 0.155;
 
 // Fetched once per URL and kept as text. Files live in /public so they are
 // never bundled into the JS.
@@ -79,14 +98,46 @@ function repairDuplicateMattedText(json) {
   return json;
 }
 
+/**
+ * Repaints a mark in one colour.
+ *
+ * White strokes are left alone: those are the track mattes that reveal the
+ * writing stroke by stroke, and recolouring them would break the draw-on.
+ */
+function tint(json, hex) {
+  const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const paint = (items = []) =>
+    items.forEach((item) => {
+      if (item.ty === 'gr') paint(item.it);
+      if ((item.ty === 'st' || item.ty === 'fl') && Array.isArray(item.c?.k)) {
+        const [r, g, b] = item.c.k;
+        if (r > 0.9 && g > 0.9 && b > 0.9) return; // a matte, not ink
+        item.c.k = [...rgb, item.c.k[3] ?? 1];
+      }
+    });
+  const walk = (layers = []) => layers.forEach((l) => l.ty === 4 && paint(l.shapes));
+  walk(json.layers);
+  (json.assets ?? []).forEach((a) => walk(a.layers));
+  return json;
+}
+
 async function load(src) {
   if (!cache.has(src)) {
     cache.set(
       src,
-      fetch(src).then((r) => {
-        if (!r.ok) throw new Error(`Failed to load ${src}`);
-        return r.text();
-      })
+      fetch(src)
+        .then((r) => {
+          if (!r.ok) throw new Error(`Failed to load ${src}`);
+          return r.text();
+        })
+        .catch((err) => {
+          // Forget a failed attempt so the next mount can try again. Leaving
+          // the rejected promise in the cache means one request cancelled by a
+          // navigation mid-flight — which WebKit does readily — stops the mark
+          // ever drawing again for the rest of the session.
+          cache.delete(src);
+          throw err;
+        })
     );
   }
   return JSON.parse(await cache.get(src));
@@ -156,7 +207,12 @@ export default function LottieMark({ mark, mode = 'intro', label, className, sty
     // previous occupant left behind so it never reports a stale position.
     if (element.current) element.current.dataset.lottieProgress = '';
     load(config.src)
-      .then((json) => active && setData(config.repairDuplicateWordmark ? repairDuplicateMattedText(json) : json))
+      .then((json) => {
+        if (!active) return;
+        if (config.repairDuplicateWordmark) repairDuplicateMattedText(json);
+        if (config.tint) tint(json, config.tint);
+        setData(json);
+      })
       .catch(() => active && setState('error'));
     return () => {
       active = false;

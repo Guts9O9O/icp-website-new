@@ -7,6 +7,7 @@ import RichText from '../lib/richText';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import CarouselControls from './chrome/CarouselControls';
 import { useSeo } from '../lib/seo';
 
 const slideStyles = `
@@ -23,7 +24,7 @@ const COL_TOP = 500;
 const PHOTO_TOP = 43;
 const PHOTO_H = 508.71;
 const RULE_H = 6;
-const CONTROLS_TOP = 1291;
+const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
 
 function areaLabel(areaSqft) {
   return areaSqft ? `${areaSqft.toLocaleString('en-IN')} Sq.Ft Area` : '0000 Sq.Ft Area';
@@ -67,23 +68,23 @@ export default function PortfolioCategoryPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
+    <div className="relative min-h-screen bg-icp-paper font-brand text-icp-slate">
       <style>{slideStyles}</style>
       <EdgeBars />
-      <SiteNav title="portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
+      <SiteNav title="Portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="light" />
 
       {category?.description && (
         <div
-          className="absolute left-1/2 -translate-x-1/2 text-center text-icp-mist"
+          className="absolute left-1/2 -translate-x-1/2 text-center text-icp-slate"
           style={{ top: v(230), width: `min(${u(1500)}, calc(100vw - ${u(200)}))`, maxHeight: v(240), overflow: 'hidden', fontSize: fs(15, 11), lineHeight: 1.7 }}
         >
-          <RichText text={category.description} tone="dark" gap={v(12)} />
+          <RichText text={category.description} tone="light" gap={v(12)} />
         </div>
       )}
 
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(COL_TOP) }}>
         {projects && list.length === 0 ? (
-          <p className="uppercase text-icp-mist/70" style={{ fontSize: fs(16, 12), letterSpacing: '0.3em', marginTop: v(200) }}>
+          <p className="uppercase text-icp-slate/60" style={{ fontSize: fs(16, 12), letterSpacing: '0.3em', marginTop: v(200) }}>
             Projects coming soon
           </p>
         ) : (
@@ -124,7 +125,7 @@ export default function PortfolioCategoryPage() {
                   className="flex flex-1 flex-col items-center justify-center text-center"
                   style={{ fontSize: fs(14, 11), lineHeight: 1.7, letterSpacing: '0.02em' }}
                 >
-                  <p className="text-white/90" style={{ fontSize: fs(16, 12) }}>
+                  <p className="text-icp-slate/60" style={{ fontSize: fs(16, 12) }}>
                     {project.name}
                   </p>
                   <p>{project.location}</p>
@@ -138,32 +139,19 @@ export default function PortfolioCategoryPage() {
       </main>
 
       {pageCount > 1 && (
-        <nav
-          className="absolute left-0 right-0 flex items-center justify-center text-icp-mist"
-          style={{ top: v(CONTROLS_TOP), fontSize: fs(20, 12), gap: u(60) }}
-          aria-label="Pages"
-        >
-          <button type="button" onClick={() => go(page - 1)} disabled={page === 0} className="flex items-center transition-opacity disabled:opacity-30" style={{ gap: u(10) }}>
-            <span aria-hidden="true">‹</span>
-            <span>previous</span>
-          </button>
-          <div className="flex items-center" style={{ gap: u(25) }}>
-            {Array.from({ length: pageCount }).map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => go(i)}
-                aria-label={`Page ${i + 1}`}
-                className={`rounded-full transition-colors ${i === page ? 'bg-icp-red' : 'bg-icp-mist/70 hover:bg-icp-mist'}`}
-                style={{ width: u(10), height: u(10), minWidth: 6, minHeight: 6 }}
-              />
-            ))}
-          </div>
-          <button type="button" onClick={() => go(page + 1)} disabled={page >= pageCount - 1} className="flex items-center transition-opacity disabled:opacity-30" style={{ gap: u(10) }}>
-            <span>next</span>
-            <span aria-hidden="true">›</span>
-          </button>
-        </nav>
+        <div className="absolute left-0 right-0" style={{ top: v(CONTROLS_TOP) }}>
+          <CarouselControls
+            count={pageCount}
+            index={page}
+            onSelect={go}
+            onPrev={() => go(page - 1)}
+            onNext={() => go(page + 1)}
+            label="Pages"
+            itemLabel={(i) => `Page ${i + 1}`}
+            onLight
+            endsDisabled
+          />
+        </div>
       )}
 
       <SiteFooter />

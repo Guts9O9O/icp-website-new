@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { getSite } from '../lib/api';
 import { SUBJECTS, sendEnquiry, validateEnquiry } from '../lib/enquiry';
 import { useData } from '../lib/useData';
@@ -41,7 +41,7 @@ const fieldStyle = (m) => ({ height: v(m.fieldH), paddingLeft: u(16), paddingRig
 function Row({ label, children, align = 'center', gap }) {
   return (
     <div className={`flex ${align === 'start' ? 'items-start' : 'items-center'}`} style={{ marginBottom: v(gap) }}>
-      <label className="shrink-0 text-icp-taupe" style={{ width: u(LABEL_W), fontSize: fs(18, 13) }}>
+      <label className="t-strong shrink-0 text-icp-taupe" style={{ width: u(LABEL_W), fontSize: fs(18, 13) }}>
         {label}
       </label>
       <div className="flex" style={{ width: u(FIELD_W), gap: u(10) }}>
@@ -79,13 +79,28 @@ function Select({ value, onChange, options, style, field }) {
   );
 }
 
+const ICON_W = 45; // the round contact icons
+const ICON_GAP = 42; // icon to its text
+
+// The studio's address as one search string. The lines already carry their own
+// punctuation, so they are joined plainly and the trailing full stop dropped
+// rather than glued together with extra commas.
+function mapQuery(site) {
+  return (site.addressLines ?? [])
+    .join(' ')
+    .replace(/^\s*studio\s*[-:]\s*/i, '') // "Studio-" labels the line, it is not part of the address
+    .replace(/\s+/g, ' ')
+    .replace(/[.,\s]+$/, '')
+    .trim();
+}
+
 function ContactIcon({ src, alt }) {
   return (
     <img
       src={src}
       alt={alt}
       className="shrink-0 object-contain"
-      style={{ width: u(45), height: u(45), minWidth: 26, minHeight: 26 }}
+      style={{ width: u(ICON_W), height: u(ICON_W), minWidth: 26, minHeight: 26 }}
     />
   );
 }
@@ -98,13 +113,14 @@ function SocialLink({ social }) {
       rel="noreferrer"
       aria-label={social.name}
       className="group relative block shrink-0"
-      style={{ width: u(45), height: u(45), minWidth: 26, minHeight: 26 }}
+      style={{ width: u(ICON_W), height: u(ICON_W), minWidth: 26, minHeight: 26 }}
     >
-      <img src={social.icon} alt="" className="absolute inset-0 h-full w-full object-contain group-hover:opacity-0" />
+      {/* One image: the supplied artwork is a single red disc per network, so
+          there is nothing to cross-fade to. Hovering lifts it instead. */}
       <img
-        src={social.iconHover}
+        src={social.icon}
         alt=""
-        className="absolute inset-0 h-full w-full object-contain opacity-0 group-hover:opacity-100"
+        className="absolute inset-0 h-full w-full object-contain transition-opacity duration-200 group-hover:opacity-70"
       />
     </a>
   );
@@ -165,9 +181,9 @@ export default function EnquiryPage() {
     ) : null;
 
   return (
-    <div className="relative min-h-screen bg-white font-brand">
+    <div className="relative min-h-screen bg-icp-paper font-brand">
       <EdgeBars />
-      <SiteNav rightTitle="enquiry" />
+      <SiteNav rightTitle="Enquiry" tone="light" />
 
       <main className="absolute left-0 right-0 tall:flex tall:flex-col" style={{ top: v(m.formTop), paddingLeft: u(FORM_LEFT) }}>
         <form onSubmit={onSubmit} className="absolute tall:static" style={{ left: u(FORM_LEFT) }} noValidate>
@@ -264,7 +280,7 @@ export default function EnquiryPage() {
           <div className="flex items-center justify-end" style={{ width: u(LABEL_W + FIELD_W), gap: u(30) }}>
             {status.state === 'sent' && (
               <p className="text-icp-taupe" style={{ fontSize: fs(16, 12) }} role="status">
-                Thank you — your enquiry has been sent. We will get back to you shortly.
+                Thank you â€” your enquiry has been sent. We will get back to you shortly.
               </p>
             )}
             {status.state === 'error' && (
@@ -275,10 +291,10 @@ export default function EnquiryPage() {
             <button
               type="submit"
               disabled={status.state === 'sending'}
-              className="font-semibold text-icp-red transition-opacity hover:opacity-70 disabled:opacity-50"
+              className="t-strong text-icp-red transition-opacity hover:opacity-70 disabled:opacity-50"
               style={{ fontSize: fs(18, 13) }}
             >
-              {status.state === 'sending' ? 'Sending…' : 'Submit'}
+              {status.state === 'sending' ? 'Sendingâ€¦' : 'SUBMIT'}
             </button>
           </div>
         </form>
@@ -310,6 +326,25 @@ export default function EnquiryPage() {
                 ))}
               </p>
             </div>
+            {/* "Add GPS location" (R3): a Google map of the studio, lined up
+                with the address text rather than the icon column. The plain
+                embed needs no API key, and loading it lazily keeps it off the
+                critical path. */}
+            <iframe
+              title="iC+P studio location on Google Maps"
+              src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery(site))}&output=embed`}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="tall:col-span-2"
+              style={{
+                marginLeft: u(ICON_W + ICON_GAP),
+                width: u(710),
+                height: v(157),
+                border: 0,
+                marginBottom: v(portrait ? 20 : 48),
+              }}
+            />
+
             <div className="flex items-center" style={{ gap: u(42) }}>
               <ContactIcon src="/images/icons/Internet.png" alt="" />
               <span>follow us on:</span>

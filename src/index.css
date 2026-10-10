@@ -76,6 +76,48 @@ textarea {
   font-size: max(13px, calc(18 * var(--u)));
 }
 
+/* The client asked for the enquiry labels and Submit to read as bold. "Segoe
+   UI Light" carries only its one light face, so asking it for weight 600 gets
+   a synthesised smear rather than real weight. Dropping to the regular Segoe
+   UI family, which does ship a semibold, is what actually looks bold.
+   Descendants are included because the blanket `span { font-weight: 300 }`
+   above would otherwise reset any label built out of nested spans. */
+.t-strong,
+.t-strong * {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+}
+
+/* A scrollbar that belongs to the panel it sits in. The platform default —
+   grey, chunky, with stepper arrows — read as a browser control dropped on top
+   of the artwork. No buttons, a track that disappears, and a thumb in the
+   brand mist that firms up when you reach for it. `overscroll-behavior`
+   stops the page behind scrolling on once the panel hits its end. */
+.scroll-slim {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+}
+.scroll-slim::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.32);
+  border-radius: 999px;
+}
+.scroll-slim::-webkit-scrollbar-thumb:hover,
+.scroll-slim::-webkit-scrollbar-thumb:active {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+.scroll-slim::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
 /* Visible to screen readers and search engines only (e.g. the home page title,
    whose wordmark lives inside the animated logo). */
 .sr-only {

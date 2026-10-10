@@ -5,6 +5,7 @@ import { fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import CarouselControls from './chrome/CarouselControls';
 import { useSeo } from '../lib/seo';
 
 const AUTOPLAY_MS = 9000;
@@ -31,7 +32,7 @@ export default function TestimonialsPage() {
   return (
     <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
       <EdgeBars />
-      <SiteNav title="testimonials" />
+      <SiteNav title="Testimonials" />
 
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(420) }}>
         {items && count === 0 ? (
@@ -56,32 +57,17 @@ export default function TestimonialsPage() {
       </main>
 
       {count > 1 && (
-        <nav
-          className="absolute left-0 right-0 flex items-center justify-center text-icp-mist"
-          style={{ top: v(1300), fontSize: fs(20, 12), gap: u(60) }}
-          aria-label="Testimonials"
-        >
-          <button type="button" onClick={() => go((i) => (i - 1 + count) % count)} className="flex items-center" style={{ gap: u(10) }}>
-            <span aria-hidden="true">‹</span>
-            <span>previous</span>
-          </button>
-          <div className="flex items-center" style={{ gap: u(25) }}>
-            {list.map((t, i) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => go(i)}
-                aria-label={`Testimonial ${i + 1}`}
-                className={`rounded-full transition-colors ${i === index ? 'bg-icp-red' : 'bg-icp-mist/70 hover:bg-icp-mist'}`}
-                style={{ width: u(10), height: u(10), minWidth: 6, minHeight: 6 }}
-              />
-            ))}
-          </div>
-          <button type="button" onClick={() => go((i) => (i + 1) % count)} className="flex items-center" style={{ gap: u(10) }}>
-            <span>next</span>
-            <span aria-hidden="true">›</span>
-          </button>
-        </nav>
+        <div className="absolute left-0 right-0" style={{ top: v(1418) }}>
+          <CarouselControls
+            count={count}
+            index={index}
+            onSelect={go}
+            onPrev={() => go((i) => (i - 1 + count) % count)}
+            onNext={() => go((i) => (i + 1) % count)}
+            label="Testimonials"
+            itemLabel={(i) => `Testimonial ${i + 1}`}
+          />
+        </div>
       )}
 
       <SiteFooter />
