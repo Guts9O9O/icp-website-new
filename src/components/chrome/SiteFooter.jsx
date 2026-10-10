@@ -60,7 +60,12 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
           style={{
             position: 'absolute',
             width: u(logoWidth),
-            height: v(LOGO_H),
+            // Both axes scale with `u` so the box keeps the artwork's own
+            // aspect. Sizing the height with `v` made the box a different
+            // shape on any screen that is not 16:10, and `meet` then shrank
+            // the mark to fit — far enough that the roundel's lower bars fell
+            // between pixels and vanished.
+            height: u(LOGO_H),
             left: u(GAP),
             bottom: `calc(100% + ${v(LOGO_LIFT)})`, // sits clear above the rule
           }}
@@ -74,7 +79,7 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
         style={{
           position: 'absolute',
           width: u(SIG_W),
-          height: v(sigHeight),
+          height: u(sigHeight), // same reason as the mark above
           right: u(GAP),
           bottom: `calc(100% + ${v(SIG_LIFT)})`, // rests just above the rule, not across it
         }}

@@ -9,13 +9,14 @@ same thing in every engine.
     python test_animations.py [chromium|webkit|firefox]
 """
 import sys, asyncio, os, os, io
+import numpy as np
 from PIL import Image, ImageChops
 from playwright.async_api import async_playwright
 
 ENGINE = sys.argv[1] if len(sys.argv) > 1 else "chromium"
 BASE = os.environ.get("BASE", "http://localhost:5173")
 OUT = os.environ.get("OUT", ".")
-FOOTER = {"x": 0, "y": 700, "width": 1440, "height": 200}
+FOOTER = {"x": 0, "y": 610, "width": 1440, "height": 200}
 results = []
 
 
@@ -130,9 +131,28 @@ async def images_settled(pg, tries=100):
     return False
 
 
+def red_bands(img):
+    """How many separate red bars sit above and below the roundel's centre."""
+    a = np.asarray(img.convert("RGB")).astype(int)
+    red = (a[:, :, 0] > a[:, :, 1] + 35) & (a[:, :, 0] > a[:, :, 2] + 35)
+    rows = red.sum(axis=1)
+    starts, running = [], False
+    for i, v in enumerate(rows):
+        if v > 2 and not running:
+            starts.append(i)
+            running = True
+        elif v <= 2:
+            running = False
+    mid = img.height / 2
+    return sum(1 for s in starts if s < mid), sum(1 for s in starts if s >= mid)
+
+
 async def run(p):
     b = await getattr(p, ENGINE).launch()
-    ctx = await b.new_context(viewport={"width": 1440, "height": 900})
+    # 16:9, not 16:10. Most screens are, and the design's vertical unit is
+    # derived from a 1600-tall artboard, so this is where anything that mixes
+    # the horizontal and vertical units goes wrong — as the roundel did.
+    ctx = await b.new_context(viewport={"width": 1440, "height": 810})
     pg = await ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
@@ -187,6 +207,19 @@ async def run(p):
     ok(await settle(pg, "shortLogo", "closed"), f"[{ENGINE}] moving away closes it again")
     ok(await progress(pg, "shortLogo") == 0, f"[{ENGINE}] it returns to the first frame")
     ok(worst_pixel(closed_shot, await logo_shot()) <= 16, f"[{ENGINE}] closed state looks the same as before the hover")
+
+    # --- the roundel keeps its symmetry on screens that are not 16:10.
+    # Its bars are drawn in matching pairs above and below the centre. Sizing
+    # the mark's box with `u` across and `v` down made the box a different
+    # shape from the artwork on any other aspect; `meet` then shrank the mark
+    # until the lower bars fell between pixels and disappeared, leaving three
+    # above and two below.
+    short_box = await viewport_box(pg, "shortLogo")
+    roundel = await shot(pg, {"x": short_box["x"], "y": short_box["y"],
+                              "width": short_box["height"], "height": short_box["height"]})
+    above, below = red_bands(roundel)
+    ok(above == below and above >= 3,
+       f"[{ENGINE}] the roundel is symmetric top to bottom ({above} bars above, {below} below)")
 
     # --- keyboard users get the same behaviour
     await node(pg, "shortLogo").focus()
