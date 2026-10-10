@@ -15,7 +15,9 @@ const CAP = '0.72em';
 // The divider between Home and the page title keeps the cap height the client
 // asked for in the written feedback.
 const bar = { width: u(EDGE_BAR), height: v(NAV_BAR_H) };
-const divider = { width: `max(2px, ${u(4)})`, height: CAP };
+// R3 draws the divider the same height as the bars (59 design px), not the
+// height of the capitals; the client asked for it thicker than the PDF's 1.6.
+const divider = { width: `max(2px, ${u(4)})`, height: v(NAV_BAR_H) };
 
 /**
  * Top nav shared by every inner page (R3):
@@ -27,6 +29,7 @@ export default function SiteNav({
   title,
   crumb, // { label, to } — e.g. the category on portfolio pages
   rightTitle, // page title shown on the right, e.g. "Enquiry"
+  titleTo, // makes the page title a link — the way back up from a category
   leftLabel = 'Home',
   leftTo = '/',
   // What the nav sits on: 'dark' a photo or the taupe, 'light' the pale
@@ -39,7 +42,11 @@ export default function SiteNav({
   // White reads on both the dark pages and the red bar; the pale pages take
   // the brand red. Hovering moves to red — except on the red bar itself, where
   // that would make the link disappear, so it dims to mist instead.
-  const text = onLight ? 'text-icp-red' : 'text-white';
+  // On the pale pages the title carries the red and the surrounding links step
+  // back into the brand grey, as they do on the home page. Mist itself would be
+  // unreadable on #EBE9E6, so this is the darker grey of the same family.
+  const text = onLight ? 'text-icp-taupe' : 'text-white';
+  const titleInk = onLight ? 'text-icp-red' : 'text-white';
   const textHover = onLight ? 'hover:text-icp-taupe' : onRed ? 'hover:text-icp-mist' : 'hover:text-icp-red';
   // The crumb matches the rest of the nav — it is told apart from the page
   // title by size, not by colour. In red it was nearly illegible on taupe.
@@ -64,9 +71,19 @@ export default function SiteNav({
         {title && (
           <>
             <span className={`t-title ${endBar}`} style={{ ...divider, marginLeft: u(24) }} />
-            <span className={`t-title leading-none ${text}`} style={{ marginLeft: u(18) }}>
-              {title}
-            </span>
+            {titleTo ? (
+              <Link
+                to={titleTo}
+                className={`t-title leading-none transition-colors ${titleInk} hover:text-icp-taupe`}
+                style={{ marginLeft: u(18) }}
+              >
+                {title}
+              </Link>
+            ) : (
+              <span className={`t-title leading-none ${titleInk}`} style={{ marginLeft: u(18) }}>
+                {title}
+              </span>
+            )}
           </>
         )}
         {crumb && (

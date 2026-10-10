@@ -18,7 +18,7 @@ const COL_TOP = 500;
 const PHOTO_H = 455;
 const NAME_H = 95;
 const RULE_H = 6;
-const ABOUT_MARK_W = 150; // the supplied "abou+ iC+P" lockup
+const ABOUT_MARK_W = 75; // the supplied "abou+ iC+P" lockup, at the size the client asked for
 // R3 keeps the write-up in a fixed column on the left of the panel, centred
 // vertically, whichever card is open and however wide the panel grows.
 const WRITEUP_W = 650;

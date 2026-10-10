@@ -7,6 +7,8 @@ import LottieMark, { SIGNATURE_RULE_STOP, artAspect } from './LottieMark';
 const LOGO_H = 61; // the "iC+P" mark; hovering expands it to the full wordmark
 const SIG_W = 330;
 const GAP = 50; // R3: the mark sits 50px in from the corner
+const LOGO_LIFT = 72; // clearance above the rule, so the mark never crowds it
+const SIG_LIFT = 12; // the signature clears the rule rather than sitting on it
 
 /**
  * Footer shared by every page (R3): a 1.5px rule 100 design px from the
@@ -60,7 +62,7 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
             width: u(logoWidth),
             height: v(LOGO_H),
             left: u(GAP),
-            bottom: `calc(100% + ${v(GAP)})`, // sits above the rule
+            bottom: `calc(100% + ${v(LOGO_LIFT)})`, // sits clear above the rule
           }}
         />
       )}
@@ -74,7 +76,7 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
           width: u(SIG_W),
           height: v(sigHeight),
           right: u(GAP),
-          bottom: `calc(100% - ${v(sigHeight * 0.42)})`, // crosses the rule
+          bottom: `calc(100% + ${v(SIG_LIFT)})`, // rests just above the rule, not across it
         }}
       />
     </footer>

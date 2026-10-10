@@ -89,7 +89,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
       <EdgeBars />
-      <SiteNav title="Portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
+      <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
 
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(FRAME_TOP) }}>
         <div

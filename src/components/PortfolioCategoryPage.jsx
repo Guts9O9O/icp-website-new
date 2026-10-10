@@ -19,10 +19,10 @@ const PAGE_SIZE = 5;
 
 // Column geometry from R3 (design px).
 const COL_W = 229.81;
-const COL_H = 676.3;
+const COL_H = 788;
 const COL_TOP = 500;
 const PHOTO_TOP = 43;
-const PHOTO_H = 508.71;
+const PHOTO_H = 620; // client: the thumbnails should stand taller than R3's 509
 const RULE_H = 6;
 const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
 
@@ -71,7 +71,7 @@ export default function PortfolioCategoryPage() {
     <div className="relative min-h-screen bg-icp-paper font-brand text-icp-slate">
       <style>{slideStyles}</style>
       <EdgeBars />
-      <SiteNav title="Portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="light" />
+      <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="light" />
 
       {category?.description && (
         <div
