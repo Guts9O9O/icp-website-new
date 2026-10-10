@@ -5,10 +5,14 @@ import LottieMark, { SIGNATURE_RULE_STOP, artAspect } from './LottieMark';
 // Artwork sizes from R3 (design px). LottieMark clips each animation to its
 // own artwork, so these are the sizes of what is actually drawn.
 const LOGO_H = 61; // the "iC+P" mark; hovering expands it to the full wordmark
-const SIG_W = 330;
+const SIG_W = 430; // R3 draws the signature 142.5 design px tall
 const GAP = 50; // R3: the mark sits 50px in from the corner
-const LOGO_LIFT = 72; // clearance above the rule, so the mark never crowds it
-const SIG_LIFT = 12; // the signature clears the rule rather than sitting on it
+// Measured off R3's own reference line, which runs through the centre of the
+// mark and the centre of the carousel controls at y 1428.9. The mark's foot
+// sits 51 design px above the rule; the signature hangs 57 below it, crossing
+// the line as the designer drew it.
+const LOGO_LIFT = 51;
+const SIG_DROP = 57;
 
 /**
  * Footer shared by every page (R3): a 1.5px rule 100 design px from the
@@ -67,7 +71,7 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
             // between pixels and vanished.
             height: u(LOGO_H),
             left: u(GAP),
-            bottom: `calc(100% + ${v(LOGO_LIFT)})`, // sits clear above the rule
+            bottom: `calc(100% + ${v(LOGO_LIFT)})`, // its centre lands on R3's reference line
           }}
         />
       )}
@@ -81,7 +85,7 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
           width: u(SIG_W),
           height: u(sigHeight), // same reason as the mark above
           right: u(GAP),
-          bottom: `calc(100% + ${v(SIG_LIFT)})`, // rests just above the rule, not across it
+          bottom: `calc(100% - ${v(SIG_DROP)})`, // hangs across the rule, as R3 draws it
         }}
       />
     </footer>
