@@ -103,8 +103,15 @@ export default function ClientsPage() {
       <SiteNav title="Clients" tone="red" />
 
       <main
-        className="absolute grid grid-cols-4 tall:grid-cols-2"
-        style={{ top: v(GRID_TOP), left: u(EDGE_BAR), right: u(EDGE_BAR) }}
+        // Follows the number of categories rather than assuming four, which is
+        // what dropped Bespoke Elements onto a row of its own.
+        className="absolute grid tall:!grid-cols-2"
+        style={{
+          top: v(GRID_TOP),
+          left: u(EDGE_BAR),
+          right: u(EDGE_BAR),
+          gridTemplateColumns: `repeat(${Math.max(1, groups.length)}, minmax(0, 1fr))`,
+        }}
       >
         {groups.map((group, i) => (
           <CategoryBlock
