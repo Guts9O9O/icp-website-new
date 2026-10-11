@@ -23,12 +23,15 @@ export default function PortfolioPage() {
       <SiteNav title="Portfolio" />
 
       <main
-        className="absolute grid grid-cols-4 tall:grid-cols-2 tall:grid-rows-2"
+        // The column count follows the data rather than being fixed at four:
+        // R4 took the categories to five, and the studio can add more.
+        className="absolute grid tall:!grid-cols-2"
         style={{
           top: 0,
           bottom: 0,
           left: u(EDGE_BAR),
           right: u(EDGE_BAR),
+          gridTemplateColumns: `repeat(${Math.max(1, (categories ?? []).length)}, minmax(0, 1fr))`,
         }}
       >
         {(categories ?? []).map((item, idx, all) => (
@@ -50,7 +53,10 @@ export default function PortfolioPage() {
             {idx < all.length - 1 && <div className="absolute inset-y-0 right-0 w-px bg-icp-mist/40" />}
             <div className="absolute inset-x-0 bottom-0 hidden h-px bg-icp-mist/40 tall:block" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-white drop-shadow-md" style={{ fontSize: fs(38, 18) }}>
+              <p
+                className="text-center uppercase text-white drop-shadow-md"
+                style={{ fontSize: fs(38, 18), paddingLeft: u(20), paddingRight: u(20), lineHeight: 1.15 }}
+              >
                 {item.label}
               </p>
             </div>

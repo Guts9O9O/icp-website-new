@@ -21,3 +21,6 @@ public/sitemap.xml
 
 # scratch renders of the design PDF, produced while measuring against it
 r3*.png
+
+# incoming client drops; they are filed under client-assets/ once reviewed
+rewebsiteasset_icp*/

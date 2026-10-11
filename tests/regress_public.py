@@ -56,7 +56,7 @@ async def run(vw, vh, tag):
         pg.on("response", lambda r: errors.append(f"[{tag}] HTTP {r.status}: {r.url[:120]}") if r.status >= 400 else None)
 
         # direct loads
-        checks = [("/", "iconcepts + partners"), ("/about", "about us"), ("/clients", "hegde house"), ("/portfolio", "private residences"),
+        checks = [("/", "iconcepts + partners"), ("/about", "about us"), ("/clients", "hegde house"), ("/portfolio", "bespoke elements"),
                   ("/portfolio/hospitality", "hotel hilton"), ("/portfolio/commercial", "projects coming soon"),
                   ("/portfolio/hospitality/hotel-hilton", "hotel hilton, mumbai"), ("/enquiry", "studio@icp.firm.in")]
         for path, text in checks:

@@ -2,29 +2,32 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useParams } from 'react-router';
 import { getCategory, getProject } from '../lib/api';
 import { useData } from '../lib/useData';
-import { fs, u, v } from '../lib/units';
+import { EDGE_BAR, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
 import CarouselControls from './chrome/CarouselControls';
 import { useSeo } from '../lib/seo';
 
-// Image frame and controls, measured off R3 page 10 (design px).
-const FRAME_TOP = 310;
-const FRAME_W = 1784;
-const FRAME_H = 989;
-const CAPTION_H = 90;
-const CONTROLS_TOP = 1420;
+// Measured off R4 page 10 (design px). The caption no longer sits on the
+// photograph: a red panel runs down the left of the page carrying the
+// project's name, area and description, and the image fills the rest.
+const PANEL_W = 800;
+const TEXT_LEFT = 131; // the write-up's left edge inside the panel
+const TEXT_TOP = 555;
+const FRAME_TOP = 328;
+const FRAME_W = 1747;
+const FRAME_H = 941;
+const CONTROLS_TOP = 1335;
 const AUTOPLAY_MS = 4000;
 
-// R3 captions each image with the project's area, written as
-// "Area- 000 Sq.Mt/0000 Sq.Ft". The zeroes are the designer's placeholder and
-// stay until the studio fills the real figure in from the admin, which is how
-// the listing pages read too.
+// R4 writes the area as "Area 0000 Sq.ft./ Sq.Mt". The zeroes are the
+// designer's placeholder and stay until the studio fills the real figure in
+// from the admin, which is how the listing pages read too.
 function areaLabel(sqft) {
-  if (!sqft) return 'Area- 000 Sq.Mt/0000 Sq.Ft';
+  if (!sqft) return 'Area 0000 Sq.ft./ Sq.Mt';
   const sqm = Math.round(sqft * 0.092903);
-  return `Area- ${sqm.toLocaleString('en-IN')} Sq.Mt/${sqft.toLocaleString('en-IN')} Sq.Ft`;
+  return `Area ${sqft.toLocaleString('en-IN')} Sq.ft./ ${sqm.toLocaleString('en-IN')} Sq.Mt`;
 }
 
 // Single project view with image carousel: /portfolio/:category/:slug
@@ -91,10 +94,46 @@ export default function ProjectDetailPage() {
       <EdgeBars />
       <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
 
-      <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(FRAME_TOP) }}>
+      {/* R4: a red panel down the left carrying the project's details, with
+          the photography filling the rest of the page. */}
+      <div
+        className="absolute bottom-0 top-0 bg-icp-red"
+        style={{ left: u(EDGE_BAR), width: u(PANEL_W) }}
+      />
+
+      {project && (
+        <div
+          className="absolute text-white tall:static tall:px-[calc(60*var(--u))] tall:pt-[calc(200*var(--v))]"
+          style={{
+            left: u(EDGE_BAR + TEXT_LEFT),
+            top: v(TEXT_TOP),
+            width: u(PANEL_W - TEXT_LEFT - 60),
+            lineHeight: 1.7,
+          }}
+        >
+          <p style={{ fontSize: fs(17, 12) }}>
+            <span className="t-strong">{project.name}</span>
+            {project.location ? `, ${project.location}` : ''}
+          </p>
+          <p className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(10) }}>
+            {areaLabel(project.areaSqft)}
+          </p>
+          {project.description && (
+            <p className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(34) }}>
+              {project.description}
+            </p>
+          )}
+        </div>
+      )}
+
+      <main className="absolute" style={{ top: v(FRAME_TOP), left: u(EDGE_BAR + PANEL_W) }}>
         <div
           className="relative select-none overflow-hidden bg-black/10"
-          style={{ width: `min(${u(FRAME_W)}, calc(100vw - ${u(120)}))`, height: v(FRAME_H), touchAction: 'pan-y' }}
+          style={{
+            width: `min(${u(FRAME_W)}, calc(100vw - ${u(EDGE_BAR * 2 + PANEL_W)}))`,
+            height: v(FRAME_H),
+            touchAction: 'pan-y',
+          }}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerUp}
@@ -109,26 +148,14 @@ export default function ProjectDetailPage() {
               </div>
             ))}
           </div>
-
-          {project && (
-            <div
-              className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center bg-icp-taupe/70 text-center text-white"
-              style={{ minHeight: v(CAPTION_H), paddingLeft: u(40), paddingRight: u(40), paddingTop: v(12), paddingBottom: v(12), gap: v(6) }}
-            >
-              <p style={{ fontSize: fs(16, 12) }}>
-                {project.name}
-                {project.location ? `, ${project.location}` : ''}
-              </p>
-              <p className="w-full truncate text-white/85" style={{ fontSize: fs(14, 11) }}>
-                {areaLabel(project.areaSqft)}
-              </p>
-            </div>
-          )}
         </div>
       </main>
 
       {count > 1 && (
-        <div className="absolute left-0 right-0" style={{ top: v(CONTROLS_TOP) }}>
+        <div
+          className="absolute right-0"
+          style={{ top: v(CONTROLS_TOP), left: u(EDGE_BAR + PANEL_W) }}
+        >
           <CarouselControls
             count={count}
             index={index}
