@@ -222,8 +222,8 @@ export default function EnquiryPage() {
             gap={m.rowGap}
             label={
               <span className="flex" style={{ gap: u(48) }}>
-                <span>Address</span>
                 <span>Zip Code</span>
+                <span>Address</span>
               </span>
             }
           >
@@ -301,7 +301,7 @@ export default function EnquiryPage() {
 
         {site && (
           <div
-            className="absolute text-icp-taupe tall:static tall:mt-[calc(40*var(--v))] tall:grid tall:grid-cols-2 tall:gap-x-[calc(40*var(--u))]"
+            className="t-strong absolute text-icp-taupe tall:static tall:mt-[calc(40*var(--v))] tall:grid tall:grid-cols-2 tall:gap-x-[calc(40*var(--u))]"
             style={{ left: u(1525), top: v(187), fontSize: fs(18, 13), lineHeight: 1.5, width: portrait ? u(LABEL_W + FIELD_W) : undefined }}
           >
             <div className="flex items-center" style={{ gap: u(42), marginBottom: v(portrait ? 20 : 34) }}>

@@ -6,51 +6,25 @@ export const about = {
   title: 'About iC+P',
   text: `ABOUT US
 
-iConcepts + Partners (iC+P) is a multidisciplinary design studio with Interior Design at its core, extending into Architecture, Product Design and bespoke elements. Founded in 2007, the studio is driven by a belief in design that is thoughtful, expressive and deeply connected to how people experience space.
+iConcepts + Partners (iC+P) is a Multidisciplinary Design Studio founded in 2007, with Interior Design at its core and an evolving practice across Architecture, Product Design and Bespoke Elements.
 
-Under the creative direction of Principal Designer–Founder Imran Khan and its Design Partners, iC+P translates each client brief into a bespoke design narrative, shaped by the character, context and aspirations of every project. We create layers of meaning by bringing together space, material, detail and atmosphere to form environments that are distinctive and purposeful.
+Under the creative direction of Principal Designer–Founder Imran Khan and its Design Partners, we translate client aspirations into distinctive and purposeful design narratives.
 
-Our diverse portfolio spans Hospitality, Residential, Commercial and Recreational environments—from clubhouses and prestige developments to building lobbies, sales galleries and bespoke spaces. This breadth of experience has cultivated a design perspective that is both contextual and considered. At the heart of our approach lies the interplay of design sensibility, material exploration and meticulous detailing. Carefully curated palettes, refined bespoke details, contextual understanding and artistic sensibility converge to create spaces that are distinctive, immersive and enduring.
+Our diverse portfolio spans Hospitality, Residential, Commercial and Recreational environments, shaped by context, character and human experience. Rooted in modern urban minimalism and understated elegance, our design language balances expression with restraint, and innovation with timelessness. Through intelligent planning, material exploration, artistic sensibility and meticulous detailing, we create spaces that are both functional and expressive.
 
-DESIGN PHILOSOPHY
+We believe true luxury lies not in extravagance, but in thoughtful composition, refined craftsmanship and the meaningful interplay of every element. Our approach unites creativity with discipline, balancing aesthetics, functionality, budgets and execution. Every space is conceived to engage the senses, inspire connections and enrich the experience of living.
 
-Design is meant to engage, inspire and influence the way we feel and act.
-
-Our design language is rooted in modern urban minimalism and understated elegance—where every element has purpose, and nothing exists merely for effect.
-
-For us, luxury is not defined by the most expensive or elaborate products and materials. It lies in creating spaces that are thoughtfully composed, deeply considered and inherently curated—spaces that elevate the experience of living, where every element belongs, every detail has intent, and the whole feels effortless.
-
-We believe meaningful design emerges from a delicate balance between function and aesthetics, expression and restraint, innovation and timelessness. It is about creating environments that are not only visually compelling, but also intuitive, enduring and deeply connected to the way they are experienced.
-
-This design ethos forms the foundation of everything we create—DESIGN TO LIVE.
+Our design ethos is the foundation of everything we create — DESIGN TO LIVE
 
 OUR DISCIPLINES
-
-- INTERIOR DESIGN — Our core discipline—creating thoughtful, functional and expressive environments shaped around the way people live, work, gather and experience space.
-- ARCHITECTURAL DESIGN — Extending our design thinking beyond interiors, we explore architecture through context, proportion, materiality and spatial experience, creating a cohesive relationship between built form and interior.
-- PRODUCT DESIGN — Designing furniture, lighting and objects that are integral to the larger spatial narrative, with a considered approach to proportion, material, function and detail.
-- BESPOKE ELEMENTS — From custom furniture and lighting to distinctive architectural and decorative elements, we develop tailored, one-of-a-kind details that bring individuality and character to every project.
-
-Across every discipline, our approach remains consistent—purposeful, cohesive design rooted in context, refined through detail and created to endure.
-
-THE iC+P HALLMARK
-
-1. INTELLIGENT PLANNING — Establishing proportion, functionality and spatial efficiency as the foundation of every project.
-2. DISTINCTIVE DESIGN — Creating environments with a clear identity, balancing character, atmosphere and purpose.
-3. BESPOKE DETAILING — Developing thoughtful, project-specific details down to the smallest element.
-4. MATERIAL & CRAFT — Exploring materials, textures, finishes and craftsmanship to create depth, richness and longevity.
-5. CONTEXT & RELEVANCE — Responding to the location, architecture, culture, people and purpose behind every project.
-6. DESIGN WITH DISCIPLINE — Balancing creativity with practicality, budgets, timelines and the realities of execution.
+- INTERIOR DESIGN — Creating thoughtful, well-detailed and functional environments that enrich everyday experiences.
+- ARCHITECTURAL DESIGN — Shaping built forms through context, proportion, materiality and spatial harmony.
+- BESPOKE ELEMENTS — Crafting distinctive furniture, lighting and interior elements that brings character and individuality to every project.
+- OUR APPROACH — Creating purposeful, cohesive and enduring designs, refined through context, creativity and detail.
 
 TEAM iC+P
 
-Team iC+P brings together Architects, Interior Designers, Product Designers, Visualisers, Lighting Designers and Technical Specialists, each contributing distinct strengths, perspectives and expertise.
-
-This cross-pollination of disciplines allows ideas to move seamlessly between interior, architecture, art, product and technology, resulting in richer and more resolved design outcomes.
-
-From concept and material exploration to detailing and buildability, our collaborative process brings together creative thinking and technical understanding—ensuring that design is not only imagined, but thoughtfully developed and realised.
-
-For us, design is the unifying discipline—connecting innovation with creativity to create people-driven, highly considered and visually compelling environments that enrich the human experience.`,
+Team iC+P brings together Architects, Interior Designers, Visualisers and Technical & Execution Specialists, fostering a collaborative exchange of ideas, expertise and perspectives. This cross-pollination of disciplines allows ideas to flow seamlessly across interiors, architecture and art, resulting in richer and more resolved design outcomes. From concept development and material exploration to detailing, technical coordination and execution, our integrated approach unites creative thinking with technical precision. With design as our unifying discipline, we connect innovation with creativity to translate ideas into thoughtfully developed, people-centric and visually compelling environments that enrich the human experience.`,
 };
 
 export const team = [

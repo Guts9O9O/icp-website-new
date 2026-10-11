@@ -57,7 +57,7 @@ export default function PortfolioPage() {
   return (
     <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
       <EdgeBars />
-      <SiteNav title="Portfolio" />
+      <SiteNav />
 
       {/* The write-up, in the red panel R4 uses on the project page. */}
       <aside

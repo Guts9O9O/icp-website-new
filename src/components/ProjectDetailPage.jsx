@@ -92,7 +92,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
       <EdgeBars />
-      <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} />
+      <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="red" />
 
       {/* R4: a red panel down the left carrying the project's details, with
           the photography filling the rest of the page. */}
