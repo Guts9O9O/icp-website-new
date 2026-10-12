@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { getCategory, getProjects } from '../lib/api';
+import RichText from '../lib/richText';
 import { useData } from '../lib/useData';
-import { fs, u, v } from '../lib/units';
+import { useMediaQuery } from '../lib/useMediaQuery';
+import { EDGE_BAR, FOOTER_H, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
@@ -24,6 +26,13 @@ const PHOTO_TOP = 43;
 const PHOTO_H = 620; // client: the thumbnails should stand taller than R3's 509
 const RULE_H = 6;
 const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
+
+// The segment write-up panel takes the empty space beside the thumbnails. It
+// runs from just under the nav row to the footer rule: the nav is in its light
+// tone on this page and the footer rule is red, so neither survives being
+// painted over in red.
+const PANEL_PAD = 60;
+const PANEL_TOP = NAV_TOP + NAV_BAR_H + 34;
 
 function areaLabel(areaSqft) {
   return areaSqft ? `${areaSqft.toLocaleString('en-IN')} Sq.Ft Area` : '0000 Sq.Ft Area';
@@ -49,6 +58,43 @@ export default function PortfolioCategoryPage() {
   const [direction, setDirection] = useState('next');
   const [slideKey, setSlideKey] = useState(0);
 
+  // Hovering any project opens the category's write-up. Which project is
+  // hovered makes no difference — the copy belongs to the segment — so the
+  // thumbnails can shift aside for the panel without the content flickering.
+  const hoverable = !useMediaQuery(NO_HOVER_QUERY);
+  const [showPanel, setShowPanel] = useState(false);
+  const closeTimer = useRef(null);
+  const cancelClose = () => clearTimeout(closeTimer.current);
+  const openPanel = () => {
+    cancelClose();
+    setShowPanel(true);
+  };
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setShowPanel(false), 180);
+  };
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+
+  // The panel fits the empty space to the left of the thumbnails rather than
+  // pushing them aside. Moving the row slid the hovered thumbnail out from
+  // under the pointer, which closed the panel, which moved the row back — an
+  // oscillation you could see.
+  const rowRef = useRef(null);
+  const [panelW, setPanelW] = useState(0);
+  useEffect(() => {
+    const measure = () => {
+      const row = rowRef.current;
+      if (!row) return;
+      const gutter = (EDGE_BAR / 2560) * window.innerWidth;
+      setPanelW(Math.max(0, row.getBoundingClientRect().left - gutter * 2));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [projects, page]);
+
+
+
   if (!categoryLoading && !category) return <Navigate to="/portfolio" replace />;
 
   const list = projects ?? [];
@@ -72,6 +118,37 @@ export default function PortfolioCategoryPage() {
       <EdgeBars />
       <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="light" />
 
+      {/* The studio's write-up for this segment, in the red panel R4 uses on
+          the project view, carrying the studio's copy for the whole segment. */}
+      <aside
+        data-panel="segment"
+        aria-hidden={!showPanel}
+        onMouseEnter={hoverable ? cancelClose : undefined}
+        onMouseLeave={hoverable ? scheduleClose : undefined}
+        className={[
+          'fixed z-20 overflow-hidden bg-icp-red text-white',
+          'transition-opacity duration-500 ease-in-out',
+          showPanel ? 'opacity-100' : 'pointer-events-none opacity-0',
+        ].join(' ')}
+        style={{ left: u(EDGE_BAR), width: panelW, top: v(PANEL_TOP), bottom: v(FOOTER_H) }}
+      >
+        <div className="scroll-slim h-full overflow-y-auto">
+          <div
+            className="flex min-h-full flex-col justify-center"
+            style={{
+              paddingLeft: u(PANEL_PAD),
+              paddingRight: u(PANEL_PAD),
+              paddingTop: v(40),
+              paddingBottom: v(40),
+              fontSize: fs(14, 12),
+              lineHeight: 1.8,
+            }}
+          >
+            {category?.description && <RichText text={category.description} tone="dark" gap={u(18)} />}
+          </div>
+        </div>
+      </aside>
+
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(COL_TOP) }}>
         {projects && list.length === 0 ? (
           <p className="uppercase text-icp-slate/60" style={{ fontSize: fs(16, 12), letterSpacing: '0.3em', marginTop: v(200) }}>
@@ -80,6 +157,7 @@ export default function PortfolioCategoryPage() {
         ) : (
           <div
             key={slideKey}
+            ref={rowRef}
             className={`relative flex transition-all duration-[160ms] ease-in ${
               exiting ? (direction === 'next' ? '-translate-x-6 opacity-0' : 'translate-x-6 opacity-0') : 'translate-x-0 opacity-100'
             }`}
@@ -93,6 +171,9 @@ export default function PortfolioCategoryPage() {
                 key={project.id}
                 className="group relative flex cursor-pointer flex-col"
                 style={{ width: u(COL_W), paddingTop: v(PHOTO_TOP) }}
+                onMouseEnter={hoverable ? openPanel : undefined}
+                onMouseLeave={hoverable ? scheduleClose : undefined}
+                onFocus={hoverable ? openPanel : undefined}
                 onClick={() => navigate(`/portfolio/${categorySlug}/${project.slug}`)}
                 role="link"
                 tabIndex={0}

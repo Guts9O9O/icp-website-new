@@ -32,7 +32,7 @@ async def run(vw, vh, tag):
         # narrow: our own origin and the local database only, so a genuine
         # cross-origin failure (the Google Maps embed, say) still counts as an
         # error, and the content assertions remain the real guard either way.
-        OURS = ("localhost:5173", "127.0.0.1:54321")
+        OURS = (BASE.split("//", 1)[-1].rstrip("/"), "127.0.0.1:54321")
 
         def note_pageerror(e):
             message = str(e)
