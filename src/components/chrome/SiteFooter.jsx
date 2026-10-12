@@ -5,14 +5,16 @@ import LottieMark, { SIGNATURE_RULE_STOP, artAspect } from './LottieMark';
 // Artwork sizes from R3 (design px). LottieMark clips each animation to its
 // own artwork, so these are the sizes of what is actually drawn.
 const LOGO_H = 61; // the "iC+P" mark; hovering expands it to the full wordmark
-const SIG_W = 430; // R3 draws the signature 142.5 design px tall
+const SIG_W = 340; // R3 drew it 430 wide; the client asked for a smaller signature
 const GAP = 50; // R3: the mark sits 50px in from the corner
 // Measured off R3's own reference line, which runs through the centre of the
 // mark and the centre of the carousel controls at y 1428.9. The mark's foot
-// sits 51 design px above the rule; the signature hangs 57 below it, crossing
-// the line as the designer drew it.
+// sits 51 design px above the rule; the signature hangs below it by 40% of its
+// own height, crossing the line as the designer drew it. Taking the drop as a
+// proportion rather than a fixed 57px keeps that crossing looking the same
+// whatever width the signature is set to.
 const LOGO_LIFT = 51;
-const SIG_DROP = 57;
+const SIG_DROP_RATIO = 0.4;
 
 /**
  * Footer shared by every page (R3): a 1.5px rule 100 design px from the
@@ -32,6 +34,7 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
   const signature = mist ? 'signatureMist' : 'signature';
   const logoWidth = LOGO_H * artAspect('shortLogo');
   const sigHeight = SIG_W / artAspect(signature);
+  const sigDrop = sigHeight * SIG_DROP_RATIO;
 
   return (
     <footer
@@ -85,7 +88,7 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
           width: u(SIG_W),
           height: u(sigHeight), // same reason as the mark above
           right: u(GAP),
-          bottom: `calc(100% - ${v(SIG_DROP)})`, // hangs across the rule, as R3 draws it
+          bottom: `calc(100% - ${v(sigDrop)})`, // hangs across the rule, as R3 draws it
         }}
       />
     </footer>
