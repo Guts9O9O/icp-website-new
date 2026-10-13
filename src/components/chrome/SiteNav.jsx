@@ -35,25 +35,31 @@ export default function SiteNav({
   // What the nav sits on: 'dark' a photo or the taupe, 'light' the pale
   // background, 'red' the brand-red top bar (the clients page).
   tone = 'dark',
+  // The two halves of the nav do not always sit on the same thing. On a
+  // category listing a red panel runs up the left of the page and under this
+  // row, so the left half needs the red treatment while "Contact Us", still on
+  // the pale background at the far right, keeps the light one.
+  leftTone = tone,
 }) {
-  const onLight = tone === 'light';
-  const onRed = tone === 'red';
-
   // White reads on both the dark pages and the red bar; the pale pages take
   // the brand red. Hovering moves to red — except on the red bar itself, where
   // that would make the link disappear, so it dims to mist instead.
   // On the pale pages the title carries the red and the surrounding links step
   // back into the brand grey, as they do on the home page. Mist itself would be
   // unreadable on #EBE9E6, so this is the darker grey of the same family.
-  const text = onLight ? 'text-icp-taupe' : 'text-white';
-  const titleInk = onLight ? 'text-icp-red' : 'text-white';
-  const textHover = onLight ? 'hover:text-icp-taupe' : onRed ? 'hover:text-icp-mist' : 'hover:text-icp-red';
-  // The crumb matches the rest of the nav — it is told apart from the page
-  // title by size, not by colour. In red it was nearly illegible on taupe.
-  const crumbText = onLight ? 'text-icp-slate' : 'text-white';
-  const crumbHover = onRed ? 'hover:text-icp-mist' : 'hover:text-icp-red';
-  // The closing bar is red everywhere but on the red bar, where R3 shows mist.
-  const endBar = onRed ? 'bg-icp-mist' : 'bg-icp-red';
+  const ink = (t) => ({
+    text: t === 'light' ? 'text-icp-taupe' : 'text-white',
+    titleInk: t === 'light' ? 'text-icp-red' : 'text-white',
+    textHover: t === 'light' ? 'hover:text-icp-taupe' : t === 'red' ? 'hover:text-icp-mist' : 'hover:text-icp-red',
+    // The crumb matches the rest of the nav — it is told apart from the page
+    // title by size, not by colour. In red it was nearly illegible on taupe.
+    crumbText: t === 'light' ? 'text-icp-slate' : 'text-white',
+    crumbHover: t === 'red' ? 'hover:text-icp-mist' : 'hover:text-icp-red',
+    // The closing bar is red everywhere but on the red bar, where R3 shows mist.
+    endBar: t === 'red' ? 'bg-icp-mist' : 'bg-icp-red',
+  });
+  const left = ink(leftTone);
+  const right = ink(tone);
   return (
     <header
       className="pointer-events-none fixed left-0 right-0 z-50 flex items-baseline justify-between"
@@ -63,24 +69,24 @@ export default function SiteNav({
         <span className="t-title bg-icp-mist" style={bar} />
         <Link
           to={leftTo}
-          className={`t-nav transition-colors ${text} ${textHover}`}
+          className={`t-nav transition-colors ${left.text} ${left.textHover}`}
           style={{ marginLeft: u(20) }}
         >
           {leftLabel}
         </Link>
         {title && (
           <>
-            <span className={`t-title ${endBar}`} style={{ ...divider, marginLeft: u(24) }} />
+            <span className={`t-title transition-colors ${left.endBar}`} style={{ ...divider, marginLeft: u(24) }} />
             {titleTo ? (
               <Link
                 to={titleTo}
-                className={`t-title leading-none transition-colors ${titleInk} hover:text-icp-taupe`}
+                className={`t-title leading-none transition-colors ${left.titleInk} hover:text-icp-taupe`}
                 style={{ marginLeft: u(18) }}
               >
                 {title}
               </Link>
             ) : (
-              <span className={`t-title leading-none ${titleInk}`} style={{ marginLeft: u(18) }}>
+              <span className={`t-title leading-none transition-colors ${left.titleInk}`} style={{ marginLeft: u(18) }}>
                 {title}
               </span>
             )}
@@ -88,10 +94,10 @@ export default function SiteNav({
         )}
         {crumb && (
           <>
-            <span className={`t-title ${endBar}`} style={{ ...divider, marginLeft: u(24) }} />
+            <span className={`t-title transition-colors ${left.endBar}`} style={{ ...divider, marginLeft: u(24) }} />
             <Link
               to={crumb.to}
-              className={`t-nav transition-colors ${crumbText} ${crumbHover}`}
+              className={`t-nav transition-colors ${left.crumbText} ${left.crumbHover}`}
               style={{ marginLeft: u(18) }}
             >
               {crumb.label}
@@ -107,10 +113,10 @@ export default function SiteNav({
             <span className="t-title bg-icp-red" style={{ ...divider, marginLeft: u(18), marginRight: u(18) }} />
           </>
         )}
-        <Link to="/enquiry" className={`t-nav transition-colors ${text} ${textHover}`}>
+        <Link to="/enquiry" className={`t-nav transition-colors ${right.text} ${right.textHover}`}>
           Contact Us
         </Link>
-        <span className={`t-title ${endBar}`} style={{ ...bar, marginLeft: u(20) }} />
+        <span className={`t-title ${right.endBar}`} style={{ ...bar, marginLeft: u(20) }} />
       </div>
     </header>
   );

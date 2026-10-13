@@ -27,12 +27,13 @@ const PHOTO_H = 620; // client: the thumbnails should stand taller than R3's 509
 const RULE_H = 6;
 const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
 
-// The segment write-up panel takes the empty space beside the thumbnails. It
-// runs from just under the nav row to the footer rule: the nav is in its light
-// tone on this page and the footer rule is red, so neither survives being
-// painted over in red.
+// The segment write-up panel takes the empty space beside the thumbnails. The
+// client asked for it to run the whole height of the page, under the nav row,
+// as the red panel does on the project view, so it sits below the nav (z-50)
+// and the footer (z-30) and lets both paint over it. Only the text is inset,
+// clear of the nav above and the footer rule below.
 const PANEL_PAD = 60;
-const PANEL_TOP = NAV_TOP + NAV_BAR_H + 34;
+const TEXT_TOP = NAV_TOP + NAV_BAR_H + 34;
 
 function areaLabel(areaSqft) {
   return areaSqft ? `${areaSqft.toLocaleString('en-IN')} Sq.Ft Area` : '0000 Sq.Ft Area';
@@ -116,7 +117,7 @@ export default function PortfolioCategoryPage() {
     <div className="relative min-h-screen bg-icp-paper font-brand text-icp-slate">
       <style>{slideStyles}</style>
       <EdgeBars />
-      <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="light" />
+      <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="light" leftTone={showPanel ? 'red' : 'light'} />
 
       {/* The studio's write-up for this segment, in the red panel R4 uses on
           the project view, carrying the studio's copy for the whole segment. */}
@@ -126,13 +127,16 @@ export default function PortfolioCategoryPage() {
         onMouseEnter={hoverable ? cancelClose : undefined}
         onMouseLeave={hoverable ? scheduleClose : undefined}
         className={[
-          'fixed z-20 overflow-hidden bg-icp-red text-white',
-          'transition-opacity duration-500 ease-in-out',
+          'fixed inset-y-0 z-20 overflow-hidden bg-icp-red text-white',
+          'transition-opacity duration-300 ease-in-out',
           showPanel ? 'opacity-100' : 'pointer-events-none opacity-0',
         ].join(' ')}
-        style={{ left: u(EDGE_BAR), width: panelW, top: v(PANEL_TOP), bottom: v(FOOTER_H) }}
+        style={{ left: u(EDGE_BAR), width: panelW }}
       >
-        <div className="scroll-slim h-full overflow-y-auto">
+        <div
+          className="scroll-slim absolute inset-x-0 overflow-y-auto"
+          style={{ top: v(TEXT_TOP), bottom: v(FOOTER_H) }}
+        >
           <div
             className="flex min-h-full flex-col justify-center"
             style={{
