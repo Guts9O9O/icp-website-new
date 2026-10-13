@@ -16,8 +16,10 @@ const CAP = '0.72em';
 // asked for in the written feedback.
 const bar = { width: u(EDGE_BAR), height: v(NAV_BAR_H) };
 // R3 draws the divider the same height as the bars (59 design px), not the
-// height of the capitals; the client asked for it thicker than the PDF's 1.6.
-const divider = { width: `max(2px, ${u(4)})`, height: v(NAV_BAR_H) };
+// height of the capitals. The client asked for it thicker than the PDF's 1.6,
+// then (Oct 2026) for half of that again — it was reading as a block rather
+// than a rule.
+const divider = { width: `max(1px, ${u(2)})`, height: v(NAV_BAR_H) };
 
 /**
  * Top nav shared by every inner page (R3):
@@ -41,19 +43,20 @@ export default function SiteNav({
   // the pale background at the far right, keeps the light one.
   leftTone = tone,
 }) {
-  // White reads on both the dark pages and the red bar; the pale pages take
-  // the brand red. Hovering moves to red — except on the red bar itself, where
-  // that would make the link disappear, so it dims to mist instead.
-  // On the pale pages the title carries the red and the surrounding links step
-  // back into the brand grey, as they do on the home page. Mist itself would be
-  // unreadable on #EBE9E6, so this is the darker grey of the same family.
+  // Over red, R4 sets the whole row in the off-white #EBE9E6 rather than pure
+  // white — measured off its pages 7 and 10, where every nav item is that one
+  // colour. White reads on the photography and the taupe; the pale pages take
+  // the brand red. Hovering moves to red — except on red itself, where that
+  // would make the link disappear, so it dims to mist instead.
   const ink = (t) => ({
-    text: t === 'light' ? 'text-icp-taupe' : 'text-white',
-    titleInk: t === 'light' ? 'text-icp-red' : 'text-white',
+    text: t === 'light' ? 'text-icp-taupe' : t === 'red' ? 'text-icp-paper' : 'text-white',
+    titleInk: t === 'light' ? 'text-icp-red' : t === 'red' ? 'text-icp-paper' : 'text-white',
     textHover: t === 'light' ? 'hover:text-icp-taupe' : t === 'red' ? 'hover:text-icp-mist' : 'hover:text-icp-red',
     // The crumb matches the rest of the nav — it is told apart from the page
-    // title by size, not by colour. In red it was nearly illegible on taupe.
-    crumbText: t === 'light' ? 'text-icp-slate' : 'text-white',
+    // title by size, not by colour. R4's page 9 draws the whole row on a pale
+    // background in the brand red, the crumb with it; on taupe red was nearly
+    // illegible, so only the pale pages take it.
+    crumbText: t === 'light' ? 'text-icp-red' : t === 'red' ? 'text-icp-paper' : 'text-white',
     crumbHover: t === 'red' ? 'hover:text-icp-mist' : 'hover:text-icp-red',
     // The closing bar is red everywhere but on the red bar, where R3 shows mist.
     endBar: t === 'red' ? 'bg-icp-mist' : 'bg-icp-red',

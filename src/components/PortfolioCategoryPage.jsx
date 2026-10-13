@@ -19,12 +19,12 @@ const slideStyles = `
 const PAGE_SIZE = 5;
 
 // Column geometry from R3 (design px).
-const COL_W = 229.81;
+const COL_W = 189.6; // R4 p9 column pitch, measured — R3 drew them at 229.81
 const COL_H = 788;
 const COL_TOP = 500;
 const PHOTO_TOP = 43;
 const PHOTO_H = 620; // client: the thumbnails should stand taller than R3's 509
-const RULE_H = 6;
+const RULE_H = 4.8; // R4 p9 measures 4.79
 const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
 
 // The segment write-up panel takes the empty space beside the thumbnails. The
@@ -34,10 +34,6 @@ const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
 // clear of the nav above and the footer rule below.
 const PANEL_PAD = 60;
 const TEXT_TOP = NAV_TOP + NAV_BAR_H + 34;
-
-function areaLabel(areaSqft) {
-  return areaSqft ? `${areaSqft.toLocaleString('en-IN')} Sq.Ft Area` : '0000 Sq.Ft Area';
-}
 
 // Project listing for one portfolio category: /portfolio/:category
 export default function PortfolioCategoryPage() {
@@ -86,8 +82,11 @@ export default function PortfolioCategoryPage() {
     const measure = () => {
       const row = rowRef.current;
       if (!row) return;
+      // Right up to the thumbnails: the panel starts one gutter in, so its
+      // width is the whole run from there to the row. Stopping a second gutter
+      // short left a pale stripe between the red and the photographs.
       const gutter = (EDGE_BAR / 2560) * window.innerWidth;
-      setPanelW(Math.max(0, row.getBoundingClientRect().left - gutter * 2));
+      setPanelW(Math.max(0, row.getBoundingClientRect().left - gutter));
     };
     measure();
     window.addEventListener('resize', measure);
@@ -204,7 +203,6 @@ export default function PortfolioCategoryPage() {
                     {project.name}
                   </p>
                   <p>{project.location}</p>
-                  <p>{areaLabel(project.areaSqft)}</p>
                 </div>
               </div>
             ))}
