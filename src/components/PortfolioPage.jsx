@@ -8,25 +8,21 @@ import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
 import { useSeo } from '../lib/seo';
 
-// Bespoke Elements is three chandeliers stacked down one ceiling, and the
-// client wants all three to read on every screen, which `object-cover` cannot
-// promise: a tall window fills the column's height and crops the chandeliers'
-// sides, a wide one fills its width and crops the lowest chandelier away. That
-// strip instead keeps the column's full width but never gets wider than 0.375
-// of its height — the proportion of the screenshot the client held up as right
-// — and any room left over is the ceiling's brown, sampled off the photograph.
+// Bespoke Elements is three chandeliers stacked down one ceiling, the lowest
+// right at the photograph's foot, and the client wants all three on every
+// screen. `object-cover` fills a column wider than the photograph by its width
+// and crops that lowest chandelier away — which is what a 16:9 screen showed.
+// So the strip always runs the column's full height: a narrow column crops its
+// sides, as in the screenshot the client held up as right, and a wider one
+// leaves room either side, filled with the ceiling's brown (the median of the
+// photograph's own edges).
 const CHANDELIERS = 'bespoke-elements';
-const CEILING = '#80542f';
-const STRIP_W = 'min(100cqw, 37.5cqh)';
+const CEILING = '#7d5028';
 // The strip's edges fade into that brown across whatever gap it leaves, and not
-// at all where it meets the column, so on the client's reference screen nothing
-// changes. 316cqw is the strip's height at the column's full width (570x1801).
-const SIDE_FADE = 'clamp(0px, (100cqw - 37.5cqh) / 2, 48px)';
-const END_FADE = 'clamp(0px, (100cqh - 316cqw) / 2, 96px)';
-const FEATHER = [
-  `linear-gradient(to right, transparent, #000 ${SIDE_FADE}, #000 calc(100% - ${SIDE_FADE}), transparent)`,
-  `linear-gradient(to bottom, transparent, #000 ${END_FADE}, #000 calc(100% - ${END_FADE}), transparent)`,
-].join(', ');
+// at all when the strip overflows the column. 31.6cqh is the strip's width at
+// the column's full height (the photograph is 570x1801).
+const SIDE_FADE = 'clamp(0px, (100cqw - 31.6cqh) / 2, 48px)';
+const FEATHER = `linear-gradient(to right, transparent, #000 ${SIDE_FADE}, #000 calc(100% - ${SIDE_FADE}), transparent)`;
 
 /**
  * Category columns fill the page top to bottom (R4), each carrying its own
@@ -84,14 +80,8 @@ export default function PortfolioPage() {
                 <img
                   src={item.image}
                   alt={item.label}
-                  className="absolute left-1/2 top-1/2 h-auto max-w-none -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    width: STRIP_W,
-                    WebkitMaskImage: FEATHER,
-                    maskImage: FEATHER,
-                    WebkitMaskComposite: 'source-in',
-                    maskComposite: 'intersect',
-                  }}
+                  className="absolute left-1/2 top-0 h-full w-auto max-w-none -translate-x-1/2"
+                  style={{ WebkitMaskImage: FEATHER, maskImage: FEATHER }}
                 />
               </div>
             ) : (
