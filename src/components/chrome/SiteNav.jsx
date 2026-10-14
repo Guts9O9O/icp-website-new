@@ -66,6 +66,12 @@ export default function SiteNav({
   });
   const left = ink(leftTone);
   const right = ink(tone);
+  // The red marks where you are, so only the last item in the trail carries
+  // it. On /portfolio the title is the page and takes the red; one level down,
+  // on /portfolio/hospitality, the title is an ancestor and steps back to the
+  // grey of "Home" while the crumb takes the red. Over red the whole row is
+  // one off-white, so there is nothing to step back from.
+  const titleInk = leftTone === 'light' && crumb ? left.text : left.titleInk;
   return (
     <header
       className="pointer-events-none fixed left-0 right-0 z-50 flex items-baseline justify-between"
@@ -86,13 +92,13 @@ export default function SiteNav({
             {titleTo ? (
               <Link
                 to={titleTo}
-                className={`t-title leading-none transition-colors ${left.titleInk} hover:text-icp-taupe`}
+                className={`t-title leading-none transition-colors ${titleInk} hover:text-icp-taupe`}
                 style={{ marginLeft: u(18) }}
               >
                 {title}
               </Link>
             ) : (
-              <span className={`t-title leading-none transition-colors ${left.titleInk}`} style={{ marginLeft: u(18) }}>
+              <span className={`t-title leading-none transition-colors ${titleInk}`} style={{ marginLeft: u(18) }}>
                 {title}
               </span>
             )}
