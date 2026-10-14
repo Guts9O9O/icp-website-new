@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import site from './src/data/site.js';
 
 // Dev-only stand-in for the Google Apps Script enquiry endpoint. It applies
 // the same rules as apps-script/Code.gs, logs the enquiry to the terminal,
@@ -38,6 +39,18 @@ function enquiryMock(env) {
     return res.ok ? 'saved to CMS' : `CMS insert failed: ${res.status}`;
   }
 
+  // The inbox the real script would email, from the same contact settings.
+  async function recipientFor(subject) {
+    const url = env.VITE_SUPABASE_URL;
+    const key = env.VITE_SUPABASE_ANON_KEY;
+    let contact = site;
+    if (url && key) {
+      const res = await fetch(`${url}/rest/v1/site_settings?select=value&key=eq.contact`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+      if (res.ok) contact = (await res.json())[0]?.value ?? site;
+    }
+    return (subject === 'Design Request' && contact.designEmail) || contact.email;
+  }
+
   return {
     name: 'icp-enquiry-mock',
     apply: 'serve',
@@ -66,7 +79,8 @@ function enquiryMock(env) {
           if (/^fail@/.test(p.email)) return reply({ ok: false, error: 'Something went wrong on our side. Please email us directly.' });
           const kind = kindOf(p.subject);
           const mirrored = await mirrorToCms(p, kind).catch((e) => `CMS insert error: ${e.message}`);
-          console.log(`\n[enquiry mock] ${kind}: ${p.subject}${p.detail ? ' / ' + p.detail : ''} from ${p.name} <${p.email}> — sheet row + emails would be sent; ${mirrored}`);
+          const to = await recipientFor(p.subject).catch((e) => `(lookup failed: ${e.message})`);
+          console.log(`\n[enquiry mock] ${kind}: ${p.subject}${p.detail ? ' / ' + p.detail : ''} from ${p.name} <${p.email}> — would email ${to}; ${mirrored}`);
           reply({ ok: true, kind });
         });
       });

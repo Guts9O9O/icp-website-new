@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import * as api from '../api';
 import { Button, Card, Field, Input, PageHeader, Spinner, Textarea, errorMessage, useToast } from '../components/ui';
 import RichTextEditor from '../components/RichTextEditor';
+import { EMAIL } from '../../lib/enquiry';
 
 const ABOUT_DEFAULT = { title: 'About iC+P', text: '' };
 const FORMAT_HINT = 'Use the buttons above, or Ctrl+B and Ctrl+I. Headings are set in capitals to match the rest of the site. Sizes are Heading / Normal / Small rather than a number, so the text keeps scaling correctly on every screen.';
 const CONTACT_DEFAULT = {
   phone: '',
   email: '',
+  designEmail: '',
   addressLines: ['', ''],
   socials: [
     { name: 'Instagram', href: '', icon: '/images/icons/Insta.png', iconHover: '/images/icons/Insta_C.png' },
@@ -59,12 +61,21 @@ export default function SettingsPage() {
   };
 
   const saveContact = async () => {
+    // These two addresses decide where enquiries are emailed, so a typo would
+    // lose them; the studio address is required, the design one optional.
+    const email = contact.email.trim();
+    const designEmail = contact.designEmail.trim();
+    if (!EMAIL.test(email) || (designEmail && !EMAIL.test(designEmail))) {
+      toast.error('Please check the email addresses — enquiries are sent to them.');
+      return;
+    }
     setSaving('contact');
     try {
       await api.setSetting('contact', {
         ...contact,
         phone: contact.phone.trim(),
-        email: contact.email.trim(),
+        email,
+        designEmail,
         addressLines: contact.addressLines.map((l) => l.trim()).filter(Boolean),
         socials: contact.socials.map((s) => ({ ...s, href: s.href.trim() || '#' })),
       });
@@ -114,7 +125,13 @@ export default function SettingsPage() {
         <h2 className="text-[16px] font-semibold">Enquiry page — contact details</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Phone"><Input value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} /></Field>
-          <Field label="Email"><Input type="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} /></Field>
+          <div className="hidden sm:block" />
+          <Field label="Studio email" hint="Receives staff recruitment and other enquiries, and is shown on the Enquiry page for those subjects.">
+            <Input type="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />
+          </Field>
+          <Field label="Design request email" hint="Receives design requests, and is shown on the Enquiry page when a visitor picks Design Request. Leave empty to use the studio email.">
+            <Input type="email" value={contact.designEmail} onChange={(e) => setContact({ ...contact, designEmail: e.target.value })} />
+          </Field>
         </div>
         <Field label="Address line 1"><Input value={contact.addressLines[0] ?? ''} onChange={(e) => setContact({ ...contact, addressLines: [e.target.value, contact.addressLines[1] ?? ''] })} /></Field>
         <Field label="Address line 2"><Input value={contact.addressLines[1] ?? ''} onChange={(e) => setContact({ ...contact, addressLines: [contact.addressLines[0] ?? '', e.target.value] })} /></Field>

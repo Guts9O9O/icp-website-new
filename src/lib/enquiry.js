@@ -14,7 +14,17 @@ export const SUBJECTS = {
   Other: [],
 };
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Which inbox handles a subject. Both addresses live in the site settings
+// (admin → Site text & contact): design requests go to the design inbox,
+// everything else — recruitment and "Other" — to the studio's own.
+// apps-script/Code.gs makes the same choice from the same settings when it
+// sends the email, so the address shown for a subject is the one it reaches.
+export function enquiryEmail(subject, contact) {
+  if (!contact) return '';
+  return (subject === 'Design Request' && contact.designEmail) || contact.email;
+}
+
+export const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // Client-side checks mirror the server's, so most mistakes are caught before sending.
 export function validateEnquiry(form) {

@@ -10,7 +10,9 @@
  * For every submission the script:
  *   1. validates it (required fields, email format, honeypot, rate limit),
  *   2. appends a row to that kind's Google Sheet,
- *   3. emails the studio (reply-to = the sender),
+ *   3. emails the studio (reply-to = the sender): design requests to the
+ *      design address, everything else to the studio address, both set in the
+ *      website admin (see recipientFor),
  *   4. emails the sender a short acknowledgement,
  *   5. mirrors it into the website CMS (Supabase) so it shows in the admin.
  *
@@ -18,8 +20,8 @@
  * stores their IDs), then `sendTestEnquiry()`. See SETUP.md.
  *
  * Script properties (Project Settings → Script properties):
- *   NOTIFY_TO_LEADS        emails for leads, e.g. studio@icp.firm.in (comma-separated ok)
- *   NOTIFY_TO_RECRUITMENT  emails for job applications (defaults to NOTIFY_TO_LEADS)
+ *   NOTIFY_TO_LEADS        fallback for leads when the website database cannot be read
+ *   NOTIFY_TO_RECRUITMENT  fallback for job applications (defaults to NOTIFY_TO_LEADS)
  *   FROM_NAME              sender name on emails (default: iConcepts + Partners)
  *   STUDIO_PHONE           shown in the acknowledgement email (optional)
  *   LEADS_SHEET_ID / RECRUITMENT_SHEET_ID   set automatically by setup()
@@ -160,6 +162,51 @@ function settings(kind) {
   };
 }
 
+// Who an enquiry is emailed to. The website's admin holds the addresses (Site
+// text & contact): design requests go to `designEmail`, everything else to the
+// studio `email`, and the Enquiry page shows the same choice — so the address a
+// visitor sees for a subject is the one that subject reaches. The address is
+// never taken from the form itself, or anyone could aim the form at any inbox.
+// If the website database cannot be reached, the NOTIFY_TO_… properties still
+// deliver it.
+function recipientFor(entry) {
+  return pickRecipient(entry.subject, siteContact()) || settings(entry.kind).notifyTo;
+}
+
+// Pure, so apps-script/test.mjs can check it.
+function pickRecipient(subject, contact) {
+  contact = contact || {};
+  var candidates = subject === 'Design Request' ? [contact.designEmail, contact.email] : [contact.email];
+  for (var i = 0; i < candidates.length; i++) {
+    var to = String(candidates[i] || '').trim();
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)) return to;
+  }
+  return '';
+}
+
+// The contact settings, read fresh for each enquiry so a change in the admin
+// applies to the very next one. Enquiries are few; the lookup is cheap.
+function siteContact() {
+  var url = props().getProperty('SUPABASE_URL');
+  var key = props().getProperty('SUPABASE_SERVICE_KEY');
+  if (!url || !key) return null;
+  try {
+    var res = UrlFetchApp.fetch(url.replace(/\/$/, '') + '/rest/v1/site_settings?select=value&key=eq.contact', {
+      headers: { apikey: key, Authorization: 'Bearer ' + key },
+      muteHttpExceptions: true,
+    });
+    if (res.getResponseCode() >= 300) {
+      console.error('Contact lookup failed: ' + res.getResponseCode() + ' ' + res.getContentText());
+      return null;
+    }
+    var rows = JSON.parse(res.getContentText());
+    return rows.length ? rows[0].value : null;
+  } catch (err) {
+    console.error('Contact lookup failed: ' + err);
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Rate limiting (CacheService: per-email/hour; PropertiesService: per-day)
 // ---------------------------------------------------------------------------
@@ -264,7 +311,7 @@ function notifyStudio(entry) {
     ' directly. A copy is saved in the “' + KINDS[entry.kind].title + '” sheet and in the website admin.</p></div>';
 
   MailApp.sendEmail({
-    to: s.notifyTo,
+    to: recipientFor(entry),
     replyTo: entry.email,
     name: s.fromName + ' website',
     subject: subject,
@@ -341,7 +388,9 @@ function setup() {
   if (!p.getProperty('NOTIFY_TO_LEADS')) p.setProperty('NOTIFY_TO_LEADS', Session.getEffectiveUser().getEmail());
   Logger.log('Leads sheet:       ' + leads.getUrl());
   Logger.log('Recruitment sheet: ' + jobs.getUrl());
-  Logger.log('Notifications go to: ' + settings('lead').notifyTo + ' (leads), ' + settings('recruitment').notifyTo + ' (recruitment)');
+  Object.keys(SUBJECTS).forEach(function (subject) {
+    Logger.log(subject + ' enquiries go to: ' + recipientFor({ subject: subject, kind: kindOf(subject) }));
+  });
 }
 
 function sendTestEnquiry() {

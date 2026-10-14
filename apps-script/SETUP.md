@@ -4,10 +4,16 @@ The website's enquiry form posts to a small Google Apps Script that runs inside
 the studio's Google account (studio@icp.firm.in). Every submission is sorted
 into one of two kinds:
 
-| Subject on the form                | Kind        | Google Sheet            | Emails go to                              | Admin page  |
-|------------------------------------|-------------|-------------------------|-------------------------------------------|-------------|
-| Design Request, Other              | lead        | **Website Leads**       | `NOTIFY_TO_LEADS`                          | Leads       |
-| Staff Recruitment                  | recruitment | **Website Recruitment** | `NOTIFY_TO_RECRUITMENT` (falls back to leads) | Recruitment |
+| Subject on the form | Kind        | Google Sheet            | Emails go to                          | Admin page  |
+|---------------------|-------------|-------------------------|---------------------------------------|-------------|
+| Design Request      | lead        | **Website Leads**       | the *Design request email* in the admin | Leads       |
+| Other               | lead        | **Website Leads**       | the *Studio email* in the admin         | Leads       |
+| Staff Recruitment   | recruitment | **Website Recruitment** | the *Studio email* in the admin         | Recruitment |
+
+Both addresses are set in the website admin (**Site text & contact**), and the
+Enquiry page shows the one the visitor's chosen subject goes to. The script
+reads them from the website database for every enquiry; if it ever cannot, it
+falls back to the `NOTIFY_TO_…` script properties below, so nothing is lost.
 
 For each submission the script appends a sheet row, emails the studio (reply-to
 = the visitor), sends the visitor an acknowledgement, and mirrors the entry
@@ -70,8 +76,8 @@ Now do **"Finish in the editor"** below.
 
    | Property                | Value                                                            |
    |-------------------------|------------------------------------------------------------------|
-   | `NOTIFY_TO_LEADS`       | who receives design enquiries, e.g. `studio@icp.firm.in` (comma-separated for several) |
-   | `NOTIFY_TO_RECRUITMENT` | who receives job applications (leave out to use the leads address) |
+   | `NOTIFY_TO_LEADS`       | fallback for leads if the website database cannot be read, e.g. `studio@icp.firm.in` |
+   | `NOTIFY_TO_RECRUITMENT` | fallback for job applications (leave out to use the leads address) |
    | `STUDIO_PHONE`          | `+91 99 8792 1441` — shown in the acknowledgement email           |
    | `SUPABASE_URL`          | the website database URL (developer supplies)                     |
    | `SUPABASE_SERVICE_KEY`  | the website database service key (developer supplies; keep private) |
@@ -88,7 +94,8 @@ Now do **"Finish in the editor"** below.
 
 ## Day to day
 
-- **Change who gets the emails:** edit the `NOTIFY_TO_…` script properties. No redeploy.
+- **Change who gets the emails:** edit the two addresses in the website admin
+  (**Site text & contact**). The next enquiry goes to the new address. No redeploy.
 - **Share the sheets:** they are normal Google Sheets in Drive — share the
   recruitment sheet with whoever handles hiring without exposing leads.
 - **Change email wording:** edit `Code.gs`, then **Deploy → Manage deployments

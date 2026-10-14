@@ -6,10 +6,10 @@ import assert from 'node:assert/strict';
 const src = await readFile(new URL('./Code.gs', import.meta.url), 'utf8');
 const sandbox = {};
 new Function('ContentService', 'CacheService', 'PropertiesService', 'SpreadsheetApp', 'MailApp', 'Session', 'Utilities', 'console',
-  src + '\nthis.validate = validate; this.parseBody = parseBody; this.escapeHtml = escapeHtml; this.SUBJECTS = SUBJECTS; this.kindOf = kindOf;'
+  src + '\nthis.validate = validate; this.parseBody = parseBody; this.escapeHtml = escapeHtml; this.SUBJECTS = SUBJECTS; this.kindOf = kindOf; this.pickRecipient = pickRecipient;'
 ).call(sandbox, {}, {}, {}, {}, {}, {}, {}, console);
 
-const { validate, parseBody, escapeHtml, kindOf } = sandbox;
+const { validate, parseBody, escapeHtml, kindOf, pickRecipient } = sandbox;
 const good = { subject: 'Design Request', detail: 'Hospitality', name: ' Asha ', company: 'X', email: 'Asha@Example.com', zip: '400068', address1: 'Line 1', address2: 'Line 2', requirement: 'Need a lobby redesign.' };
 
 let n = 0;
@@ -47,6 +47,19 @@ t('parseBody prefers JSON body, falls back to form params', () => {
   assert.deepEqual(parseBody({ postData: { contents: '{"a":1}' } }), { a: 1 });
   assert.deepEqual(parseBody({ postData: { contents: 'not json' }, parameter: { b: 2 } }), { b: 2 });
   assert.deepEqual(parseBody(undefined), {});
+});
+t('design requests go to the design inbox, everything else to the studio', () => {
+  const contact = { email: 'studio@icp.firm.in', designEmail: 'imran@icp.firm.in' };
+  assert.equal(pickRecipient('Design Request', contact), 'imran@icp.firm.in');
+  assert.equal(pickRecipient('Staff Recruitment', contact), 'studio@icp.firm.in');
+  assert.equal(pickRecipient('Other', contact), 'studio@icp.firm.in');
+});
+t('no usable design address falls back to the studio, nothing usable to the properties', () => {
+  assert.equal(pickRecipient('Design Request', { email: 'studio@icp.firm.in' }), 'studio@icp.firm.in');
+  assert.equal(pickRecipient('Design Request', { email: 'studio@icp.firm.in', designEmail: 'not an email' }), 'studio@icp.firm.in');
+  assert.equal(pickRecipient('Design Request', { designEmail: ' imran@icp.firm.in ' }), 'imran@icp.firm.in');
+  assert.equal(pickRecipient('Staff Recruitment', { designEmail: 'imran@icp.firm.in' }), '');
+  assert.equal(pickRecipient('Design Request', null), '');
 });
 t('escapeHtml neutralises markup', () => assert.equal(escapeHtml('<b>"x" & \'y\'</b>'), '&lt;b&gt;&quot;x&quot; &amp; &#39;y&#39;&lt;/b&gt;'));
 

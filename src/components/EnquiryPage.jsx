@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef, useState } from 'react';
 import { getSite } from '../lib/api';
-import { SUBJECTS, sendEnquiry, validateEnquiry } from '../lib/enquiry';
+import { SUBJECTS, enquiryEmail, sendEnquiry, validateEnquiry } from '../lib/enquiry';
 import { useData } from '../lib/useData';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { PORTRAIT_QUERY, fs, u, v } from '../lib/units';
@@ -141,6 +141,8 @@ export default function EnquiryPage() {
     openedAt.current = Date.now();
   }, []);
   const detailOptions = SUBJECTS[form.subject] ?? [];
+  // The address follows the subject, so it is the inbox this enquiry reaches.
+  const email = enquiryEmail(form.subject, site);
 
   const set = (key) => (e) => {
     const value = e.target.value;
@@ -285,7 +287,7 @@ export default function EnquiryPage() {
             )}
             {status.state === 'error' && (
               <p className="text-icp-red" style={{ fontSize: fs(16, 12) }} role="alert">
-                {status.message} {site?.email && <>You can also email us at <a href={`mailto:${site.email}`} className="underline">{site.email}</a>.</>}
+                {status.message} {email && <>You can also email us at <a href={`mailto:${email}`} className="underline">{email}</a>.</>}
               </p>
             )}
             <button
@@ -312,8 +314,8 @@ export default function EnquiryPage() {
             </div>
             <div className="flex items-center" style={{ gap: u(42), marginBottom: v(portrait ? 20 : 34) }}>
               <ContactIcon src="/images/icons/Email.png" alt="" />
-              <a href={`mailto:${site.email}`} className="hover:text-icp-red">
-                {site.email}
+              <a href={`mailto:${email}`} className="hover:text-icp-red">
+                {email}
               </a>
             </div>
             <div className="flex items-center" style={{ gap: u(42), marginBottom: v(portrait ? 20 : 60) }}>

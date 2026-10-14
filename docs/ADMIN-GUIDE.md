@@ -92,6 +92,10 @@ something off the website without deleting it.
   portfolio category page.
 - **Contact details:** phone, email, address and the Instagram / LinkedIn /
   Pinterest links on the Enquiry page.
+- **Studio email / Design request email:** where enquiries are emailed. Design
+  requests go to the design request email; staff recruitment and other
+  enquiries go to the studio email. The Enquiry page shows whichever one the
+  visitor's chosen subject goes to, and a change applies to the next enquiry.
 
 ---
 
