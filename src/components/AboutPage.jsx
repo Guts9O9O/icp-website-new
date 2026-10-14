@@ -80,8 +80,13 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
             ) : (
               <div className="h-full w-full bg-icp-mist/40" />
             )}
+            {/* 75%, which is what R4 measures. The band is transparent, so how
+                it reads depends on the photograph under it — at 50% a pale
+                shirt lifted one band well clear of the other two (59 levels
+                apart, against R4's own ~20). Three quarters halves the
+                photograph's share and brings them back together. */}
             <div
-              className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-icp-red/50 text-center text-white"
+              className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-icp-red/75 text-center text-white"
               style={{ height: v(NAME_H), fontSize: fs(14, 11), letterSpacing: '0.12em' }}
             >
               <span>
