@@ -46,19 +46,22 @@ const CATEGORY_RULE = 'border-r border-r-icp-mist';
 // 2:1 file reads right by default whether it is a wordmark or an emblem.
 const LOGO_BOX_W = 84; // cqw
 const LOGO_BOX_H = 111; // cqh
-// The rest of that markup, as factors on the fit above. AVI, PSP and Dark
-// Temptations were asked +25% and Nixon +10%. CCI was left as it was, and
-// Wadhwa, Ozone and Ashwin Sheth asked only +10%, so the taller box is taken
-// back off them. Keyed by client name; any other logo takes the plain fit.
+// Logos the studio then set by eye on its marked-up screenshots, as factors
+// on the fit above. Keyed by client name; any other logo takes the plain fit.
 const LOGO_SCALE = {
   'AVI Worldwide Pvt Ltd': 1.25,
   'PSP Laser Tech Pvt. Ltd': 1.25,
   'Dark Temptations': 1.25,
-  Nixon: 1.1,
-  'CCI Projects': 0.88,
+  'Aamby Valley': 1.2,
+  'Ashwin Sheth': 0.78,
   'The Wadhwa Group': 0.79,
   'Ozone Group': 0.79,
-  'Ashwin Sheth': 0.65,
+  Nixon: 0.77,
+  Hilton: 0.7,
+  'Travel Food Services': 0.7,
+  'Indiabulls Real Estate': 0.7,
+  'PRA Realty India Pvt. Ltd': 0.7,
+  'CCI Projects': 0.62,
 };
 
 function Logo({ src, name }) {
