@@ -3,6 +3,7 @@
 // unpublished rows from anonymous visitors; the explicit `published` filters
 // keep admin previews out of the public site when an admin is signed in.
 import { mediaUrl, supabase } from './supabase';
+import { NOT_CLIENT_CATEGORIES } from '../data/clients';
 
 const bySortOrder = (a, b) => a.sort_order - b.sort_order;
 
@@ -99,7 +100,7 @@ export async function getClientGroups() {
     getCategories(),
     unwrap(await supabase.from('clients').select('*').eq('published', true).order('sort_order')),
   ]);
-  return categories.map((category) => ({
+  return categories.filter((c) => !NOT_CLIENT_CATEGORIES.includes(c.slug)).map((category) => ({
     category: category.slug,
     label: category.label,
     items: clients

@@ -103,8 +103,8 @@ export default function ClientsPage() {
       <SiteNav title="Clients" tone="red" />
 
       <main
-        // Follows the number of categories rather than assuming four, which is
-        // what dropped Bespoke Elements onto a row of its own.
+        // Follows the number of client categories rather than hard-coding four,
+        // so a category added in the admin never drops onto a row of its own.
         className="absolute grid tall:!grid-cols-2"
         style={{
           top: v(GRID_TOP),

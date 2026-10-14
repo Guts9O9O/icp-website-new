@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as api from '../api';
+import { NOT_CLIENT_CATEGORIES } from '../../data/clients';
 import { ACCEPT_LOGOS, prepareLogo, previewUrl } from '../images';
 import ImageDrop from '../components/ImageDrop';
 import { Badge, Button, Card, Field, Input, PageHeader, Select, Spinner, Textarea, Toggle, errorMessage, useConfirm, useToast } from '../components/ui';
@@ -79,7 +80,10 @@ export default function ClientsPage() {
   const [categories, setCategories] = useState([]);
   const [editing, setEditing] = useState(null);
 
-  const load = () => Promise.all([api.listRows(TABLE), api.listCategories()]).then(([r, c]) => { setRows(r); setCategories(c); }).catch((e) => toast.error(errorMessage(e)));
+  const load = () =>
+    Promise.all([api.listRows(TABLE), api.listCategories()])
+      .then(([r, c]) => { setRows(r); setCategories(c.filter((cat) => !NOT_CLIENT_CATEGORIES.includes(cat.slug))); })
+      .catch((e) => toast.error(errorMessage(e)));
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps

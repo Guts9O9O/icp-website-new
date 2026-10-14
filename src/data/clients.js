@@ -1,3 +1,8 @@
+// Portfolio categories that are not client sectors. Bespoke Elements is a
+// segment of the studio's work, not a kind of client, and the client asked for
+// it off the Clients page so the grid stays at R3's four columns.
+export const NOT_CLIENT_CATEGORIES = ['bespoke-elements'];
+
 // Client logos grouped by portfolio category, in the order they appear in the
 // R3 grid (two columns per category, row by row). Image cells reference
 // /public/images/clients; text cells are private clients without a logo.
