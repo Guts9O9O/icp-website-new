@@ -17,7 +17,7 @@ const COL_H = 675;
 const COL_TOP = 500;
 const PHOTO_H = 455;
 const NAME_H = 95;
-const RULE_H = 6;
+const RULE_H = 5; // R4 p4 measures 5.0 under each photograph
 const ABOUT_MARK_W = 75; // the supplied "abou+ iC+P" lockup, at the size the client asked for
 // R3 keeps the write-up in a fixed column on the left of the panel, centred
 // vertically, whichever card is open and however wide the panel grows.
@@ -66,8 +66,11 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
       ) : (
         <>
           {/* The team photographs are cut-outs, so the cell takes the page
-              colour and they sit on it rather than on a white card. */}
-          <div className="relative overflow-hidden bg-icp-paper" style={{ height: v(PHOTO_H) }}>
+              colour and they sit on it rather than on a white card. R4 runs the
+              photograph all the way down to the rule and lays the name band
+              across its foot, so the picture shows through the band — it is not
+              a separate block below the picture, which is what it had become. */}
+          <div className="relative overflow-hidden bg-icp-paper" style={{ height: v(PHOTO_H + NAME_H) }}>
             {member.image ? (
               <img
                 src={member.image}
@@ -77,15 +80,15 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
             ) : (
               <div className="h-full w-full bg-icp-mist/40" />
             )}
-          </div>
-          <div
-            className="flex items-center justify-center bg-icp-red/80 text-center text-white"
-            style={{ height: v(NAME_H), fontSize: fs(14, 11), letterSpacing: '0.12em' }}
-          >
-            <span>
-              {member.firstName}{' '}
-              <span className="font-semibold uppercase">{member.lastName}</span>
-            </span>
+            <div
+              className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-icp-red/50 text-center text-white"
+              style={{ height: v(NAME_H), fontSize: fs(14, 11), letterSpacing: '0.12em' }}
+            >
+              <span>
+                {member.firstName}{' '}
+                <span className="font-semibold uppercase">{member.lastName}</span>
+              </span>
+            </div>
           </div>
         </>
       )}
