@@ -23,6 +23,28 @@ const ABOUT_MARK_W = 75; // the supplied "abou+ iC+P" lockup, at the size the cl
 // vertically, whichever card is open and however wide the panel grows.
 const WRITEUP_W = 650;
 
+// The three photographs were not shot alike: Prachi's was taken from further
+// back, so her face came out about 17% smaller than the other two (by eye
+// spacing and by eye-to-chin alike) and her head started twice as far down.
+// The client asked for the faces to match and the tops of the heads to meet
+// one line. `headTop` is where the hair starts in each photograph, as a share
+// of its height; each is zoomed by `zoom` from the top and moved so that its
+// head starts at HEAD_LINE. Measured on the current photographs: a member who
+// uploads a new one should drop out of this list.
+const HEAD_LINE = 0.065;
+const PHOTO_FRAME = {
+  'Imran Khan': { headTop: 0.059, zoom: 1 },
+  'Prachi Laud': { headTop: 0.129, zoom: 1.17 },
+  'Archna Shinghal': { headTop: 0.071, zoom: 1 },
+};
+
+function photoFrame(member) {
+  const frame = PHOTO_FRAME[`${member.firstName} ${member.lastName}`];
+  if (!frame) return undefined;
+  const shift = (HEAD_LINE - frame.headTop * frame.zoom) * 100;
+  return { transformOrigin: 'top center', transform: `translateY(${shift}%) scale(${frame.zoom})` };
+}
+
 function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onToggle, hoverable, cardRef }) {
   return (
     <div
@@ -76,6 +98,7 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
                 src={member.image}
                 alt={`${member.firstName} ${member.lastName}`}
                 className="h-full w-full object-cover object-top"
+                style={photoFrame(member)}
               />
             ) : (
               <div className="h-full w-full bg-icp-mist/40" />
