@@ -10,19 +10,11 @@ import { useSeo } from '../lib/seo';
 
 // Bespoke Elements is three chandeliers stacked down one ceiling, the lowest
 // right at the photograph's foot, and the client wants all three on every
-// screen. `object-cover` fills a column wider than the photograph by its width
-// and crops that lowest chandelier away — which is what a 16:9 screen showed.
-// So the strip always runs the column's full height: a narrow column crops its
-// sides, as in the screenshot the client held up as right, and a wider one
-// leaves room either side, filled with the ceiling's brown (the median of the
-// photograph's own edges).
+// screen with nothing but the photograph in the column. A column wider than
+// the photograph (any 16:9 screen) makes `object-cover` crop top and bottom;
+// centred, that crop takes the lowest chandelier away. Kept to the foot, it
+// only trims the crown of the top one, which stays plainly a chandelier.
 const CHANDELIERS = 'bespoke-elements';
-const CEILING = '#7d5028';
-// The strip's edges fade into that brown across whatever gap it leaves, and not
-// at all when the strip overflows the column. 31.6cqh is the strip's width at
-// the column's full height (the photograph is 570x1801).
-const SIDE_FADE = 'clamp(0px, (100cqw - 31.6cqh) / 2, 48px)';
-const FEATHER = `linear-gradient(to right, transparent, #000 ${SIDE_FADE}, #000 calc(100% - ${SIDE_FADE}), transparent)`;
 
 /**
  * Category columns fill the page top to bottom (R4), each carrying its own
@@ -41,7 +33,7 @@ export default function PortfolioPage() {
   const list = categories ?? [];
   const open = (slug) => navigate(`/portfolio/${slug}`);
   // Portrait tablets lay the categories out in short, wide cells where three
-  // chandeliers cannot fit, so there the bespoke strip keeps the ordinary crop.
+  // chandeliers cannot fit, so there the bespoke photograph keeps the centred crop.
   const portrait = useMediaQuery(PORTRAIT_QUERY);
 
   return (
@@ -75,18 +67,11 @@ export default function PortfolioPage() {
               }
             }}
           >
-            {item.slug === CHANDELIERS && !portrait ? (
-              <div className="absolute inset-0 [container-type:size]" style={{ background: CEILING }}>
-                <img
-                  src={item.image}
-                  alt={item.label}
-                  className="absolute left-1/2 top-0 h-full w-auto max-w-none -translate-x-1/2"
-                  style={{ WebkitMaskImage: FEATHER, maskImage: FEATHER }}
-                />
-              </div>
-            ) : (
-              <img src={item.image} alt={item.label} className="absolute inset-0 h-full w-full object-cover" />
-            )}
+            <img
+              src={item.image}
+              alt={item.label}
+              className={`absolute inset-0 h-full w-full object-cover ${item.slug === CHANDELIERS && !portrait ? 'object-bottom' : ''}`}
+            />
             <div className="absolute inset-0 bg-icp-red/50 transition-transform duration-700 ease-in-out group-hover:-translate-x-full" />
             {idx < all.length - 1 && <div className="absolute inset-y-0 right-0 w-px bg-icp-mist/40" />}
             <div className="absolute inset-x-0 bottom-0 hidden h-px bg-icp-mist/40 tall:block" />
