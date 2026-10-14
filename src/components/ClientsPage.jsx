@@ -53,7 +53,7 @@ const LOGO_SCALE = {
   'PSP Laser Tech Pvt. Ltd': 1.25,
   'Dark Temptations': 1.25,
   'Aamby Valley': 1.2,
-  'Ashwin Sheth': 0.78,
+  'Ashwin Sheth': 0.94,
   'The Wadhwa Group': 0.79,
   'Ozone Group': 0.79,
   Nixon: 0.77,
