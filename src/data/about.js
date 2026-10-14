@@ -17,6 +17,7 @@ We believe true luxury lies not in extravagance, but in thoughtful composition, 
 Our design ethos is the foundation of everything we create — DESIGN TO LIVE
 
 OUR DISCIPLINES
+
 - INTERIOR DESIGN — Creating thoughtful, well-detailed and functional environments that enrich everyday experiences.
 - ARCHITECTURAL DESIGN — Shaping built forms through context, proportion, materiality and spatial harmony.
 - BESPOKE ELEMENTS — Crafting distinctive furniture, lighting and interior elements that brings character and individuality to every project.

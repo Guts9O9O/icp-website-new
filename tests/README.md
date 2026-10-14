@@ -68,3 +68,16 @@ result at some point:
   storage CDN (Firefox logs one per image) are tallied separately, so a real
   error is never buried. A suite that always reports errors is one nobody
   reads.
+
+## format_roundtrip.mjs
+
+The write-up format round trip: the plain text the About page, team bios and
+category introductions are stored in, through the admin's editor, and back.
+
+    node tests/format_roundtrip.mjs
+
+No browser and no database — the converters are pure, which is why the parsing
+half of the format lives in `src/lib/richTextParse.js` (plain JS) rather than
+in `richText.jsx`. The studio's own copy is their words, so a serialiser that
+quietly dropped a mark or a level would lose them; the last few checks parse
+the real About and category copy to catch exactly that.

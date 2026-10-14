@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import * as api from '../api';
 import { Button, Card, Field, Input, PageHeader, Spinner, Textarea, errorMessage, useToast } from '../components/ui';
+import RichTextEditor from '../components/RichTextEditor';
 
 const ABOUT_DEFAULT = { title: 'About iC+P', text: '' };
-const FORMAT_HINT = 'Write it like a document: a blank line starts a new paragraph; a line in CAPITALS on its own becomes a heading; start lines with "- " (or "1. ") for a list, and use "TITLE — text" inside a list line to make the title bold; wrap a paragraph in quotes for a highlighted quote.';
+const FORMAT_HINT = 'Use the buttons above, or Ctrl+B and Ctrl+I. Headings are set in capitals to match the rest of the site. Sizes are Heading / Normal / Small rather than a number, so the text keeps scaling correctly on every screen.';
 const CONTACT_DEFAULT = {
   phone: '',
   email: '',
@@ -85,7 +86,7 @@ export default function SettingsPage() {
         <h2 className="text-[16px] font-semibold">About Us — studio write-up</h2>
         <p className="text-[13px] text-icp-slate/60">Shown in the panel that slides out when a visitor hovers the “about iC+P” column.</p>
         <Field label="Write-up" hint={FORMAT_HINT}>
-          <Textarea rows={22} value={about.text} onChange={(e) => setAbout({ ...about, text: e.target.value })} className="font-mono text-[13px]" />
+          <RichTextEditor value={about.text} onChange={(text) => setAbout({ ...about, text })} minHeight={420} />
         </Field>
         <div className="flex justify-end">
           <Button variant="primary" onClick={saveAbout} disabled={saving === 'about'}>{saving === 'about' ? 'Saving…' : 'Save about text'}</Button>
@@ -94,10 +95,14 @@ export default function SettingsPage() {
 
       <Card className="mb-6 space-y-4 p-6">
         <h2 className="text-[16px] font-semibold">Portfolio — category introductions</h2>
-        <p className="text-[13px] text-icp-slate/60">Short text shown above the projects on each category page. Blank line between paragraphs.</p>
+        <p className="text-[13px] text-icp-slate/60">Shown in the red panel on each category page, when a visitor hovers one of its projects.</p>
         {categories.map((c, i) => (
           <Field key={c.slug} label={c.label}>
-            <Textarea rows={5} value={c.description ?? ''} onChange={(e) => setCategories(categories.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))} />
+            <RichTextEditor
+              value={c.description ?? ''}
+              onChange={(text) => setCategories(categories.map((x, j) => (j === i ? { ...x, description: text } : x)))}
+              minHeight={150}
+            />
           </Field>
         ))}
         <div className="flex justify-end">

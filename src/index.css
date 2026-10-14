@@ -131,3 +131,64 @@ textarea {
   white-space: nowrap;
   border-width: 0;
 }
+
+/* The admin's rich-text editor surface. These mirror how RichText draws the
+   same blocks on the public site, so what the studio types is what they get.
+   Sizes are relative (em), never fixed, for the same reason the site's are. */
+.icp-prose {
+  padding: 0.75rem;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--icp-slate);
+}
+.icp-prose > * + * {
+  margin-top: 0.9em;
+}
+.icp-prose h3 {
+  margin: 0;
+  font-size: 1em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.icp-prose p {
+  margin: 0;
+}
+.icp-prose p[data-small='true'] {
+  font-size: 0.86em;
+}
+.icp-prose strong {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+}
+.icp-prose ul,
+.icp-prose ol {
+  margin: 0;
+  padding-left: 1.4em;
+}
+.icp-prose ul {
+  list-style: disc;
+}
+.icp-prose ol {
+  list-style: decimal;
+}
+.icp-prose li > p {
+  margin: 0;
+}
+.icp-prose li + li {
+  margin-top: 0.45em;
+}
+.icp-prose blockquote {
+  margin: 0;
+  border-left: 2px solid var(--icp-red);
+  padding-left: 1em;
+  font-style: italic;
+}
+/* ProseMirror shows nothing for an empty document without this. */
+.icp-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: rgba(71, 67, 62, 0.4);
+  pointer-events: none;
+}

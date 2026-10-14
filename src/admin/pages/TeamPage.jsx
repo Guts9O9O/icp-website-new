@@ -3,6 +3,7 @@ import * as api from '../api';
 import { ACCEPT_PHOTOS, SIZES, previewUrl, toWebp } from '../images';
 import ImageDrop from '../components/ImageDrop';
 import { Badge, Button, Card, EmptyState, Field, Input, PageHeader, Spinner, Textarea, Toggle, errorMessage, useConfirm, useToast } from '../components/ui';
+import RichTextEditor from '../components/RichTextEditor';
 
 const TABLE = 'team_members';
 const EMPTY = { first_name: '', last_name: '', role_text: '', bio: '', published: true };
@@ -42,8 +43,8 @@ function MemberForm({ initial, onSave, onCancel, toast }) {
       <Field label="Role" hint="One line per row, e.g. Founder / & / Design Director — shown under the photo exactly as typed.">
         <Textarea rows={3} value={form.role_text} onChange={set('role_text')} placeholder={'Founder\n&\nDesign Director'} />
       </Field>
-      <Field label="Write-up" hint="Shown in the slide-out panel when a visitor hovers the photo. Blank line between paragraphs; a line in CAPITALS on its own (e.g. DESIGN PHILOSOPHY) becomes a heading; wrap a paragraph in quotes for a highlighted quote.">
-        <Textarea rows={12} value={form.bio} onChange={set('bio')} />
+      <Field label="Write-up" hint="Shown in the slide-out panel when a visitor hovers the photo. Use the buttons above, or Ctrl+B and Ctrl+I. Headings are set in capitals to match the rest of the site. Sizes are Heading / Normal / Small rather than a number, so the text keeps scaling correctly on every screen.">
+        <RichTextEditor value={form.bio} onChange={(bio) => setForm((f) => ({ ...f, bio }))} minHeight={260} />
       </Field>
       <div className="flex items-start gap-4">
         <div className="h-28 w-20 shrink-0 overflow-hidden rounded bg-[#efece8]">

@@ -1,52 +1,29 @@
-// A tiny document format for content written by non-technical admins:
-//   - a blank line starts a new paragraph
-//   - a line entirely in CAPITALS on its own is a heading (the brand name
-//     "iC+P" is allowed inside a heading)
-//   - lines starting with "- ", "• " or "1. " are list items; inside an item,
-//     "TITLE — text" (or "TITLE - text") makes TITLE bold
-//   - a paragraph wrapped in quotes (“…” or "…") is a pull-quote
-// Used for the About Us write-up, team bios and category introductions.
+// The rendering half of the write-up format; the parsing half lives in
+// richTextParse.js, which is plain JS so it can be imported and tested without
+// a build step.
+import { INLINE_RE, parseRichText } from './richTextParse.js';
 
-const LIST_RE = /^(?:[-•*]|\d+[.)])\s+/;
-const QUOTE_RE = /^[“"](.+)[”"]$/s;
-const TITLE_RE = /^([^—–-]{2,60}?)\s+[—–-]\s+(.+)$/s;
+export { parseRichText };
 
-export function parseRichText(text) {
-  const blocks = [];
-  const paragraphs = String(text ?? '')
-    .replace(/\r\n/g, '\n')
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-
-  for (const para of paragraphs) {
-    const lines = para.split('\n').map((l) => l.trim()).filter(Boolean);
-    const probe = lines[0].replace(/iC\+P/g, 'IC+P');
-    const isHeading = lines.length === 1 && probe.length >= 3 && probe.length <= 80 && probe === probe.toUpperCase() && /[A-Z]/.test(probe);
-    if (isHeading) {
-      blocks.push({ type: 'heading', text: lines[0] });
-      continue;
+// **bold** and _italic_ inside a run of text. Bold carries `t-strong` rather
+// than a weight: the brand face is Segoe UI Light, which has no bold cut, so a
+// weight alone does nothing — the class swaps in the regular face.
+export function Inline({ text }) {
+  const parts = String(text ?? '').split(INLINE_RE);
+  return parts.map((part, i) => {
+    if (!part) return null;
+    if (part.length > 4 && part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={i} className="t-strong">
+          {part.slice(2, -2)}
+        </strong>
+      );
     }
-    if (lines.every((l) => LIST_RE.test(l))) {
-      blocks.push({
-        type: 'list',
-        ordered: /^\d/.test(lines[0]),
-        items: lines.map((l) => {
-          const body = l.replace(LIST_RE, '');
-          const m = body.match(TITLE_RE);
-          return m ? { title: m[1].trim(), text: m[2].trim() } : { text: body };
-        }),
-      });
-      continue;
+    if (part.length > 2 && part.startsWith('_') && part.endsWith('_')) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
     }
-    const quote = para.match(QUOTE_RE);
-    if (quote) {
-      blocks.push({ type: 'quote', text: quote[1].trim() });
-      continue;
-    }
-    blocks.push({ type: 'paragraph', text: lines.join(' ') });
-  }
-  return blocks;
+    return <span key={i}>{part}</span>;
+  });
 }
 
 // Renders parsed blocks. `tone` picks colours for dark (red panel) or light backgrounds.
@@ -61,14 +38,14 @@ export default function RichText({ text, tone = 'dark', headingStyle, paragraphS
         if (b.type === 'heading') {
           return (
             <h3 key={i} style={{ fontWeight: 600, letterSpacing: '0.12em', marginTop: i === 0 ? 0 : '0.6em', color: strong, ...headingStyle }}>
-              {b.text}
+              <Inline text={b.text} />
             </h3>
           );
         }
         if (b.type === 'quote') {
           return (
             <blockquote key={i} style={{ fontStyle: 'italic', color: strong, borderLeft: '2px solid var(--icp-red)', paddingLeft: '1em', margin: 0 }}>
-              “{b.text}”
+              “<Inline text={b.text} />”
             </blockquote>
           );
         }
@@ -79,15 +56,19 @@ export default function RichText({ text, tone = 'dark', headingStyle, paragraphS
               {b.items.map((it, j) => (
                 <li key={j} style={paragraphStyle}>
                   {it.title && <span style={{ fontWeight: 600, color: strong }}>{it.title} — </span>}
-                  <span style={{ color: it.title ? muted : undefined }}>{it.text}</span>
+                  <span style={{ color: it.title ? muted : undefined }}>
+                    <Inline text={it.text} />
+                  </span>
                 </li>
               ))}
             </Tag>
           );
         }
         return (
-          <p key={i} style={{ margin: 0, ...paragraphStyle }}>
-            {b.text}
+          // `em` keeps the smaller level on the same scale as everything
+          // around it, so it still follows the artboard.
+          <p key={i} style={{ margin: 0, ...paragraphStyle, ...(b.small ? { fontSize: '0.86em' } : null) }}>
+            <Inline text={b.text} />
           </p>
         );
       })}
