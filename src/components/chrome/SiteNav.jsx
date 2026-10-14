@@ -60,6 +60,9 @@ export default function SiteNav({
     crumbHover: t === 'red' ? 'hover:text-icp-mist' : 'hover:text-icp-red',
     // The closing bar is red everywhere but on the red bar, where R3 shows mist.
     endBar: t === 'red' ? 'bg-icp-mist' : 'bg-icp-red',
+    // The dividers follow the closing bar, except on the pale pages, where the
+    // client asked for them in the mist of the bar beside "Home" (Oct 2026).
+    divider: t === 'light' || t === 'red' ? 'bg-icp-mist' : 'bg-icp-red',
   });
   const left = ink(leftTone);
   const right = ink(tone);
@@ -79,7 +82,7 @@ export default function SiteNav({
         </Link>
         {title && (
           <>
-            <span className={`t-title transition-colors ${left.endBar}`} style={{ ...divider, marginLeft: u(24) }} />
+            <span className={`t-title transition-colors ${left.divider}`} style={{ ...divider, marginLeft: u(24) }} />
             {titleTo ? (
               <Link
                 to={titleTo}
@@ -97,7 +100,7 @@ export default function SiteNav({
         )}
         {crumb && (
           <>
-            <span className={`t-title transition-colors ${left.endBar}`} style={{ ...divider, marginLeft: u(24) }} />
+            <span className={`t-title transition-colors ${left.divider}`} style={{ ...divider, marginLeft: u(24) }} />
             <Link
               to={crumb.to}
               className={`t-nav transition-colors ${left.crumbText} ${left.crumbHover}`}
@@ -113,7 +116,7 @@ export default function SiteNav({
         {rightTitle && (
           <>
             <span className="t-title leading-none text-icp-red">{rightTitle}</span>
-            <span className="t-title bg-icp-red" style={{ ...divider, marginLeft: u(18), marginRight: u(18) }} />
+            <span className={`t-title ${right.divider}`} style={{ ...divider, marginLeft: u(18), marginRight: u(18) }} />
           </>
         )}
         <Link to="/enquiry" className={`t-nav transition-colors ${right.text} ${right.textHover}`}>
