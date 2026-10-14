@@ -51,12 +51,12 @@ const clientGroups = [
     category: 'private-residences',
     label: 'Private Residences',
     items: [
-      { type: 'text', text: 'Former CEO\nHotel Sahara Star & Aamby Valley\nMumbai, Maharashtra' },
-      { type: 'text', text: 'Hegde House,\nBelgavi Karnataka' },
-      { type: 'text', text: 'Hegde House,\nBelgavi Karnataka' },
-      { type: 'text', text: '19/D Dr. Nandkumar House,\nMumbai Maharashtra' },
-      { type: 'text', text: 'Bayana House,\nGurugram NCR' },
-      { type: 'text', text: "Shetty's Apartment\nMumbai Maharashtra" },
+      { type: 'text', text: '**Former CEO**\n**Hotel Sahara Star & Aamby Valley**\nMumbai, Maharashtra' },
+      { type: 'text', text: '**Hegde House,**\nBelgavi Karnataka' },
+      { type: 'text', text: '**Hegde House,**\nBelgavi Karnataka' },
+      { type: 'text', text: '**19/D Dr. Nandkumar House,**\nMumbai Maharashtra' },
+      { type: 'text', text: '**Bayana House,**\nGurugram NCR' },
+      { type: 'text', text: "**Shetty's Apartment**\nMumbai Maharashtra" },
     ],
   },
 ];

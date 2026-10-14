@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, forwardRef, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Buttons
@@ -42,9 +42,10 @@ export function Input({ className = '', ...props }) {
   return <input className={`${inputClass} h-11 ${className}`} {...props} />;
 }
 
-export function Textarea({ className = '', rows = 4, ...props }) {
-  return <textarea rows={rows} className={`${inputClass} py-2.5 leading-relaxed ${className}`} {...props} />;
-}
+// Forwards its ref: the bold control needs the element to read the selection.
+export const Textarea = forwardRef(function Textarea({ className = '', rows = 4, ...props }, ref) {
+  return <textarea ref={ref} rows={rows} className={`${inputClass} py-2.5 leading-relaxed ${className}`} {...props} />;
+});
 
 export function Select({ className = '', children, ...props }) {
   return (

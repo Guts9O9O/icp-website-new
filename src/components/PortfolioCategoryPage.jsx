@@ -202,7 +202,9 @@ export default function PortfolioCategoryPage() {
                   className="flex flex-1 flex-col items-center justify-center text-center"
                   style={{ fontSize: fs(14, 11), lineHeight: 1.7, letterSpacing: '0.02em' }}
                 >
-                  <p className="text-icp-slate/60" style={{ fontSize: fs(16, 12) }}>
+                  {/* The name carries `t-strong` rather than a weight: the
+                      brand face is Segoe UI Light and has no bold cut. */}
+                  <p className="t-strong text-icp-slate/60" style={{ fontSize: fs(16, 12) }}>
                     {project.name}
                   </p>
                   <p>{project.location}</p>

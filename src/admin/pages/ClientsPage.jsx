@@ -3,6 +3,7 @@ import * as api from '../api';
 import { NOT_CLIENT_CATEGORIES } from '../../data/clients';
 import { ACCEPT_LOGOS, prepareLogo, previewUrl } from '../images';
 import ImageDrop from '../components/ImageDrop';
+import BoldableTextarea from '../components/BoldableTextarea';
 import { Badge, Button, Card, Field, Input, PageHeader, Select, Spinner, Textarea, Toggle, errorMessage, useConfirm, useToast } from '../components/ui';
 
 const TABLE = 'clients';
@@ -60,8 +61,8 @@ function ClientForm({ initial, categories, onSave, onCancel, toast }) {
           </div>
         </div>
       ) : (
-        <Field label="Text *" hint="One line per row, e.g. Hegde House, / Belgavi Karnataka">
-          <Textarea rows={3} value={form.text} onChange={set('text')} />
+        <Field label="Text *" hint="One line per row, e.g. Hegde House, / Belgavi Karnataka. Set the name lines bold to tell them from the town.">
+          <BoldableTextarea rows={3} value={form.text} onChange={(text) => setForm((f) => ({ ...f, text }))} />
         </Field>
       )}
       <Toggle checked={form.published} onChange={set('published')} label={form.published ? 'Shown on the website' : 'Hidden'} />

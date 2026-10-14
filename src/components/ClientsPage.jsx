@@ -7,6 +7,7 @@ import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
 import { useSeo } from '../lib/seo';
+import { Inline } from '../lib/richText';
 
 // Grid geometry from R3 (design px): red header row, then logo rows of two
 // columns per category. Landscape shows the four categories side by side;
@@ -20,6 +21,11 @@ const ROW_H_PORTRAIT = 120;
 // R3 draws these as a pale rule over the taupe — not the darker slate we had,
 // which read as a shadow rather than a line.
 const RULE = 'border-white/20';
+// The three rules between the categories are different: they carry on up into
+// the red band beside the headings, and R4 draws them there in solid mist
+// (#C2BDB4), not this washed white — which over red came out a pale pink and
+// read as a smudge rather than a line.
+const CATEGORY_RULE = 'border-icp-mist';
 
 function Cell({ item, rowH }) {
   const border = `border-l border-b ${RULE}`;
@@ -47,9 +53,12 @@ function Cell({ item, rowH }) {
       style={{ minHeight: v(rowH), padding: u(20), fontSize: fs(14, 11), lineHeight: 1.5 }}
     >
       <p>
+        {/* One line per row, as the studio types it, each able to carry
+            **bold** — the client asked for the names set apart from the town
+            below them, and which lines those are is theirs to decide. */}
         {item.text.split('\n').map((line, i) => (
           <span key={i} className="block">
-            {line}
+            <Inline text={line} />
           </span>
         ))}
       </p>
@@ -64,12 +73,12 @@ function CategoryBlock({ group, rows, rowH, last }) {
         // R3 keeps the red bar unbroken around the headings: no rule above
         // them, none below (the red meets the taupe directly), and no outer
         // edge — only the three dividers between the four categories.
-        className={`flex items-center justify-center bg-icp-red text-center text-white ${last ? '' : `border-r ${RULE}`}`}
+        className={`flex items-center justify-center bg-icp-red text-center text-white ${last ? '' : `border-r ${CATEGORY_RULE}`}`}
         style={{ height: v(HEADER_H), fontSize: fs(24, 14) }}
       >
         {group.label}
       </h2>
-      <div className={`grid grid-cols-2 ${last ? `border-r ${RULE}` : ''}`}>
+      <div className={`grid grid-cols-2 ${last ? `border-r ${CATEGORY_RULE}` : ''}`}>
         {Array.from({ length: rows * 2 }).map((_, i) => (
           <Cell key={i} item={group.items[i] ?? null} rowH={rowH} />
         ))}

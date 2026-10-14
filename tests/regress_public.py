@@ -53,9 +53,10 @@ async def run(vw, vh, tag):
         #
         # They are tallied separately rather than dropped, so the noise stays
         # visible without burying a real fault. The match is deliberately
-        # narrow: our own origin and the local database only, so a genuine
-        # cross-origin failure (the Google Maps embed, say) still counts as an
-        # error, and the content assertions remain the real guard either way.
+        # narrow: our own origin and whichever database this build is pointed
+        # at, so a genuine cross-origin failure (the Google Maps embed, say)
+        # still counts as an error — it has to both end in that phrase and name
+        # a host of ours. The content assertions remain the real guard either way.
         OURS = (BASE.split("//", 1)[-1].rstrip("/"), *DB_HOSTS)
 
         def note_pageerror(e):
