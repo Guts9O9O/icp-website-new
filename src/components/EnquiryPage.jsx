@@ -280,7 +280,7 @@ export default function EnquiryPage() {
           <div className="flex items-center justify-end" style={{ width: u(LABEL_W + FIELD_W), gap: u(30) }}>
             {status.state === 'sent' && (
               <p className="text-icp-taupe" style={{ fontSize: fs(16, 12) }} role="status">
-                Thank you â€” your enquiry has been sent. We will get back to you shortly.
+                Thank you — your enquiry has been sent. We will get back to you shortly.
               </p>
             )}
             {status.state === 'error' && (
@@ -294,7 +294,7 @@ export default function EnquiryPage() {
               className="t-strong text-icp-red transition-opacity hover:opacity-70 disabled:opacity-50"
               style={{ fontSize: fs(18, 13) }}
             >
-              {status.state === 'sending' ? 'Sendingâ€¦' : 'SUBMIT'}
+              {status.state === 'sending' ? 'Sending…' : 'SUBMIT'}
             </button>
           </div>
         </form>
