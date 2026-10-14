@@ -116,7 +116,10 @@ export default function PortfolioCategoryPage() {
     <div className="relative min-h-screen bg-icp-paper font-brand text-icp-slate">
       <style>{slideStyles}</style>
       <EdgeBars />
-      <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="light" leftTone={showPanel ? 'red' : 'light'} />
+      {/* No crumb for the category: this page is the category, so naming it
+          again says nothing. It earns its place one level down, on a project,
+          where it is the way back up to here. */}
+      <SiteNav title="Portfolio" titleTo="/portfolio" tone="light" leftTone={showPanel ? 'red' : 'light'} />
 
       {/* The studio's write-up for this segment, in the red panel R4 uses on
           the project view, carrying the studio's copy for the whole segment. */}

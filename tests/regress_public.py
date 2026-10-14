@@ -1,4 +1,4 @@
-import asyncio, os
+import asyncio, io, os
 from playwright.async_api import async_playwright
 
 BASE = os.environ.get("BASE", "http://localhost:5173")
@@ -6,6 +6,30 @@ ENGINE = os.environ.get("ENGINE", "chromium")
 errors = []
 aborted_fetches = []  # navigation-cancelled requests, reported separately
 third_party = []  # console noise from other people's CDNs, reported separately
+# The database the site is pointed at, so WebKit's "aborted by navigation"
+# messages about our own data can be told from a genuine cross-origin failure.
+# It moved from the local Supabase to the cloud one, and the match has to move
+# with it or every navigation away from a loading page counts as an error.
+def _db_hosts():
+    # In the order Vite itself resolves them for a production build, so the
+    # host this matches is the one the bundle under test actually calls. Both
+    # are kept: a dev server and a preview build can point at different
+    # databases, and the suite runs against either.
+    roots = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+    found = [os.environ.get("VITE_SUPABASE_URL", "")]
+    for name in (".env.production.local", ".env.production", ".env.local", ".env"):
+        try:
+            for line in io.open(os.path.join(roots, name), encoding="utf-8"):
+                if line.startswith("VITE_SUPABASE_URL="):
+                    found.append(line.split("=", 1)[1].strip())
+                    break
+        except OSError:
+            pass
+    return tuple({u.split("//", 1)[-1].rstrip("/") for u in found if u})
+
+
+DB_HOSTS = _db_hosts()
+
 results = []
 
 
@@ -32,7 +56,7 @@ async def run(vw, vh, tag):
         # narrow: our own origin and the local database only, so a genuine
         # cross-origin failure (the Google Maps embed, say) still counts as an
         # error, and the content assertions remain the real guard either way.
-        OURS = (BASE.split("//", 1)[-1].rstrip("/"), "127.0.0.1:54321")
+        OURS = (BASE.split("//", 1)[-1].rstrip("/"), *DB_HOSTS)
 
         def note_pageerror(e):
             message = str(e)
@@ -45,7 +69,7 @@ async def run(vw, vh, tag):
         # Supabase's storage CDN — once per image — and for a couple of its own
         # internal modules. Nothing we serve or can change, and the bucket
         # assertions prove the images arrive, so these are tallied apart.
-        THIRD_PARTY = ("__cf_bm", 'Could not load "search_impl"', 'Could not load "util"')
+        THIRD_PARTY = ("__cf_bm", 'Could not load "search_impl"', 'Could not load "util"', 'Could not load "geometry"')
 
         def note_console(m):
             if m.type != "error":
@@ -55,10 +79,12 @@ async def run(vw, vh, tag):
         pg.on("console", note_console)
         pg.on("response", lambda r: errors.append(f"[{tag}] HTTP {r.status}: {r.url[:120]}") if r.status >= 400 else None)
 
-        # direct loads
+        # direct loads. The enquiry page is matched on the domain rather than
+        # one address: the studio edits their contact details from the admin,
+        # and the suite should not fail when they do.
         checks = [("/", "iconcepts + partners"), ("/about", "about us"), ("/clients", "hegde house"), ("/portfolio", "bespoke elements"),
                   ("/portfolio/hospitality", "hotel hilton"), ("/portfolio/commercial", "projects coming soon"),
-                  ("/portfolio/hospitality/hotel-hilton", "hotel hilton, mumbai"), ("/enquiry", "studio@icp.firm.in")]
+                  ("/portfolio/hospitality/hotel-hilton", "hotel hilton, mumbai"), ("/enquiry", "@icp.firm.in")]
         for path, text in checks:
             await pg.goto(BASE + path)
             # Poll instead of sleeping a fixed time: content arrives from the
@@ -76,9 +102,20 @@ async def run(vw, vh, tag):
             ok(text in content, f"[{tag}] direct {path} (content after {waited} ms)")
 
         # redirects
-        await pg.goto(BASE + "/nope"); await pg.wait_for_timeout(900); ok(pg.url.rstrip("/") == BASE, f"[{tag}] unknown route -> /")
-        await pg.goto(BASE + "/portfolio/nope"); await pg.wait_for_timeout(900); ok(pg.url.endswith("/portfolio"), f"[{tag}] unknown category -> /portfolio")
-        await pg.goto(BASE + "/portfolio/hospitality/nope"); await pg.wait_for_timeout(900); ok(pg.url.endswith("/portfolio/hospitality"), f"[{tag}] unknown project -> category")
+        # These redirects wait on a fetch resolving first, so they are given a
+        # deadline rather than a fixed pause: 900ms was usually enough and
+        # occasionally was not, which showed up as a flake on WebKit.
+        async def redirects_to(path, pred, label):
+            await pg.goto(BASE + path)
+            for _ in range(60):
+                if pred(pg.url):
+                    break
+                await pg.wait_for_timeout(100)
+            ok(pred(pg.url), f"[{tag}] {label}")
+
+        await redirects_to("/nope", lambda u: u.rstrip("/") == BASE, "unknown route -> /")
+        await redirects_to("/portfolio/nope", lambda u: u.endswith("/portfolio"), "unknown category -> /portfolio")
+        await redirects_to("/portfolio/hospitality/nope", lambda u: u.endswith("/portfolio/hospitality"), "unknown project -> category")
 
         # click-through incl. transition timing, fast double navigation, back/forward
         await pg.goto(BASE + "/"); await pg.wait_for_timeout(600)
