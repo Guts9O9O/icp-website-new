@@ -130,9 +130,12 @@ export default function HomePage() {
         className="pointer-events-none fixed left-0 right-0 z-50 flex items-center justify-between"
         style={{ top: v(NAV_TOP), paddingLeft: u(EDGE_BAR), paddingRight: u(EDGE_BAR) }}
       >
+        {/* items-baseline, as SiteNav has it on every other page: the bar has
+            no text, so its baseline is its foot, and the label sits on it.
+            Centred, the label floated a few pixels above the foot of the bar. */}
         <button
           type="button"
-          className="pointer-events-auto flex items-center text-icp-mist transition-colors hover:text-white"
+          className="pointer-events-auto flex items-baseline text-icp-mist transition-colors hover:text-white"
           style={{ fontSize: fs(20, 13) }}
           onMouseEnter={hoverable ? openLeft : undefined}
           onFocus={hoverable ? openLeft : undefined}
@@ -148,7 +151,7 @@ export default function HomePage() {
 
         <Link
           to="/enquiry"
-          className="pointer-events-auto flex items-center text-icp-mist transition-colors hover:text-white"
+          className="pointer-events-auto flex items-baseline text-icp-mist transition-colors hover:text-white"
           style={{ fontSize: fs(20, 13) }}
           onMouseEnter={hoverable ? openRight : undefined}
           onFocus={hoverable ? openRight : undefined}
