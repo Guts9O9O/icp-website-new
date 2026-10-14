@@ -18,17 +18,29 @@ const HEADER_H = 70;
 const ROW_H = 181.26;
 const ROW_H_PORTRAIT = 120;
 
-// R3 draws these as a pale rule over the taupe — not the darker slate we had,
-// which read as a shadow rather than a line.
-const RULE = 'border-white/20';
-// The three rules between the categories are different: they carry on up into
-// the red band beside the headings, and R4 draws them there in solid mist
-// (#C2BDB4), not this washed white — which over red came out a pale pink and
-// read as a smudge rather than a line.
-const CATEGORY_RULE = 'border-icp-mist';
+// R4 draws this grid in two weights, measured off its page 7, and the
+// difference is most of what makes it read as a grid rather than a mesh:
+//
+//   the three rules between the categories   #C2BDB4  mist
+//   everything inside a category             #46423D  slate
+//
+// The mist ones also run higher and lower than the rest: they start at the top
+// of the heading, so they cross the red band beside it, and they close the
+// foot of the grid. We had drawn every line in one washed white, which over
+// red came out a pale pink, and left the category boundaries no stronger than
+// the cells inside them.
+// Written per side. `border-icp-slate` and `border-icp-mist` each set the
+// colour of all four sides, so a cell carrying both took whichever the
+// stylesheet happened to put last rather than one colour per edge.
+const INNER_V = 'border-l border-l-icp-slate';
+const ROW_RULE = 'border-b border-b-icp-slate';
+const FOOT_RULE = 'border-b border-b-icp-mist';
+const CATEGORY_RULE = 'border-r border-r-icp-mist';
 
-function Cell({ item, rowH }) {
-  const border = `border-l border-b ${RULE}`;
+function Cell({ item, rowH, col, lastRow }) {
+  // Only the second column carries a left rule: one divider inside a category,
+  // as R4 has it, and no rule down the outer edges of the grid.
+  const border = `${col === 1 ? INNER_V : ''} ${lastRow ? FOOT_RULE : ROW_RULE}`;
   if (!item) return <div className={border} style={{ minHeight: v(rowH) }} />;
 
   if (item.type === 'image') {
@@ -68,19 +80,27 @@ function Cell({ item, rowH }) {
 
 function CategoryBlock({ group, rows, rowH, last }) {
   return (
-    <section>
+    // The rule sits on the section, not on the heading, so it is one line from
+    // the top of the heading to the foot of the grid rather than stopping where
+    // the red band ends and starting again in a different colour below it.
+    <section className={last ? '' : CATEGORY_RULE}>
       <h2
         // R3 keeps the red bar unbroken around the headings: no rule above
-        // them, none below (the red meets the taupe directly), and no outer
-        // edge — only the three dividers between the four categories.
-        className={`flex items-center justify-center bg-icp-red text-center text-white ${last ? '' : `border-r ${CATEGORY_RULE}`}`}
+        // them and none below, the red meeting the taupe directly.
+        className="flex items-center justify-center bg-icp-red text-center text-white"
         style={{ height: v(HEADER_H), fontSize: fs(24, 14) }}
       >
         {group.label}
       </h2>
-      <div className={`grid grid-cols-2 ${last ? `border-r ${CATEGORY_RULE}` : ''}`}>
+      <div className="grid grid-cols-2">
         {Array.from({ length: rows * 2 }).map((_, i) => (
-          <Cell key={i} item={group.items[i] ?? null} rowH={rowH} />
+          <Cell
+            key={i}
+            item={group.items[i] ?? null}
+            rowH={rowH}
+            col={i % 2}
+            lastRow={i >= (rows - 1) * 2}
+          />
         ))}
       </div>
     </section>
