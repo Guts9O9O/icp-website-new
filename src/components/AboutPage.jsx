@@ -98,11 +98,14 @@ function TeamCard({ member, isAbout, isActive, isMuted, onEnter, onLeave, onTogg
         </>
       )}
 
-      {/* R3 runs this rule under the photographs only, not under the lockup */}
-      {!isAbout && <div className="w-full bg-icp-red" style={{ height: v(RULE_H) }} />}
+      {/* R3 ran this rule under the photographs only; the client asked for it
+          under the lockup too, so it reads as one line across the row. */}
+      <div className="w-full bg-icp-red" style={{ height: v(RULE_H) }} />
 
+      {/* The client asked for these captions bold; `t-strong` rather than a
+          weight class, since the light face has no bold of its own. */}
       <div
-        className="flex flex-1 flex-col items-center justify-center text-center text-icp-slate"
+        className="t-strong flex flex-1 flex-col items-center justify-center text-center text-icp-slate"
         style={{ fontSize: fs(14, 11), letterSpacing: '0.08em', lineHeight: 1.6 }}
       >
         {isAbout ? (
