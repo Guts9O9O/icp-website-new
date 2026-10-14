@@ -24,9 +24,47 @@ export async function toWebp(file, max = SIZES.gallery) {
 }
 
 // Logos keep their format (transparency, vector); photos become WebP.
+// Transparent PNG and WebP logos are cropped to their artwork first: the
+// Clients page sizes every logo from its file's proportions, so an empty
+// margin left in a file would shrink the logo drawn inside it.
 export async function prepareLogo(file, max = 800) {
+  if (file.type === 'image/png' || file.type === 'image/webp') return trimTransparent(file);
   if (KEEP_AS_IS.includes(file.type)) return file;
   return toWebp(file, max);
+}
+
+async function trimTransparent(file) {
+  const bitmap = await createImageBitmap(file);
+  const { width: w, height: h } = bitmap;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0);
+  const { data } = ctx.getImageData(0, 0, w, h);
+
+  // Faint alpha (anti-aliasing haze, a stray shadow) does not count as artwork.
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (data[(y * w + x) * 4 + 3] > 8) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+  const empty = x1 < 0;
+  const tight = x0 === 0 && y0 === 0 && x1 === w - 1 && y1 === h - 1;
+  if (empty || tight) return file;
+
+  const out = document.createElement('canvas');
+  out.width = x1 - x0 + 1;
+  out.height = y1 - y0 + 1;
+  out.getContext('2d').drawImage(canvas, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+  const blob = await new Promise((resolve) => out.toBlob(resolve, 'image/png'));
+  return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.png', { type: 'image/png' });
 }
 
 export function previewUrl(file) {

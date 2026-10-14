@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { getClientGroups } from '../lib/api';
 import { useData } from '../lib/useData';
 import { useMediaQuery } from '../lib/useMediaQuery';
@@ -37,6 +37,47 @@ const ROW_RULE = 'border-b border-b-icp-slate';
 const FOOT_RULE = 'border-b border-b-icp-mist';
 const CATEGORY_RULE = 'border-r border-r-icp-mist';
 
+// Every logo is fitted to one box inside the cell's padding, 84% of its width
+// by 111% of its height — it may run into the padding below and above. The
+// height was 74% until the studio marked up the page (14 Oct 2026) asking half
+// as much again for every square and round logo: Hilton, Aamby Valley, both
+// Sankams, Travel Food Services, CFE, Merint. Raising the box is exactly that,
+// and leaves a long wordmark untouched, since it meets the width first. So a
+// 2:1 file reads right by default whether it is a wordmark or an emblem.
+const LOGO_BOX_W = 84; // cqw
+const LOGO_BOX_H = 111; // cqh
+// The rest of that markup, as factors on the fit above. AVI, PSP and Dark
+// Temptations were asked +25% and Nixon +10%. CCI was left as it was, and
+// Wadhwa, Ozone and Ashwin Sheth asked only +10%, so the taller box is taken
+// back off them. Keyed by client name; any other logo takes the plain fit.
+const LOGO_SCALE = {
+  'AVI Worldwide Pvt Ltd': 1.25,
+  'PSP Laser Tech Pvt. Ltd': 1.25,
+  'Dark Temptations': 1.25,
+  Nixon: 1.1,
+  'CCI Projects': 0.88,
+  'The Wadhwa Group': 0.79,
+  'Ozone Group': 0.79,
+  'Ashwin Sheth': 0.65,
+};
+
+function Logo({ src, name }) {
+  // Its proportions are only known once loaded, so it stays invisible until
+  // then rather than flashing at the file's own size. 0 means the file has no
+  // intrinsic size (an SVG without one), which falls back to a plain fit.
+  const [ratio, setRatio] = useState(null);
+  const onLoad = (e) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+    setRatio(w && h ? w / h : 0);
+  };
+  const scale = LOGO_SCALE[name] ?? 1;
+  const style = ratio
+    ? { height: `calc(${scale} * min(${LOGO_BOX_H}cqh, ${LOGO_BOX_W / ratio}cqw))`, width: 'auto' }
+    : { maxWidth: `${LOGO_BOX_W}cqw`, maxHeight: '74cqh', visibility: ratio === null ? 'hidden' : 'visible' };
+  // `shrink-0`: a logo wider than the padded box must not be squeezed by flex.
+  return <img src={src} alt={name} onLoad={onLoad} className="max-w-none shrink-0 object-contain" style={style} />;
+}
+
 function Cell({ item, rowH, col, lastRow }) {
   // Only the second column carries a left rule: one divider inside a category,
   // as R4 has it, and no rule down the outer edges of the grid.
@@ -45,16 +86,11 @@ function Cell({ item, rowH, col, lastRow }) {
 
   if (item.type === 'image') {
     return (
-      <div className={`flex items-center justify-center ${border}`} style={{ height: v(rowH), minHeight: v(rowH), padding: u(30) }}>
-        {/* Client feedback: the logos were sitting too large in their cells.
-            Capping them well inside the padding keeps every logo to the same
-            visual weight whatever its own aspect ratio. */}
-        <img
-          src={item.src}
-          alt={item.name}
-          className="object-contain"
-          style={{ maxWidth: '84%', maxHeight: '74%' }}
-        />
+      <div
+        className={`flex items-center justify-center [container-type:size] ${border}`}
+        style={{ height: v(rowH), minHeight: v(rowH), padding: u(30) }}
+      >
+        <Logo src={item.src} name={item.name} />
       </div>
     );
   }
