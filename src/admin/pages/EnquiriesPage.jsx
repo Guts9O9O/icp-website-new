@@ -11,7 +11,7 @@ const STATUS = {
 const COPY = {
   lead: {
     title: 'Leads',
-    description: 'Design requests and general enquiries from the website form. Each one is also emailed to the studio and saved in the “Website Leads” Google Sheet.',
+    description: 'Design requests and general enquiries from the website form. Each one is also emailed — design requests to the design email, the rest to the studio email (Site text & contact) — and saved in the “Website Leads” Google Sheet.',
     empty: 'No leads yet',
     emptyHint: 'Enquiries sent from the website’s enquiry page will appear here.',
     detailLabel: 'Category',
