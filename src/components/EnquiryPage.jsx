@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef, useState } from 'react';
 import { getSite } from '../lib/api';
-import { SUBJECTS, enquiryEmail, sendEnquiry, validateEnquiry } from '../lib/enquiry';
+import { SUBJECTS, sendEnquiry, validateEnquiry } from '../lib/enquiry';
 import { useData } from '../lib/useData';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { PORTRAIT_QUERY, fs, u, v } from '../lib/units';
@@ -82,17 +82,12 @@ function Select({ value, onChange, options, style, field }) {
 const ICON_W = 45; // the round contact icons
 const ICON_GAP = 42; // icon to its text
 
-// The studio's address as one search string. The lines already carry their own
-// punctuation, so they are joined plainly and the trailing full stop dropped
-// rather than glued together with extra commas.
-function mapQuery(site) {
-  return (site.addressLines ?? [])
-    .join(' ')
-    .replace(/^\s*studio\s*[-:]\s*/i, '') // "Studio-" labels the line, it is not part of the address
-    .replace(/\s+/g, ' ')
-    .replace(/[.,\s]+$/, '')
-    .trim();
-}
+// The studio's own Google Maps listing, "iConcepts+Partners", from the link the
+// client sent. A /maps/place link cannot be framed, so the embed searches the
+// listing's name around its coordinates, which pins the listing itself, named.
+// Searching the street address pinned nothing at the studio.
+const MAP_EMBED =
+  'https://www.google.com/maps?q=iConcepts%2BPartners&ll=19.2563256,72.8716291&z=17&output=embed';
 
 function ContactIcon({ src, alt }) {
   return (
@@ -141,8 +136,10 @@ export default function EnquiryPage() {
     openedAt.current = Date.now();
   }, []);
   const detailOptions = SUBJECTS[form.subject] ?? [];
-  // The address follows the subject, so it is the inbox this enquiry reaches.
-  const email = enquiryEmail(form.subject, site);
+  // Always the studio's own address, whatever the subject. Design requests
+  // are still emailed to the design inbox (apps-script/Code.gs routes them),
+  // but the client wants only the studio address shown on the page.
+  const email = site?.email ?? '';
 
   const set = (key) => (e) => {
     const value = e.target.value;
@@ -334,7 +331,7 @@ export default function EnquiryPage() {
                 critical path. */}
             <iframe
               title="iC+P studio location on Google Maps"
-              src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery(site))}&output=embed`}
+              src={MAP_EMBED}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               className="tall:col-span-2"

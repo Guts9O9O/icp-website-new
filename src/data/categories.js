@@ -35,8 +35,8 @@ Working across complex programmes, budgets and multiple consultants, iC+P brings
   },
   {
     slug: 'commercial',
-    label: 'Commercials',
-    image: '/images/cat-commercials.png',
+    label: 'Commercial',
+    image: '/images/cat-commercial.png',
     sortOrder: 3,
     description: `WHERE DESIGN MEETS PERFORMANCE
 

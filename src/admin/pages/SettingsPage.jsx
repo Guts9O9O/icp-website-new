@@ -126,10 +126,10 @@ export default function SettingsPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Phone"><Input value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} /></Field>
           <div className="hidden sm:block" />
-          <Field label="Studio email" hint="Receives staff recruitment and other enquiries, and is shown on the Enquiry page for those subjects.">
+          <Field label="Studio email" hint="Shown on the Enquiry page, and receives staff recruitment and other enquiries.">
             <Input type="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />
           </Field>
-          <Field label="Design request email" hint="Receives design requests, and is shown on the Enquiry page when a visitor picks Design Request. Leave empty to use the studio email.">
+          <Field label="Design request email" hint="Receives design requests. Not shown on the website. Leave empty to send them to the studio email.">
             <Input type="email" value={contact.designEmail} onChange={(e) => setContact({ ...contact, designEmail: e.target.value })} />
           </Field>
         </div>

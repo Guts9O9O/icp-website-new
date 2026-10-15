@@ -3,7 +3,7 @@
 const site = {
   phone: '+91 99 8792 1441',
   // `email` takes staff recruitment and general enquiries, `designEmail` design
-  // requests; the Enquiry page shows whichever the visitor's subject reaches.
+  // requests. The Enquiry page only ever shows `email`.
   email: 'studio@icp.firm.in',
   designEmail: 'imran@icp.firm.in',
   addressLines: [

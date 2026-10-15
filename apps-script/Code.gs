@@ -164,9 +164,8 @@ function settings(kind) {
 
 // Who an enquiry is emailed to. The website's admin holds the addresses (Site
 // text & contact): design requests go to `designEmail`, everything else to the
-// studio `email`, and the Enquiry page shows the same choice — so the address a
-// visitor sees for a subject is the one that subject reaches. The address is
-// never taken from the form itself, or anyone could aim the form at any inbox.
+// studio `email` (the only one the Enquiry page shows). The address is never
+// taken from the form itself, or anyone could aim the form at any inbox.
 // If the website database cannot be reached, the NOTIFY_TO_… properties still
 // deliver it.
 function recipientFor(entry) {
