@@ -1,10 +1,10 @@
 import { useLocation } from 'react-router';
-import { EDGE_BAR, FOOTER_H, u, v } from '../../lib/units';
+import { EDGE_BAR, FOOTER_H, FOOTER_MARK_H as LOGO_H, FOOTER_MARK_LIFT as LOGO_LIFT, u, v } from '../../lib/units';
 import LottieMark, { SIGNATURE_RULE_STOP, artAspect } from './LottieMark';
 
 // Artwork sizes from R3 (design px). LottieMark clips each animation to its
 // own artwork, so these are the sizes of what is actually drawn.
-const LOGO_H = 61; // the "iC+P" mark; hovering expands it to the full wordmark
+// LOGO_H (units.js FOOTER_MARK_H): the "iC+P" mark; hovering expands it to the full wordmark
 const SIG_W = 340; // R3 drew it 430 wide; the client asked for a smaller signature
 const GAP = 50; // R3: the mark sits 50px in from the corner
 // Measured off R3's own reference line, which runs through the centre of the
@@ -12,8 +12,8 @@ const GAP = 50; // R3: the mark sits 50px in from the corner
 // sits 51 design px above the rule; the signature hangs below it by 40% of its
 // own height, crossing the line as the designer drew it. Taking the drop as a
 // proportion rather than a fixed 57px keeps that crossing looking the same
-// whatever width the signature is set to.
-const LOGO_LIFT = 51;
+// whatever width the signature is set to. LOGO_LIFT is units.js FOOTER_MARK_LIFT,
+// shared so pages can keep their own text clear of the mark.
 const SIG_DROP_RATIO = 0.4;
 
 /**

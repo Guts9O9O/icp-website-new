@@ -17,6 +17,11 @@ export const NAV_TOP = 100; // top of the nav row
 export const NAV_BAR_H = 56.65; // height of the small nav bars
 export const FOOTER_H = 90; // rule to bottom of page, so the rule lands on R3's y 1510
 // and the footer mark's centre meets the carousel controls on the reference line
+// The footer's iC+P mark: its height (in u, like its width) and how far it
+// sits above the footer rule (in v). Pages with text in the bottom-left corner
+// keep clear of it.
+export const FOOTER_MARK_H = 61;
+export const FOOTER_MARK_LIFT = 51;
 
 // Media queries shared by CSS (index.css / tailwind `tall:`) and JS.
 export const PORTRAIT_QUERY = '(orientation: portrait) and (max-width: 1100px)';

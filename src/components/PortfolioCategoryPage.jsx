@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router';
 import { getCategory, getProjects } from '../lib/api';
 import RichText, { richTextPlain } from '../lib/richText';
 import { useData } from '../lib/useData';
-import { EDGE_BAR, FOOTER_H, NAV_BAR_H, NAV_TOP, fs, u, v } from '../lib/units';
+import { EDGE_BAR, FOOTER_H, FOOTER_MARK_H, FOOTER_MARK_LIFT, NAV_BAR_H, NAV_TOP, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
@@ -29,11 +29,14 @@ const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
 // The segment write-up panel takes the empty space beside the thumbnails. The
 // client asked for it to run the whole height of the page, under the nav row,
 // as the red panel does on the project view, so it sits below the nav (z-50)
-// and the footer (z-30) and lets both paint over it. Only the text is inset,
-// clear of the nav above and the footer rule below.
+// and the footer (z-30) and lets both paint over it. Only the text is inset:
+// clear of the nav above, and of the footer's iC+P mark below — the mark sits
+// in the panel's bottom-left corner, so a long write-up ran on behind it.
 const PANEL_PAD = 60;
 const MIN_PANEL_W = 300; // CSS px: below this the write-up is unreadable
 const TEXT_TOP = NAV_TOP + NAV_BAR_H + 34;
+const FADE_FOOT = 'linear-gradient(to bottom, #000 calc(100% - 56px), transparent)';
+const TEXT_BOTTOM = `calc(${v(FOOTER_H + FOOTER_MARK_LIFT + 30)} + ${u(FOOTER_MARK_H)})`;
 
 // Project listing for one portfolio category: /portfolio/:category
 export default function PortfolioCategoryPage() {
@@ -55,13 +58,18 @@ export default function PortfolioCategoryPage() {
   const [direction, setDirection] = useState('next');
   const [slideKey, setSlideKey] = useState(0);
 
-  // The panel fills the empty space to the left of the thumbnails rather than
-  // pushing them aside, so the row stays centred where R4 puts it.
-  const rowRef = useRef(null);
+  // The thumbnails sit in a frame always five columns wide, centred where R4
+  // puts a full row; a shorter last page fills it from the left. The panel
+  // runs up to that frame. It used to run up to the row itself, which moved:
+  // a page of three is narrower, so re-centred further right, and the row
+  // slides in on every page turn, so a measurement taken mid-slide was up to
+  // 28px out — the panel came out a different width on each page and covered
+  // the edge of the first photograph.
+  const frameRef = useRef(null);
   const [panelW, setPanelW] = useState(0);
   useEffect(() => {
     const measure = () => {
-      const row = rowRef.current;
+      const row = frameRef.current;
       if (!row) return;
       // Right up to the thumbnails: the panel starts one gutter in, so its
       // width is the whole run from there to the row. Stopping a second gutter
@@ -72,7 +80,7 @@ export default function PortfolioCategoryPage() {
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [projects, page]);
+  }, []);
 
   // The category's write-up stays open beside the thumbnails, as the client
   // asked; it used to open only while a project was hovered, which hid it from
@@ -80,6 +88,21 @@ export default function PortfolioCategoryPage() {
   // a portrait tablet leaves about 160px beside the row, two words a line, so
   // there the page goes without it, as it always has on touch screens.
   const showPanel = Boolean(category?.description) && panelW >= MIN_PANEL_W;
+
+  // A long write-up on a short screen scrolls inside the panel. While there is
+  // more below, its foot fades out, so the last visible line does not read as
+  // the end of the text; at the bottom the fade lifts.
+  const textRef = useRef(null);
+  const [moreBelow, setMoreBelow] = useState(false);
+  const checkMore = () => {
+    const el = textRef.current;
+    setMoreBelow(Boolean(el) && el.scrollHeight - el.scrollTop - el.clientHeight > 4);
+  };
+  useEffect(() => {
+    checkMore();
+    window.addEventListener('resize', checkMore);
+    return () => window.removeEventListener('resize', checkMore);
+  }, [showPanel, panelW, category?.description]);
 
   if (!categoryLoading && !category) return <Navigate to="/portfolio" replace />;
 
@@ -123,8 +146,14 @@ export default function PortfolioCategoryPage() {
           style={{ left: u(EDGE_BAR), width: panelW }}
         >
           <div
+            ref={textRef}
+            onScroll={checkMore}
             className="scroll-slim absolute inset-x-0 overflow-y-auto"
-            style={{ top: v(TEXT_TOP), bottom: v(FOOTER_H) }}
+            style={{
+              top: v(TEXT_TOP),
+              bottom: TEXT_BOTTOM,
+              ...(moreBelow ? { WebkitMaskImage: FADE_FOOT, maskImage: FADE_FOOT } : null),
+            }}
           >
             <div
               className="flex min-h-full flex-col justify-center"
@@ -144,61 +173,62 @@ export default function PortfolioCategoryPage() {
       )}
 
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(COL_TOP) }}>
-        {projects && list.length === 0 ? (
-          <p className="uppercase text-icp-slate/60" style={{ fontSize: fs(16, 12), letterSpacing: '0.3em', marginTop: v(200) }}>
-            Projects coming soon
-          </p>
-        ) : (
-          <div
-            key={slideKey}
-            ref={rowRef}
-            className={`relative flex transition-all duration-[160ms] ease-in ${
-              exiting ? (direction === 'next' ? '-translate-x-6 opacity-0' : 'translate-x-6 opacity-0') : 'translate-x-0 opacity-100'
-            }`}
-            style={{
-              height: v(COL_H),
-              animation: exiting ? undefined : `${direction === 'next' ? 'icpSlideInRight' : 'icpSlideInLeft'} 200ms ease-out forwards`,
-            }}
-          >
-            {visible.map((project) => (
-              <div
-                key={project.id}
-                className="group relative flex cursor-pointer flex-col"
-                style={{ width: u(COL_W), paddingTop: v(PHOTO_TOP) }}
-                onClick={() => navigate(`/portfolio/${categorySlug}/${project.slug}`)}
-                role="link"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') navigate(`/portfolio/${categorySlug}/${project.slug}`);
-                }}
-              >
-                <div className="absolute inset-y-0 left-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
-                <div className="overflow-hidden bg-black/10" style={{ height: v(PHOTO_H) }}>
-                  {project.thumbnail ? (
-                    <img
-                      src={project.thumbnail}
-                      alt={project.name}
-                      className="h-full w-full object-cover object-top transition-transform duration-700 ease-in-out group-hover:scale-[1.03]"
-                    />
-                  ) : null}
-                </div>
-                <div className="w-full bg-icp-red" style={{ height: v(RULE_H) }} />
+        <div ref={frameRef} className="shrink-0" style={{ width: u(COL_W * PAGE_SIZE) }}>
+          {projects && list.length === 0 ? (
+            <p className="text-center uppercase text-icp-slate/60" style={{ fontSize: fs(16, 12), letterSpacing: '0.3em', marginTop: v(200) }}>
+              Projects coming soon
+            </p>
+          ) : (
+            <div
+              key={slideKey}
+              className={`relative flex w-fit transition-all duration-[160ms] ease-in ${
+                exiting ? (direction === 'next' ? '-translate-x-6 opacity-0' : 'translate-x-6 opacity-0') : 'translate-x-0 opacity-100'
+              }`}
+              style={{
+                height: v(COL_H),
+                animation: exiting ? undefined : `${direction === 'next' ? 'icpSlideInRight' : 'icpSlideInLeft'} 200ms ease-out forwards`,
+              }}
+            >
+              {visible.map((project) => (
                 <div
-                  className="flex flex-1 flex-col items-center justify-center text-center"
-                  style={{ fontSize: fs(14, 11), lineHeight: 1.7, letterSpacing: '0.02em' }}
+                  key={project.id}
+                  className="group relative flex cursor-pointer flex-col"
+                  style={{ width: u(COL_W), paddingTop: v(PHOTO_TOP) }}
+                  onClick={() => navigate(`/portfolio/${categorySlug}/${project.slug}`)}
+                  role="link"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') navigate(`/portfolio/${categorySlug}/${project.slug}`);
+                  }}
                 >
-                  {/* The name carries `t-strong` rather than a weight: the
-                      brand face is Segoe UI Light and has no bold cut. */}
-                  <p className="t-strong text-icp-slate/60" style={{ fontSize: fs(16, 12) }}>
-                    {project.name}
-                  </p>
-                  <p>{project.location}</p>
+                  <div className="absolute inset-y-0 left-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
+                  <div className="overflow-hidden bg-black/10" style={{ height: v(PHOTO_H) }}>
+                    {project.thumbnail ? (
+                      <img
+                        src={project.thumbnail}
+                        alt={project.name}
+                        className="h-full w-full object-cover object-top transition-transform duration-700 ease-in-out group-hover:scale-[1.03]"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="w-full bg-icp-red" style={{ height: v(RULE_H) }} />
+                  <div
+                    className="flex flex-1 flex-col items-center justify-center text-center"
+                    style={{ fontSize: fs(14, 11), lineHeight: 1.7, letterSpacing: '0.02em' }}
+                  >
+                    {/* The name carries `t-strong` rather than a weight: the
+                        brand face is Segoe UI Light and has no bold cut. */}
+                    <p className="t-strong text-icp-slate/60" style={{ fontSize: fs(16, 12) }}>
+                      {project.name}
+                    </p>
+                    <p>{project.location}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-            <div className="absolute inset-y-0 right-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
-          </div>
-        )}
+              ))}
+              <div className="absolute inset-y-0 right-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
+            </div>
+          )}
+        </div>
       </main>
 
       {pageCount > 1 && (
