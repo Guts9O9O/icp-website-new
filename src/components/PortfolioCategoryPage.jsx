@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { getCategory, getProjects } from '../lib/api';
-import RichText from '../lib/richText';
+import RichText, { richTextPlain } from '../lib/richText';
 import { useData } from '../lib/useData';
-import { useMediaQuery } from '../lib/useMediaQuery';
-import { EDGE_BAR, FOOTER_H, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/units';
+import { EDGE_BAR, FOOTER_H, NAV_BAR_H, NAV_TOP, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
@@ -33,6 +32,7 @@ const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
 // and the footer (z-30) and lets both paint over it. Only the text is inset,
 // clear of the nav above and the footer rule below.
 const PANEL_PAD = 60;
+const MIN_PANEL_W = 300; // CSS px: below this the write-up is unreadable
 const TEXT_TOP = NAV_TOP + NAV_BAR_H + 34;
 
 // Project listing for one portfolio category: /portfolio/:category
@@ -44,7 +44,7 @@ export default function PortfolioCategoryPage() {
   const { data: projects } = useData(() => getProjects(categorySlug), [categorySlug]);
   useSeo({
     title: category ? `${category.label} projects` : 'Portfolio',
-    description: category?.description?.split(/\n\s*\n/)[0],
+    description: richTextPlain(category?.description).split(/\n\s*\n/)[0] || undefined,
   });
 
   // Page number is remembered per category, so switching category starts at page 1.
@@ -55,27 +55,8 @@ export default function PortfolioCategoryPage() {
   const [direction, setDirection] = useState('next');
   const [slideKey, setSlideKey] = useState(0);
 
-  // Hovering any project opens the category's write-up. Which project is
-  // hovered makes no difference — the copy belongs to the segment — so the
-  // thumbnails can shift aside for the panel without the content flickering.
-  const hoverable = !useMediaQuery(NO_HOVER_QUERY);
-  const [showPanel, setShowPanel] = useState(false);
-  const closeTimer = useRef(null);
-  const cancelClose = () => clearTimeout(closeTimer.current);
-  const openPanel = () => {
-    cancelClose();
-    setShowPanel(true);
-  };
-  const scheduleClose = () => {
-    cancelClose();
-    closeTimer.current = setTimeout(() => setShowPanel(false), 180);
-  };
-  useEffect(() => () => clearTimeout(closeTimer.current), []);
-
-  // The panel fits the empty space to the left of the thumbnails rather than
-  // pushing them aside. Moving the row slid the hovered thumbnail out from
-  // under the pointer, which closed the panel, which moved the row back — an
-  // oscillation you could see.
+  // The panel fills the empty space to the left of the thumbnails rather than
+  // pushing them aside, so the row stays centred where R4 puts it.
   const rowRef = useRef(null);
   const [panelW, setPanelW] = useState(0);
   useEffect(() => {
@@ -93,7 +74,12 @@ export default function PortfolioCategoryPage() {
     return () => window.removeEventListener('resize', measure);
   }, [projects, page]);
 
-
+  // The category's write-up stays open beside the thumbnails, as the client
+  // asked; it used to open only while a project was hovered, which hid it from
+  // anyone who did not point at a photograph. It needs room to be read, though:
+  // a portrait tablet leaves about 160px beside the row, two words a line, so
+  // there the page goes without it, as it always has on touch screens.
+  const showPanel = Boolean(category?.description) && panelW >= MIN_PANEL_W;
 
   if (!categoryLoading && !category) return <Navigate to="/portfolio" replace />;
 
@@ -116,44 +102,46 @@ export default function PortfolioCategoryPage() {
     <div className="relative min-h-screen bg-icp-paper font-brand text-icp-slate">
       <style>{slideStyles}</style>
       <EdgeBars />
-      {/* No crumb for the category: this page is the category, so naming it
-          again says nothing. It earns its place one level down, on a project,
-          where it is the way back up to here. */}
-      <SiteNav title="Portfolio" titleTo="/portfolio" tone="light" leftTone={showPanel ? 'red' : 'light'} />
+      {/* The trail ends in the category, as the client asked: Home and
+          Portfolio step back and the category is where you are. Over the red
+          panel the whole row is one off-white; without it, SiteNav sets Home
+          and Portfolio grey and the category red. */}
+      <SiteNav
+        title="Portfolio"
+        titleTo="/portfolio"
+        crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }}
+        tone="light"
+        leftTone={showPanel ? 'red' : 'light'}
+      />
 
       {/* The studio's write-up for this segment, in the red panel R4 uses on
           the project view, carrying the studio's copy for the whole segment. */}
-      <aside
-        data-panel="segment"
-        aria-hidden={!showPanel}
-        onMouseEnter={hoverable ? cancelClose : undefined}
-        onMouseLeave={hoverable ? scheduleClose : undefined}
-        className={[
-          'fixed inset-y-0 z-20 overflow-hidden bg-icp-red text-white',
-          'transition-opacity duration-300 ease-in-out',
-          showPanel ? 'opacity-100' : 'pointer-events-none opacity-0',
-        ].join(' ')}
-        style={{ left: u(EDGE_BAR), width: panelW }}
-      >
-        <div
-          className="scroll-slim absolute inset-x-0 overflow-y-auto"
-          style={{ top: v(TEXT_TOP), bottom: v(FOOTER_H) }}
+      {showPanel && (
+        <aside
+          data-panel="segment"
+          className="fixed inset-y-0 z-20 overflow-hidden bg-icp-red text-white"
+          style={{ left: u(EDGE_BAR), width: panelW }}
         >
           <div
-            className="flex min-h-full flex-col justify-center"
-            style={{
-              paddingLeft: u(PANEL_PAD),
-              paddingRight: u(PANEL_PAD),
-              paddingTop: v(40),
-              paddingBottom: v(40),
-              fontSize: fs(14, 12),
-              lineHeight: 1.8,
-            }}
+            className="scroll-slim absolute inset-x-0 overflow-y-auto"
+            style={{ top: v(TEXT_TOP), bottom: v(FOOTER_H) }}
           >
-            {category?.description && <RichText text={category.description} tone="dark" gap={u(18)} />}
+            <div
+              className="flex min-h-full flex-col justify-center"
+              style={{
+                paddingLeft: u(PANEL_PAD),
+                paddingRight: u(PANEL_PAD),
+                paddingTop: v(40),
+                paddingBottom: v(40),
+                fontSize: fs(14, 12),
+                lineHeight: 1.8,
+              }}
+            >
+              <RichText text={category.description} tone="dark" gap={u(18)} />
+            </div>
           </div>
-        </div>
-      </aside>
+        </aside>
+      )}
 
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(COL_TOP) }}>
         {projects && list.length === 0 ? (
@@ -177,9 +165,6 @@ export default function PortfolioCategoryPage() {
                 key={project.id}
                 className="group relative flex cursor-pointer flex-col"
                 style={{ width: u(COL_W), paddingTop: v(PHOTO_TOP) }}
-                onMouseEnter={hoverable ? openPanel : undefined}
-                onMouseLeave={hoverable ? scheduleClose : undefined}
-                onFocus={hoverable ? openPanel : undefined}
                 onClick={() => navigate(`/portfolio/${categorySlug}/${project.slug}`)}
                 role="link"
                 tabIndex={0}

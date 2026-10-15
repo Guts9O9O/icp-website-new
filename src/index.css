@@ -151,15 +151,40 @@ textarea {
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
+.icp-prose h4 {
+  margin: 0;
+  font-size: 1em;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+}
 .icp-prose p {
   margin: 0;
 }
+.icp-prose p[data-size='small'],
 .icp-prose p[data-small='true'] {
   font-size: 0.86em;
+}
+.icp-prose p[data-size='large'] {
+  font-size: 1.15em;
 }
 .icp-prose strong {
   font-family: 'Segoe UI', system-ui, sans-serif;
   font-weight: 600;
+}
+.icp-prose a {
+  color: var(--icp-red);
+  text-decoration: underline;
+}
+.icp-prose span[data-tone='muted'] {
+  opacity: 0.6;
+}
+.icp-prose hr {
+  border: 0;
+  border-top: 1px solid var(--icp-mist);
+}
+.icp-prose li > ul,
+.icp-prose li > ol {
+  margin-top: 0.45em;
 }
 .icp-prose ul,
 .icp-prose ol {

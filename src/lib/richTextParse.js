@@ -9,10 +9,12 @@
 //   - inside any text, **bold** and _italic_
 // Used for the About Us write-up, team bios and category introductions.
 //
-// The admin writes this through a Word-style editor rather than by hand, so
-// the markers above are what that editor reads and writes. Sizes are named
-// levels, never pixels: everything on the site is scaled off the 2560 artboard
-// and a literal size would stop scaling with it.
+// Since October 2026 the admin's Word-style editor saves HTML instead, so it
+// can carry alignment, underline, links and the rest; this format is what the
+// older write-ups and the seed copy in src/data still hold, and it is still
+// read wherever they turn up. Sizes are named levels, never pixels:
+// everything on the site is scaled off the 2560 artboard and a literal size
+// would stop scaling with it.
 
 const LIST_RE = /^(?:[-•]|\d+[.)])\s+/;
 const SMALL_RE = /^~\s+/;
@@ -21,6 +23,35 @@ const SMALL_RE = /^~\s+/;
 export const INLINE_RE = /(\*\*[^*\n]+\*\*|_[^_\n]+_)/g;
 const QUOTE_RE = /^[“"](.+)[”"]$/s;
 const TITLE_RE = /^([^—–-]{2,60}?)\s+[—–-]\s+(.+)$/s;
+
+// A write-up the editor saved is HTML; anything else is the format above.
+export const isHtml = (text) => /^\s*</.test(String(text ?? ''));
+
+const ENTITIES = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
+const stripMarks = (s) => s.replace(/\*\*([^*\n]+)\*\*/g, '$1').replace(/_([^_\n]+)_/g, '$1');
+
+// The words of a write-up without its formatting, paragraphs separated by a
+// blank line: for meta descriptions, where markup must never leak through.
+export function richTextPlain(text) {
+  if (!text) return '';
+  if (isHtml(text)) {
+    return String(text)
+      .replace(/<br\s*\/?>/gi, ' ')
+      .replace(/<\/p>\s*<\/li>/gi, '</li>') // the editor wraps each list item's words in a paragraph
+      .replace(/<\/(p|h[1-6]|blockquote|ul|ol)>/gi, '\n\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m) => ENTITIES[m])
+      .replace(/[ \t]+/g, ' ')
+      .replace(/ *\n */g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+  return parseRichText(text)
+    .map((b) => (b.type === 'list' ? b.items.map((it) => (it.title ? `${it.title} — ${it.text}` : it.text)).join('\n') : b.text))
+    .map(stripMarks)
+    .join('\n\n');
+}
 
 export function parseRichText(text) {
   const blocks = [];

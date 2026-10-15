@@ -71,13 +71,16 @@ result at some point:
 
 ## format_roundtrip.mjs
 
-The write-up format round trip: the plain text the About page, team bios and
-category introductions are stored in, through the admin's editor, and back.
+The write-up formats. The admin's editor saves HTML (since October 2026); older
+write-ups and the seed copy in `src/data` are a plain-text format. The checks
+cover where the two meet: an old write-up opening in the editor without losing
+a mark or a level, and the plain words of either kind — used for meta
+descriptions — coming out with no markup.
 
     node tests/format_roundtrip.mjs
 
-No browser and no database — the converters are pure, which is why the parsing
-half of the format lives in `src/lib/richTextParse.js` (plain JS) rather than
-in `richText.jsx`. The studio's own copy is their words, so a serialiser that
-quietly dropped a mark or a level would lose them; the last few checks parse
-the real About and category copy to catch exactly that.
+No browser and no database: the converters are pure, which is why they live in
+`src/lib/richTextParse.js` and `richTextFormat.js` (plain JS) rather than in
+`richText.jsx`. The last checks parse the studio's real copy from the seed.
+What the site draws from the HTML needs the DOM, so it is checked in a browser
+rather than here.

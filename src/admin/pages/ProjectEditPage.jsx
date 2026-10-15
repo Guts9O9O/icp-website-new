@@ -1,24 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { slugify } from '../../lib/slugify';
 import * as api from '../api';
 import { ACCEPT_PHOTOS, SIZES, previewUrl, toWebp } from '../images';
 import ImageDrop from '../components/ImageDrop';
 import SortableGallery from '../components/SortableGallery';
-import { Button, Card, Field, Input, PageHeader, Select, Spinner, Textarea, Toggle, errorMessage, useConfirm, useToast } from '../components/ui';
+import RichTextEditor, { EDITOR_HINT } from '../components/RichTextEditor';
+import { Button, Card, Field, Input, PageHeader, Select, Spinner, Toggle, errorMessage, useConfirm, useToast } from '../components/ui';
 
-const EMPTY = { name: '', slug: '', category_slug: 'hospitality', location: '', area_sqft: '', description: '', published: false };
+const EMPTY = { name: '', slug: '', category_slug: 'hospitality', location: '', client: '', typology: '', area_sqft: '', description: '', published: false };
+
+// Back to the category the project belongs to, which is where the studio came from.
+const listOf = (category) => (category ? `/admin/projects?category=${category}` : '/admin/projects');
 
 export default function ProjectEditPage() {
   const { id } = useParams();
   const isNew = id === 'new';
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const toast = useToast();
   const confirm = useConfirm();
 
   const [categories, setCategories] = useState([]);
   const [project, setProject] = useState(null); // existing row
-  const [form, setForm] = useState(EMPTY);
+  // A new project starts in the category it was added from.
+  const [form, setForm] = useState(() => ({ ...EMPTY, category_slug: params.get('category') || EMPTY.category_slug }));
+  const [typologies, setTypologies] = useState([]); // earlier entries, offered as suggestions
   const [slugTouched, setSlugTouched] = useState(false);
   const [thumb, setThumb] = useState(null); // { path } | { file, preview } | { copyFrom, preview }
   const [gallery, setGallery] = useState([]); // [{ key, path?, file?, preview, pending }]
@@ -30,6 +37,10 @@ export default function ProjectEditPage() {
 
   useEffect(() => {
     api.listCategories().then(setCategories).catch((e) => toast.error(errorMessage(e)));
+    api
+      .listProjects()
+      .then((rows) => setTypologies([...new Set(rows.map((r) => r.typology?.trim()).filter(Boolean))].sort()))
+      .catch(() => {});
     if (isNew) return;
     api
       .getProject(id)
@@ -45,6 +56,8 @@ export default function ProjectEditPage() {
           slug: p.slug,
           category_slug: p.category_slug,
           location: p.location ?? '',
+          client: p.client ?? '',
+          typology: p.typology ?? '',
           area_sqft: p.area_sqft ?? '',
           description: p.description ?? '',
           published: p.published,
@@ -146,6 +159,8 @@ export default function ProjectEditPage() {
         slug: form.slug,
         category_slug: form.category_slug,
         location: form.location.trim() || null,
+        client: form.client.trim() || null,
+        typology: form.typology.trim() || null,
         area_sqft: form.area_sqft === '' ? null : Number(form.area_sqft),
         description: form.description.trim() || null,
         published: form.published,
@@ -207,7 +222,7 @@ export default function ProjectEditPage() {
 
       setDirty(false);
       toast.success(fields.published ? 'Saved — the project is live on the website.' : 'Saved as a draft (not visible on the website yet).');
-      navigate('/admin/projects');
+      navigate(listOf(fields.category_slug));
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {
@@ -218,7 +233,7 @@ export default function ProjectEditPage() {
   const cancel = async () => {
     if (dirty && !(await confirm({ title: 'Discard changes?', message: 'Your unsaved edits will be lost.', confirmLabel: 'Discard', danger: true }))) return;
     setDirty(false);
-    navigate('/admin/projects');
+    navigate(listOf(project?.category_slug ?? form.category_slug));
   };
 
   if (loading) {
@@ -248,10 +263,6 @@ export default function ProjectEditPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <Card className="space-y-5 p-6">
-          <Field label="Project name *">
-            <Input value={form.name} onChange={set('name')} placeholder="e.g. Hotel Hilton" autoFocus={isNew} />
-          </Field>
-
           <Field label="Category *">
             <Select value={form.category_slug} onChange={set('category_slug')}>
               {categories.map((c) => (
@@ -262,17 +273,33 @@ export default function ProjectEditPage() {
             </Select>
           </Field>
 
+          {/* The project's details in the order the website reads them:
+              name, location, client, typology, area. */}
+          <Field label="Project name *">
+            <Input value={form.name} onChange={set('name')} placeholder="e.g. Rivalli Park" autoFocus={isNew} />
+          </Field>
+          <Field label="Location">
+            <Input value={form.location} onChange={set('location')} placeholder="e.g. Mumbai, Maharashtra" />
+          </Field>
+          <Field label="Client">
+            <Input value={form.client} onChange={set('client')} placeholder="e.g. CCI Projects" />
+          </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Location">
-              <Input value={form.location} onChange={set('location')} placeholder="e.g. Andheri, Mumbai" />
+            <Field label="Typology" hint="The kind of space, e.g. Sales gallery, Clubhouse, Restaurant.">
+              <Input value={form.typology} onChange={set('typology')} list="typology-suggestions" placeholder="e.g. Clubhouse" />
+              <datalist id="typology-suggestions">
+                {typologies.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
             </Field>
             <Field label="Area (sq. ft)">
               <Input type="number" min="0" inputMode="numeric" value={form.area_sqft} onChange={set('area_sqft')} placeholder="e.g. 4500" />
             </Field>
           </div>
 
-          <Field label="Description" hint="Shown under the photo on the project page. Leave a blank line between paragraphs.">
-            <Textarea rows={7} value={form.description} onChange={set('description')} />
+          <Field label="Description" hint={`Shown in the red panel on the project page, under the details. ${EDITOR_HINT}`}>
+            <RichTextEditor value={form.description} onChange={set('description')} minHeight={180} />
           </Field>
 
           <Field label="Link name" hint={`Website address: ${siteUrl}`}>

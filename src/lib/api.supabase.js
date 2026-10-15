@@ -26,6 +26,8 @@ const mapProject = (p) => ({
   category: p.category_slug,
   name: p.name,
   location: p.location,
+  client: p.client,
+  typology: p.typology,
   areaSqft: p.area_sqft,
   description: p.description,
   thumbnail: mediaUrl(p.thumbnail_path, p.updated_at),

@@ -85,7 +85,7 @@ async def run(vw, vh, tag):
         # and the suite should not fail when they do.
         checks = [("/", "iconcepts + partners"), ("/about", "about us"), ("/clients", "hegde house"), ("/portfolio", "bespoke elements"),
                   ("/portfolio/hospitality", "hotel hilton"), ("/portfolio/commercial", "projects coming soon"),
-                  ("/portfolio/hospitality/hotel-hilton", "hotel hilton, mumbai"), ("/enquiry", "@icp.firm.in")]
+                  ("/portfolio/hospitality/hotel-hilton", "sq.ft./ sq.mt"), ("/enquiry", "@icp.firm.in")]
         for path, text in checks:
             await pg.goto(BASE + path)
             # Poll instead of sleeping a fixed time: content arrives from the

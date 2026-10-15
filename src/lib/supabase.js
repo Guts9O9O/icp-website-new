@@ -5,7 +5,21 @@ import { createClient } from '@supabase/supabase-js';
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = url && anonKey ? createClient(url, anonKey) : null;
+// In the second after signing in, Supabase now and then refuses the brand-new
+// token with "JWT issued at future": the server that issued it reads its
+// clock a hair ahead of the one checking it. The same token is accepted a
+// moment later, so such a request is sent again once, after a short wait,
+// instead of reaching the studio as an error. Nothing else is retried.
+async function fetchPastClockSkew(input, init) {
+  const res = await fetch(input, init);
+  if (res.status !== 401 && res.status !== 403) return res;
+  const body = await res.clone().text().catch(() => '');
+  if (!/issued at future/i.test(body)) return res;
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  return fetch(input, init);
+}
+
+export const supabase = url && anonKey ? createClient(url, anonKey, { global: { fetch: fetchPastClockSkew } }) : null;
 
 // Public URL for a file in the `media` bucket. Absolute URLs and local
 // /public paths are passed through untouched. `version` (e.g. a row's

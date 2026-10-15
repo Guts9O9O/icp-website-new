@@ -1,15 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import * as api from '../api';
-import { Badge, Button, Card, EmptyState, PageHeader, Select, Spinner, Toggle, errorMessage, useConfirm, useToast } from '../components/ui';
+import { Badge, Button, Card, EmptyState, PageHeader, Spinner, Toggle, errorMessage, useConfirm, useToast } from '../components/ui';
 
+/**
+ * Projects are reached through their category: first the categories, each
+ * with how many projects it holds, then that category's projects in the order
+ * the website shows them. The category lives in the address
+ * (?category=hospitality), so a project's Save and Cancel come back to it and
+ * the browser's Back button steps out to the categories.
+ */
 export default function ProjectsListPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const confirm = useConfirm();
+  const [params, setParams] = useSearchParams();
   const [projects, setProjects] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [categories, setCategories] = useState(null);
 
   const load = () =>
     Promise.all([api.listProjects(), api.listCategories()])
@@ -24,8 +31,15 @@ export default function ProjectsListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const label = useMemo(() => Object.fromEntries(categories.map((c) => [c.slug, c.label])), [categories]);
-  const visible = (projects ?? []).filter((p) => filter === 'all' || p.category_slug === filter);
+  const category = (categories ?? []).find((c) => c.slug === params.get('category')) ?? null;
+  const counts = useMemo(() => {
+    const out = {};
+    for (const p of projects ?? []) {
+      out[p.category_slug] ??= { live: 0, draft: 0 };
+      out[p.category_slug][p.published ? 'live' : 'draft'] += 1;
+    }
+    return out;
+  }, [projects]);
 
   const togglePublished = async (project, published) => {
     try {
@@ -69,44 +83,80 @@ export default function ProjectsListPage() {
     }
   };
 
+  if (!projects || !categories) {
+    return (
+      <div className="flex justify-center py-16">
+        <Spinner />
+      </div>
+    );
+  }
+
+  // --- step 1: the categories ------------------------------------------------
+  if (!category) {
+    return (
+      <>
+        <PageHeader title="Projects" description="Choose a category to see, add and arrange its projects." />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {categories.map((c) => {
+            const n = counts[c.slug] ?? { live: 0, draft: 0 };
+            return (
+              <button
+                key={c.slug}
+                type="button"
+                onClick={() => setParams({ category: c.slug })}
+                className="group flex items-center gap-4 rounded-lg border border-icp-mist/70 bg-white p-3 text-left transition hover:border-icp-red hover:shadow-sm"
+              >
+                <div className="h-24 w-16 shrink-0 overflow-hidden rounded bg-[#efece8]">
+                  {c.image_path && <img src={api.mediaUrl(c.image_path)} alt="" className="h-full w-full object-cover" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[17px] font-medium text-icp-slate group-hover:text-icp-red">{c.label}</p>
+                  <p className="mt-1 text-[13px] text-icp-slate/60">
+                    {n.live} live{n.draft ? ` · ${n.draft} draft${n.draft > 1 ? 's' : ''}` : ''}
+                  </p>
+                </div>
+                <span className="text-[20px] text-icp-slate/40 group-hover:text-icp-red" aria-hidden="true">›</span>
+              </button>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+
+  // --- step 2: one category's projects ---------------------------------------
+  const visible = projects.filter((p) => p.category_slug === category.slug);
+  const newProject = () => navigate(`/admin/projects/new?category=${category.slug}`);
+
   return (
     <>
+      <button
+        type="button"
+        onClick={() => setParams({})}
+        className="mb-3 text-[14px] text-icp-slate/70 hover:text-icp-red"
+      >
+        ← All categories
+      </button>
       <PageHeader
-        title="Projects"
-        description="Projects appear on the website's portfolio pages as soon as they are published."
+        title={category.label}
+        description="In the order they appear on the website. Projects go live as soon as they are published."
         actions={
-          <Button variant="primary" onClick={() => navigate('/admin/projects/new')}>
+          <Button variant="primary" onClick={newProject}>
             + New project
           </Button>
         }
       />
 
-      <div className="mb-4 flex items-center gap-3">
-        <span className="text-[14px] text-icp-slate/70">Show</span>
-        <Select value={filter} onChange={(e) => setFilter(e.target.value)} className="!h-10 w-auto">
-          <option value="all">All categories</option>
-          {categories.map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.label}
-            </option>
-          ))}
-        </Select>
-      </div>
-
-      {!projects ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
-        </div>
-      ) : visible.length === 0 ? (
+      {visible.length === 0 ? (
         <EmptyState
-          title="No projects yet"
-          description="Add your first project — it takes about a minute."
-          action={<Button variant="primary" onClick={() => navigate('/admin/projects/new')}>+ New project</Button>}
+          title={`No ${category.label} projects yet`}
+          description="Add the first one — it takes about a minute."
+          action={<Button variant="primary" onClick={newProject}>+ New project</Button>}
         />
       ) : (
         <Card>
           <ul className="divide-y divide-icp-mist/50">
-            {visible.map((p) => (
+            {visible.map((p, i) => (
               <li key={p.id} className="flex items-center gap-4 px-4 py-3">
                 <Link to={`/admin/projects/${p.id}`} className="h-16 w-20 shrink-0 overflow-hidden rounded bg-[#efece8]">
                   {p.thumbnail_path && <img src={api.mediaUrl(p.thumbnail_path, p.updated_at)} alt="" className="h-full w-full object-cover" />}
@@ -115,15 +165,16 @@ export default function ProjectsListPage() {
                   <Link to={`/admin/projects/${p.id}`} className="block truncate text-[15px] font-medium text-icp-slate hover:underline">
                     {p.name}
                   </Link>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-2 text-[13px] text-icp-slate/60">
-                    <span>{label[p.category_slug] ?? p.category_slug}</span>
-                    {p.location && <span>· {p.location}</span>}
-                    <span>· {p.project_images?.length ?? 0} photos</span>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[13px] text-icp-slate/60">
+                    {[p.location, p.client, p.typology].filter(Boolean).map((t, j) => (
+                      <span key={j}>{t} ·</span>
+                    ))}
+                    <span>{p.project_images?.length ?? 0} photos</span>
                   </p>
                 </div>
                 <div className="hidden items-center gap-1 sm:flex">
-                  <Button size="sm" variant="ghost" onClick={() => move(p, -1)} title="Move up">↑</Button>
-                  <Button size="sm" variant="ghost" onClick={() => move(p, 1)} title="Move down">↓</Button>
+                  <Button size="sm" variant="ghost" onClick={() => move(p, -1)} title="Move up" disabled={i === 0}>↑</Button>
+                  <Button size="sm" variant="ghost" onClick={() => move(p, 1)} title="Move down" disabled={i === visible.length - 1}>↓</Button>
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge tone={p.published ? 'green' : 'amber'}>{p.published ? 'Live' : 'Draft'}</Badge>

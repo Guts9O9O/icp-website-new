@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import * as api from '../api';
 import { Button, Card, Field, Input, PageHeader, Spinner, Textarea, errorMessage, useToast } from '../components/ui';
-import RichTextEditor from '../components/RichTextEditor';
+import RichTextEditor, { EDITOR_HINT } from '../components/RichTextEditor';
 import { EMAIL } from '../../lib/enquiry';
 
 const ABOUT_DEFAULT = { title: 'About iC+P', text: '' };
-const FORMAT_HINT = 'Use the buttons above, or Ctrl+B and Ctrl+I. Headings are set in capitals to match the rest of the site. Sizes are Heading / Normal / Small rather than a number, so the text keeps scaling correctly on every screen.';
 const CONTACT_DEFAULT = {
   phone: '',
   email: '',
@@ -96,7 +95,7 @@ export default function SettingsPage() {
       <Card className="mb-6 space-y-4 p-6">
         <h2 className="text-[16px] font-semibold">About Us — studio write-up</h2>
         <p className="text-[13px] text-icp-slate/60">Shown in the panel that slides out when a visitor hovers the “about iC+P” column.</p>
-        <Field label="Write-up" hint={FORMAT_HINT}>
+        <Field label="Write-up" hint={EDITOR_HINT}>
           <RichTextEditor value={about.text} onChange={(text) => setAbout({ ...about, text })} minHeight={420} />
         </Field>
         <div className="flex justify-end">
@@ -106,7 +105,7 @@ export default function SettingsPage() {
 
       <Card className="mb-6 space-y-4 p-6">
         <h2 className="text-[16px] font-semibold">Portfolio — category introductions</h2>
-        <p className="text-[13px] text-icp-slate/60">Shown in the red panel on each category page, when a visitor hovers one of its projects.</p>
+        <p className="text-[13px] text-icp-slate/60">Shown in the red panel beside the projects on each category page.</p>
         {categories.map((c, i) => (
           <Field key={c.slug} label={c.label}>
             <RichTextEditor

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useParams } from 'react-router';
 import { getCategory, getProject } from '../lib/api';
+import RichText, { richTextPlain } from '../lib/richText';
 import { useData } from '../lib/useData';
 import { EDGE_BAR, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
@@ -11,7 +12,7 @@ import { useSeo } from '../lib/seo';
 
 // Measured off R4 page 10 (design px). The caption no longer sits on the
 // photograph: a red panel runs down the left of the page carrying the
-// project's name, area and description, and the image fills the rest.
+// project's details and description, and the image fills the rest.
 const PANEL_W = 800;
 const TEXT_LEFT = 131; // the write-up's left edge inside the panel
 const TEXT_TOP = 555;
@@ -38,7 +39,7 @@ export default function ProjectDetailPage() {
   const { data: project, loading } = useData(() => getProject(categorySlug, slug), [categorySlug, slug]);
   useSeo({
     title: project ? `${project.name}${project.location ? `, ${project.location}` : ''}` : undefined,
-    description: project ? `${project.name}${project.location ? `, ${project.location}` : ''} — ${category?.label ?? ''} interior design by iConcepts + Partners. ${(project.description ?? '').split(/\n\s*\n/).pop() ?? ''}` : undefined,
+    description: project ? `${project.name}${project.location ? `, ${project.location}` : ''} — ${category?.label ?? ''} interior design by iConcepts + Partners. ${richTextPlain(project.description).split(/\n\s*\n/).pop() ?? ''}` : undefined,
     image: project?.thumbnail?.startsWith('http') ? project.thumbnail : undefined,
   });
 
@@ -111,17 +112,22 @@ export default function ProjectDetailPage() {
             lineHeight: 1.7,
           }}
         >
-          <p style={{ fontSize: fs(17, 12) }}>
-            <span className="t-strong">{project.name}</span>
-            {project.location ? `, ${project.location}` : ''}
+          {/* The project's taxonomy, in the studio's order: name, location,
+              client, typology, area. A line the admin left empty is skipped,
+              except the area, which R4 always draws. */}
+          <p className="t-strong" style={{ fontSize: fs(17, 12) }}>
+            {project.name}
           </p>
-          <p className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(10) }}>
-            {areaLabel(project.areaSqft)}
-          </p>
+          <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(10) }}>
+            {project.location && <p>{project.location}</p>}
+            {project.client && <p>Client: {project.client}</p>}
+            {project.typology && <p>Typology: {project.typology}</p>}
+            <p>{areaLabel(project.areaSqft)}</p>
+          </div>
           {project.description && (
-            <p className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(34) }}>
-              {project.description}
-            </p>
+            <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(34) }}>
+              <RichText text={project.description} tone="dark" />
+            </div>
           )}
         </div>
       )}

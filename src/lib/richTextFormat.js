@@ -1,7 +1,10 @@
-// Converting between the plain-text format the write-ups are stored in and the
-// HTML/JSON the admin's editor works with. Pure functions, no React and no
-// editor: the round trip is the part worth testing on its own.
-import { parseRichText } from './richTextParse.js';
+// Opening the older plain-text write-ups in the admin's editor. Since October
+// 2026 the editor saves HTML; a write-up saved before that is converted here
+// as it opens, and stays in the old format until someone edits it.
+// Pure functions, no React and no editor, so it can be tested on its own.
+import { isHtml, parseRichText } from './richTextParse.js';
+
+export { isHtml };
 
 const escapeHtml = (s) =>
   String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
@@ -15,6 +18,7 @@ function inlineToHtml(text) {
 }
 
 export function toEditorHtml(text) {
+  if (isHtml(text)) return text;
   const blocks = parseRichText(text);
   if (!blocks.length) return '<p></p>';
   return blocks
@@ -24,63 +28,13 @@ export function toEditorHtml(text) {
       if (b.type === 'list') {
         const tag = b.ordered ? 'ol' : 'ul';
         const items = b.items
-          // A list item written "TITLE — text" is drawn with the title bold;
-          // it stays as plain text here so it survives the round trip.
-          .map((it) => `<li><p>${inlineToHtml(it.title ? `${it.title} — ${it.text}` : it.text)}</p></li>`)
+          // A list item written "TITLE — text" was drawn with the title bold,
+          // so it opens that way.
+          .map((it) => `<li><p>${it.title ? `<strong>${inlineToHtml(it.title)}</strong> — ` : ''}${inlineToHtml(it.text)}</p></li>`)
           .join('');
         return `<${tag}>${items}</${tag}>`;
       }
-      return b.small
-        ? `<p data-small="true">${inlineToHtml(b.text)}</p>`
-        : `<p>${inlineToHtml(b.text)}</p>`;
+      return b.small ? `<p data-size="small">${inlineToHtml(b.text)}</p>` : `<p>${inlineToHtml(b.text)}</p>`;
     })
     .join('');
-}
-
-function inlineFromNode(node) {
-  return (node.content ?? [])
-    .map((child) => {
-      if (child.type === 'hardBreak') return ' ';
-      if (child.type !== 'text') return '';
-      let out = child.text ?? '';
-      const marks = (child.marks ?? []).map((m) => m.type);
-      // Italic inside bold rather than the other way round, so the markers
-      // nest the same way every time and re-parse cleanly.
-      if (marks.includes('italic')) out = `_${out}_`;
-      if (marks.includes('bold')) out = `**${out}**`;
-      return out;
-    })
-    .join('');
-}
-
-export function toMiniFormat(doc) {
-  const blocks = [];
-  for (const node of doc?.content ?? []) {
-    if (node.type === 'heading') {
-      // Headings are set in capitals across the site, and the stored format
-      // recognises them by that, so the editor commits to it.
-      const text = inlineFromNode(node).trim();
-      if (text) blocks.push(text.toUpperCase());
-      continue;
-    }
-    if (node.type === 'blockquote') {
-      const text = (node.content ?? []).map(inlineFromNode).join(' ').trim();
-      if (text) blocks.push(`“${text}”`);
-      continue;
-    }
-    if (node.type === 'bulletList' || node.type === 'orderedList') {
-      const ordered = node.type === 'orderedList';
-      const items = (node.content ?? [])
-        .map((li, i) => {
-          const text = (li.content ?? []).map(inlineFromNode).join(' ').trim();
-          return text ? `${ordered ? `${i + 1}.` : '-'} ${text}` : '';
-        })
-        .filter(Boolean);
-      if (items.length) blocks.push(items.join('\n'));
-      continue;
-    }
-    const text = inlineFromNode(node).trim();
-    if (text) blocks.push(node.attrs?.small ? `~ ${text}` : text);
-  }
-  return blocks.join('\n\n');
 }
