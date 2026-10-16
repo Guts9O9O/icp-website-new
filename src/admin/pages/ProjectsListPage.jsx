@@ -1,7 +1,63 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
+import { DndContext, KeyboardSensor, PointerSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import * as api from '../api';
 import { Badge, Button, Card, EmptyState, PageHeader, Spinner, Toggle, errorMessage, useConfirm, useToast } from '../components/ui';
+
+// One project in its category's list. The grip on the left picks it up —
+// drag it up or down, or focus it and use Space and the arrow keys — and the
+// rest of the row keeps working as links and buttons.
+function ProjectRow({ project: p, position, first, last, locked, onMove, onToggle, onRemove }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: p.id, disabled: locked });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`relative flex items-center gap-4 bg-white px-4 py-3 ${isDragging ? 'z-10 shadow-lg ring-1 ring-icp-red/30' : ''}`}
+    >
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        title="Drag to change the order"
+        aria-label={`Move ${p.name}`}
+        className="-ml-1 flex h-10 w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded text-[18px] leading-none text-icp-slate/40 hover:bg-[#f0edea] hover:text-icp-slate active:cursor-grabbing"
+      >
+        ⋮⋮
+      </button>
+      <span className="w-5 shrink-0 text-right text-[13px] tabular-nums text-icp-slate/50">{position}</span>
+      <Link to={`/admin/projects/${p.id}`} className="h-16 w-20 shrink-0 overflow-hidden rounded bg-[#efece8]">
+        {p.thumbnail_path && <img src={api.mediaUrl(p.thumbnail_path, p.updated_at)} alt="" className="h-full w-full object-cover" draggable={false} />}
+      </Link>
+      <div className="min-w-0 flex-1">
+        <Link to={`/admin/projects/${p.id}`} className="block truncate text-[15px] font-medium text-icp-slate hover:underline">
+          {p.name}
+        </Link>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[13px] text-icp-slate/60">
+          {[p.location, p.client, p.typology, p.year].filter(Boolean).map((t, j) => (
+            <span key={j}>{t} ·</span>
+          ))}
+          <span>{p.project_images?.length ?? 0} photos</span>
+        </p>
+      </div>
+      <div className="hidden items-center gap-1 sm:flex">
+        <Button size="sm" variant="ghost" onClick={() => onMove(p, -1)} title="Move up one" disabled={first || locked}>↑</Button>
+        <Button size="sm" variant="ghost" onClick={() => onMove(p, 1)} title="Move down one" disabled={last || locked}>↓</Button>
+      </div>
+      <div className="flex items-center gap-3">
+        <Badge tone={p.published ? 'green' : 'amber'}>{p.published ? 'Live' : 'Draft'}</Badge>
+        <Toggle checked={p.published} onChange={(v) => onToggle(p, v)} />
+      </div>
+      <Button size="sm" variant="ghost" onClick={() => onRemove(p)} className="text-red-700">
+        Delete
+      </Button>
+    </li>
+  );
+}
 
 /**
  * Projects are reached through their category: first the categories, each
@@ -17,6 +73,12 @@ export default function ProjectsListPage() {
   const [params, setParams] = useSearchParams();
   const [projects, setProjects] = useState(null);
   const [categories, setCategories] = useState(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const load = () =>
     Promise.all([api.listProjects(), api.listCategories()])
@@ -51,19 +113,38 @@ export default function ProjectsListPage() {
     }
   };
 
-  const move = async (project, dir) => {
-    const siblings = (projects ?? []).filter((p) => p.category_slug === project.category_slug);
+  // A category's projects in a new order: shown at once, then saved as their
+  // sort_order, which is the order the website lists them in.
+  const saveOrder = async (ordered) => {
+    const slug = ordered[0]?.category_slug;
+    const renumbered = ordered.map((p, i) => ({ ...p, sort_order: i + 1 }));
+    setProjects((all) => [...all.filter((p) => p.category_slug !== slug), ...renumbered]);
+    setSavingOrder(true);
+    try {
+      await api.reorderProjects(renumbered.map((p) => p.id));
+      toast.success('Order saved — the website now shows them in this order.');
+    } catch (e) {
+      toast.error(errorMessage(e));
+      await load();
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  const siblingsOf = (slug) => (projects ?? []).filter((p) => p.category_slug === slug);
+
+  const move = (project, dir) => {
+    const siblings = siblingsOf(project.category_slug);
     const i = siblings.findIndex((p) => p.id === project.id);
     const j = i + dir;
     if (j < 0 || j >= siblings.length) return;
-    const reordered = [...siblings];
-    [reordered[i], reordered[j]] = [reordered[j], reordered[i]];
-    try {
-      await api.reorderProjects(reordered.map((p) => p.id));
-      await load();
-    } catch (e) {
-      toast.error(errorMessage(e));
-    }
+    saveOrder(arrayMove(siblings, i, j));
+  };
+
+  const onDragEnd = ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    const siblings = siblingsOf(category.slug);
+    saveOrder(arrayMove(siblings, siblings.findIndex((p) => p.id === active.id), siblings.findIndex((p) => p.id === over.id)));
   };
 
   const remove = async (project) => {
@@ -139,7 +220,7 @@ export default function ProjectsListPage() {
       </button>
       <PageHeader
         title={category.label}
-        description="In the order they appear on the website. Projects go live as soon as they are published."
+        description="In the order the website shows them, five to a page; drafts are skipped. Drag the ⋮⋮ handle to change the order — it saves as soon as you let go."
         actions={
           <Button variant="primary" onClick={newProject}>
             + New project
@@ -154,38 +235,26 @@ export default function ProjectsListPage() {
           action={<Button variant="primary" onClick={newProject}>+ New project</Button>}
         />
       ) : (
-        <Card>
-          <ul className="divide-y divide-icp-mist/50">
-            {visible.map((p, i) => (
-              <li key={p.id} className="flex items-center gap-4 px-4 py-3">
-                <Link to={`/admin/projects/${p.id}`} className="h-16 w-20 shrink-0 overflow-hidden rounded bg-[#efece8]">
-                  {p.thumbnail_path && <img src={api.mediaUrl(p.thumbnail_path, p.updated_at)} alt="" className="h-full w-full object-cover" />}
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <Link to={`/admin/projects/${p.id}`} className="block truncate text-[15px] font-medium text-icp-slate hover:underline">
-                    {p.name}
-                  </Link>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[13px] text-icp-slate/60">
-                    {[p.location, p.client, p.typology, p.year].filter(Boolean).map((t, j) => (
-                      <span key={j}>{t} ·</span>
-                    ))}
-                    <span>{p.project_images?.length ?? 0} photos</span>
-                  </p>
-                </div>
-                <div className="hidden items-center gap-1 sm:flex">
-                  <Button size="sm" variant="ghost" onClick={() => move(p, -1)} title="Move up" disabled={i === 0}>↑</Button>
-                  <Button size="sm" variant="ghost" onClick={() => move(p, 1)} title="Move down" disabled={i === visible.length - 1}>↓</Button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge tone={p.published ? 'green' : 'amber'}>{p.published ? 'Live' : 'Draft'}</Badge>
-                  <Toggle checked={p.published} onChange={(v) => togglePublished(p, v)} />
-                </div>
-                <Button size="sm" variant="ghost" onClick={() => remove(p)} className="text-red-700">
-                  Delete
-                </Button>
-              </li>
-            ))}
-          </ul>
+        <Card className="overflow-hidden">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={visible.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+              <ul className="divide-y divide-icp-mist/50">
+                {visible.map((p, i) => (
+                  <ProjectRow
+                    key={p.id}
+                    project={p}
+                    position={i + 1}
+                    first={i === 0}
+                    last={i === visible.length - 1}
+                    locked={savingOrder}
+                    onMove={move}
+                    onToggle={togglePublished}
+                    onRemove={remove}
+                  />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
         </Card>
       )}
     </>
