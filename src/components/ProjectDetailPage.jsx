@@ -93,7 +93,16 @@ export default function ProjectDetailPage() {
   return (
     <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
       <EdgeBars right="red" />
-      <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="red" />
+      {/* Only the left half of the nav is on the red panel; "Contact Us" is on
+          the taupe, so it takes the taupe treatment — white, with its bar red
+          as on the listings, where the all-red tone had drawn that bar mist. */}
+      <SiteNav
+        title="Portfolio"
+        titleTo="/portfolio"
+        crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }}
+        tone="dark"
+        leftTone="red"
+      />
 
       {/* R4: a red panel down the left carrying the project's details, with
           the photography filling the rest of the page. */}
