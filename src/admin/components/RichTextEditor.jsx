@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { Mark } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -45,6 +45,22 @@ const Soft = Mark.create({
   parseHTML: () => [{ tag: 'span[data-tone="muted"]' }],
   renderHTML: () => ['span', { 'data-tone': 'muted' }, 0],
 });
+
+// One list for every editor on the page, made once (see the note in the
+// component on why it must not be rebuilt per render).
+const EXTENSIONS = [
+  StarterKit.configure({
+    paragraph: false, // replaced by SizedParagraph
+    heading: { levels: [3, 4] },
+    codeBlock: false,
+    code: false,
+    trailingNode: false, // an always-empty last line would be saved as a gap at the foot
+    link: { openOnClick: false, autolink: true, defaultProtocol: 'https' },
+  }),
+  SizedParagraph,
+  Soft,
+  TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right', 'justify'] }),
+];
 
 // --- toolbar pieces --------------------------------------------------------
 
@@ -119,33 +135,35 @@ export default function RichTextEditor({ value, onChange, minHeight = 220, class
   // arriving from the database — is loaded.
   const emitted = useRef(new Set([value ?? '']));
 
+  // Every option handed to useEditor must keep its identity from one render
+  // to the next. Tiptap compares them on each render and, finding any that
+  // changed, pushes them all into the live editor — which resets its view.
+  // Built fresh inline, the extensions and props changed on every keystroke
+  // (each one re-renders the form), so the editor kept dropping its selection:
+  // a size or bold applied to selected words did not show until the editor
+  // lost focus, and clicking back in undid it. The extensions are therefore
+  // module-level, the starting content and props are made once, and the
+  // latest onChange is reached through a ref rather than a new callback.
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+  const [initialContent] = useState(() => (isHtml(value) ? value : toEditorHtml(value)));
+  const editorProps = useMemo(
+    () => ({ attributes: { class: 'icp-prose outline-none', style: `min-height:${minHeight}px` } }),
+    [minHeight]
+  );
+
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        paragraph: false, // replaced by SizedParagraph
-        heading: { levels: [3, 4] },
-        codeBlock: false,
-        code: false,
-        trailingNode: false, // an always-empty last line would be saved as a gap at the foot
-        link: { openOnClick: false, autolink: true, defaultProtocol: 'https' },
-      }),
-      SizedParagraph,
-      Soft,
-      TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right', 'justify'] }),
-    ],
-    content: isHtml(value) ? value : toEditorHtml(value),
-    editorProps: {
-      attributes: {
-        class: 'icp-prose outline-none',
-        style: `min-height:${minHeight}px`,
-      },
-    },
+    extensions: EXTENSIONS,
+    content: initialContent,
+    editorProps,
     onUpdate: ({ editor: ed }) => {
       // Empty lines left at the end would show as a gap under the write-up.
       const html = ed.isEmpty ? '' : ed.getHTML().replace(/(<p[^>]*><\/p>)+$/, '');
       emitted.current.add(html);
       if (emitted.current.size > 200) emitted.current.delete(emitted.current.values().next().value);
-      onChange(html);
+      onChangeRef.current(html);
     },
   });
 
@@ -201,7 +219,14 @@ export default function RichTextEditor({ value, onChange, minHeight = 220, class
   };
 
   return (
-    <div className={`overflow-hidden rounded-md border border-icp-mist bg-white focus-within:border-icp-red focus-within:ring-2 focus-within:ring-icp-red/15 ${className}`}>
+    <div
+      className={`overflow-hidden rounded-md border border-icp-mist bg-white focus-within:border-icp-red focus-within:ring-2 focus-within:ring-icp-red/15 ${className}`}
+      // Should this ever sit inside a <label> again, a click in the text must
+      // not become a click on the first toolbar button (see Field in ui.jsx).
+      onClick={(e) => {
+        if (e.target.closest?.('.ProseMirror') && e.currentTarget.closest('label')) e.preventDefault();
+      }}
+    >
       <div className="flex flex-wrap items-center gap-1 border-b border-icp-mist bg-[#faf9f8] px-2 py-1.5">
         <Tool title="Undo (Ctrl+Z)" disabled={!s.canUndo} onClick={() => run().undo().run()}>↶</Tool>
         <Tool title="Redo (Ctrl+Y)" disabled={!s.canRedo} onClick={() => run().redo().run()}>↷</Tool>

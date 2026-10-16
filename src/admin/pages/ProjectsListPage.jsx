@@ -166,7 +166,7 @@ export default function ProjectsListPage() {
                     {p.name}
                   </Link>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[13px] text-icp-slate/60">
-                    {[p.location, p.client, p.typology].filter(Boolean).map((t, j) => (
+                    {[p.location, p.client, p.typology, p.year].filter(Boolean).map((t, j) => (
                       <span key={j}>{t} ·</span>
                     ))}
                     <span>{p.project_images?.length ?? 0} photos</span>

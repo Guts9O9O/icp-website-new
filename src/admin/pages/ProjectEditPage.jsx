@@ -8,7 +8,7 @@ import SortableGallery from '../components/SortableGallery';
 import RichTextEditor, { EDITOR_HINT } from '../components/RichTextEditor';
 import { Button, Card, Field, Input, PageHeader, Select, Spinner, Toggle, errorMessage, useConfirm, useToast } from '../components/ui';
 
-const EMPTY = { name: '', slug: '', category_slug: 'hospitality', location: '', client: '', typology: '', area_sqft: '', description: '', published: false };
+const EMPTY = { name: '', slug: '', category_slug: 'hospitality', location: '', client: '', typology: '', area_sqft: '', year: '', description: '', published: false };
 
 // Back to the category the project belongs to, which is where the studio came from.
 const listOf = (category) => (category ? `/admin/projects?category=${category}` : '/admin/projects');
@@ -58,6 +58,7 @@ export default function ProjectEditPage() {
           location: p.location ?? '',
           client: p.client ?? '',
           typology: p.typology ?? '',
+          year: p.year ?? '',
           area_sqft: p.area_sqft ?? '',
           description: p.description ?? '',
           published: p.published,
@@ -162,6 +163,7 @@ export default function ProjectEditPage() {
         client: form.client.trim() || null,
         typology: form.typology.trim() || null,
         area_sqft: form.area_sqft === '' ? null : Number(form.area_sqft),
+        year: form.year.trim() || null,
         description: form.description.trim() || null,
         published: form.published,
       };
@@ -275,7 +277,7 @@ export default function ProjectEditPage() {
           </Field>
 
           {/* The project's details in the order the website reads them:
-              name, location, client, typology, area. */}
+              name, location, client, typology, area, year. */}
           <Field label="Project name *">
             <Input value={form.name} onChange={set('name')} placeholder="e.g. Rivalli Park" autoFocus={isNew} />
           </Field>
@@ -285,21 +287,24 @@ export default function ProjectEditPage() {
           <Field label="Client">
             <Input value={form.client} onChange={set('client')} placeholder="e.g. CCI Projects" />
           </Field>
+          <Field label="Typology" hint="The kind of space, e.g. Sales gallery, Clubhouse, Restaurant.">
+            <Input value={form.typology} onChange={set('typology')} list="typology-suggestions" placeholder="e.g. Clubhouse" />
+            <datalist id="typology-suggestions">
+              {typologies.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+          </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Typology" hint="The kind of space, e.g. Sales gallery, Clubhouse, Restaurant.">
-              <Input value={form.typology} onChange={set('typology')} list="typology-suggestions" placeholder="e.g. Clubhouse" />
-              <datalist id="typology-suggestions">
-                {typologies.map((t) => (
-                  <option key={t} value={t} />
-                ))}
-              </datalist>
-            </Field>
             <Field label="Area (sq. ft)">
               <Input type="number" min="0" inputMode="numeric" value={form.area_sqft} onChange={set('area_sqft')} placeholder="e.g. 4500" />
             </Field>
+            <Field label="Project year">
+              <Input value={form.year} onChange={set('year')} placeholder="e.g. 2024" />
+            </Field>
           </div>
 
-          <Field label="Description" hint={`Shown in the red panel on the project page, under the details. ${EDITOR_HINT}`}>
+          <Field as="div" label="Description" hint={`Shown in the red panel on the project page, under the details. ${EDITOR_HINT}`}>
             <RichTextEditor value={form.description} onChange={set('description')} minHeight={180} />
           </Field>
 

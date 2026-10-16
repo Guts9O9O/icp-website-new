@@ -95,7 +95,7 @@ export default function SettingsPage() {
       <Card className="mb-6 space-y-4 p-6">
         <h2 className="text-[16px] font-semibold">About Us — studio write-up</h2>
         <p className="text-[13px] text-icp-slate/60">Shown in the panel that slides out when a visitor hovers the “about iC+P” column.</p>
-        <Field label="Write-up" hint={EDITOR_HINT}>
+        <Field as="div" label="Write-up" hint={EDITOR_HINT}>
           <RichTextEditor value={about.text} onChange={(text) => setAbout({ ...about, text })} minHeight={420} />
         </Field>
         <div className="flex justify-end">
@@ -107,7 +107,7 @@ export default function SettingsPage() {
         <h2 className="text-[16px] font-semibold">Portfolio — category introductions</h2>
         <p className="text-[13px] text-icp-slate/60">Shown in the red panel beside the projects on each category page.</p>
         {categories.map((c, i) => (
-          <Field key={c.slug} label={c.label}>
+          <Field as="div" key={c.slug} label={c.label}>
             <RichTextEditor
               value={c.description ?? ''}
               onChange={(text) => setCategories(categories.map((x, j) => (j === i ? { ...x, description: text } : x)))}

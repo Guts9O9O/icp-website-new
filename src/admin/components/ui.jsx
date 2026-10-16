@@ -24,14 +24,19 @@ export function Button({ variant = 'secondary', size = 'md', className = '', typ
 // ---------------------------------------------------------------------------
 // Form fields
 // ---------------------------------------------------------------------------
-export function Field({ label, hint, error, children, className = '' }) {
+// A field is a <label>, so clicking its name focuses the input. A field that
+// holds buttons as well — the write-up editor's toolbar, the bold button over
+// a textarea — passes `as="div"`: inside a label, the browser turns a click
+// anywhere in it into a click on the first button, so clicking in the text
+// being edited pressed Undo (or Bold) every time.
+export function Field({ label, hint, error, children, className = '', as: Tag = 'label' }) {
   return (
-    <label className={`block ${className}`}>
+    <Tag className={`block ${className}`}>
       {label && <span className="mb-1.5 block text-[13px] font-medium text-icp-slate">{label}</span>}
       {children}
       {hint && !error && <span className="mt-1 block text-[12px] text-icp-slate/60">{hint}</span>}
       {error && <span className="mt-1 block text-[12px] text-red-700">{error}</span>}
-    </label>
+    </Tag>
   );
 }
 

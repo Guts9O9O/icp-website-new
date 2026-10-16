@@ -92,7 +92,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
-      <EdgeBars />
+      <EdgeBars right="red" />
       <SiteNav title="Portfolio" titleTo="/portfolio" crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }} tone="red" />
 
       {/* R4: a red panel down the left carrying the project's details, with
@@ -114,8 +114,8 @@ export default function ProjectDetailPage() {
         >
           {/* The project's taxonomy, in the studio's order: name and location
               on one line ("Rivalli Park – Mumbai, Maharashtra"), then client,
-              typology and area. A line the admin left empty is skipped, except
-              the area, which R4 always draws. */}
+              typology, area and year. A line the admin left empty is skipped,
+              except the area, which R4 always draws. */}
           <p style={{ fontSize: fs(17, 12) }}>
             <span className="t-strong">{project.name}</span>
             {project.location && <span className="text-white/85"> – {project.location}</span>}
@@ -124,6 +124,7 @@ export default function ProjectDetailPage() {
             {project.client && <p>Client: {project.client}</p>}
             {project.typology && <p>Typology: {project.typology}</p>}
             <p>{areaLabel(project.areaSqft)}</p>
+            {project.year && <p>Project year: {project.year}</p>}
           </div>
           {project.description && (
             <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(34) }}>

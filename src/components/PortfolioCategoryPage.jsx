@@ -69,13 +69,22 @@ export default function PortfolioCategoryPage() {
   const [panelW, setPanelW] = useState(0);
   useEffect(() => {
     const measure = () => {
-      const row = frameRef.current;
-      if (!row) return;
+      const frame = frameRef.current;
+      if (!frame) return;
       // Right up to the thumbnails: the panel starts one gutter in, so its
       // width is the whole run from there to the row. Stopping a second gutter
       // short left a pale stripe between the red and the photographs.
+      // Measured against the page's own main column rather than the window:
+      // arriving from another page, the whole page slides in, and the frame's
+      // position on screen taken mid-slide found no room and left the panel
+      // shut until the window was resized. Both move together, so the
+      // difference is the layout position, to the fraction of a pixel (the
+      // whole-pixel offsetLeft let the panel overlap the photograph by 0.3px).
+      const main = frame.offsetParent;
+      if (!main) return;
       const gutter = (EDGE_BAR / 2560) * window.innerWidth;
-      setPanelW(Math.max(0, row.getBoundingClientRect().left - gutter));
+      const left = frame.getBoundingClientRect().left - main.getBoundingClientRect().left + main.offsetLeft;
+      setPanelW(Math.max(0, left - gutter));
     };
     measure();
     window.addEventListener('resize', measure);
@@ -122,19 +131,20 @@ export default function PortfolioCategoryPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-icp-paper font-brand text-icp-slate">
+    // #66594d, the taupe of the project pages, as the client asked for every
+    // page of the portfolio's projects (it had been the pale paper).
+    <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
       <style>{slideStyles}</style>
-      <EdgeBars />
+      <EdgeBars right="red" />
       {/* The trail ends in the category, as the client asked: Home and
           Portfolio step back and the category is where you are. Over the red
-          panel the whole row is one off-white; without it, SiteNav sets Home
-          and Portfolio grey and the category red. */}
+          panel the whole row is one off-white, and on the taupe white. */}
       <SiteNav
         title="Portfolio"
         titleTo="/portfolio"
         crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }}
-        tone="light"
-        leftTone={showPanel ? 'red' : 'light'}
+        tone="dark"
+        leftTone={showPanel ? 'red' : 'dark'}
       />
 
       {/* The studio's write-up for this segment, in the red panel R4 uses on
@@ -175,7 +185,7 @@ export default function PortfolioCategoryPage() {
       <main className="absolute left-0 right-0 flex justify-center" style={{ top: v(COL_TOP) }}>
         <div ref={frameRef} className="shrink-0" style={{ width: u(COL_W * PAGE_SIZE) }}>
           {projects && list.length === 0 ? (
-            <p className="text-center uppercase text-icp-slate/60" style={{ fontSize: fs(16, 12), letterSpacing: '0.3em', marginTop: v(200) }}>
+            <p className="text-center uppercase text-icp-mist/70" style={{ fontSize: fs(16, 12), letterSpacing: '0.3em', marginTop: v(200) }}>
               Projects coming soon
             </p>
           ) : (
@@ -218,7 +228,7 @@ export default function PortfolioCategoryPage() {
                   >
                     {/* The name carries `t-strong` rather than a weight: the
                         brand face is Segoe UI Light and has no bold cut. */}
-                    <p className="t-strong text-icp-slate/60" style={{ fontSize: fs(16, 12) }}>
+                    <p className="t-strong text-white/90" style={{ fontSize: fs(16, 12) }}>
                       {project.name}
                     </p>
                     <p>{project.location}</p>
@@ -241,7 +251,6 @@ export default function PortfolioCategoryPage() {
             onNext={() => go(page + 1)}
             label="Pages"
             itemLabel={(i) => `Page ${i + 1}`}
-            onLight
             endsDisabled
           />
         </div>

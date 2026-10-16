@@ -61,7 +61,7 @@ function ClientForm({ initial, categories, onSave, onCancel, toast }) {
           </div>
         </div>
       ) : (
-        <Field label="Text *" hint="One line per row, e.g. Hegde House, / Belgavi Karnataka. Set the name lines bold to tell them from the town.">
+        <Field as="div" label="Text *" hint="One line per row, e.g. Hegde House, / Belgavi Karnataka. Set the name lines bold to tell them from the town.">
           <BoldableTextarea rows={3} value={form.text} onChange={(text) => setForm((f) => ({ ...f, text }))} />
         </Field>
       )}

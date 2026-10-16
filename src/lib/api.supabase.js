@@ -30,6 +30,7 @@ const mapProject = (p) => ({
   client: p.client,
   typology: p.typology,
   areaSqft: p.area_sqft,
+  year: p.year,
   description: p.description,
   thumbnail: mediaUrl(p.thumbnail_path, p.updated_at),
   images: [...(p.project_images ?? [])].sort(bySortOrder).map((i) => mediaUrl(i.path)),

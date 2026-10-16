@@ -43,7 +43,7 @@ function MemberForm({ initial, onSave, onCancel, toast }) {
       <Field label="Role" hint="One line per row, e.g. Founder / & / Design Director — shown under the photo exactly as typed.">
         <Textarea rows={3} value={form.role_text} onChange={set('role_text')} placeholder={'Founder\n&\nDesign Director'} />
       </Field>
-      <Field label="Write-up" hint={`Shown in the slide-out panel when a visitor hovers the photo. ${EDITOR_HINT}`}>
+      <Field as="div" label="Write-up" hint={`Shown in the slide-out panel when a visitor hovers the photo. ${EDITOR_HINT}`}>
         <RichTextEditor value={form.bio} onChange={(bio) => setForm((f) => ({ ...f, bio }))} minHeight={260} />
       </Field>
       <div className="flex items-start gap-4">
