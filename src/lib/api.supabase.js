@@ -25,7 +25,8 @@ const mapProject = (p) => ({
   slug: p.slug,
   category: p.category_slug,
   name: p.name,
-  location: p.location,
+  // Typed in the admin as "Mumbai,Maharashtra"; shown with a space after each comma.
+  location: p.location?.replace(/\s*,\s*/g, ', ').trim(),
   client: p.client,
   typology: p.typology,
   areaSqft: p.area_sqft,

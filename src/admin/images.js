@@ -1,26 +1,59 @@
 import imageCompression from 'browser-image-compression';
 
-// Size caps (px, longest side) — the same limits scripts/seed.mjs applies.
+// Size caps (px, longest side) for the small previews made from photos.
 export const SIZES = {
-  thumbnail: 1200,
-  gallery: 2400,
+  thumbnail: 1600,
   photo: 1000,
 };
 
 const KEEP_AS_IS = ['image/png', 'image/svg+xml', 'image/webp'];
 
-// Converts an uploaded photo to WebP in the browser (resized, EXIF-rotated),
-// so the server only ever stores optimised files.
-export async function toWebp(file, max = SIZES.gallery) {
+// Converts an uploaded photo to WebP in the browser (resized, EXIF-rotated).
+// Used for previews — a project's listing thumbnail, a team photo — never for
+// the photographs a project page shows.
+export async function toWebp(file, max = SIZES.thumbnail, quality = 0.9) {
   const blob = await imageCompression(file, {
     maxWidthOrHeight: max,
     maxSizeMB: 4,
-    initialQuality: 0.82,
+    initialQuality: quality,
     fileType: 'image/webp',
     useWebWorker: true,
   });
-  const name = file.name.replace(/\.[^.]+$/, '') + '.webp';
+  const name = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.webp';
   return new File([blob], name, { type: 'image/webp' });
+}
+
+// A project's photographs are stored exactly as uploaded: the same pixels,
+// size, format and quality, so nothing is cut down or recompressed. They used
+// to be shrunk to 2400px and squeezed under 4 MB, which on a detailed render
+// cost visible quality. Only a file the website cannot hold is converted, at
+// full size and high quality: a HEIC from an iPhone (browsers cannot show it,
+// and only Safari can read it to convert), or one over the 15 MB the storage
+// accepts per file.
+export const MAX_UPLOAD_MB = 15;
+const WEB_FORMATS = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+export async function prepareProjectPhoto(file) {
+  if (WEB_FORMATS[file.type] && file.size <= MAX_UPLOAD_MB * 1024 * 1024) return file;
+  const blob = await imageCompression(file, {
+    maxSizeMB: MAX_UPLOAD_MB - 1,
+    initialQuality: 0.92,
+    fileType: 'image/jpeg',
+    useWebWorker: true,
+  });
+  const name = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+  return new File([blob], name, { type: 'image/jpeg' });
+}
+
+// The file extension a photo is stored under, from what it really is.
+export const extensionOf = (file) => WEB_FORMATS[file.type] ?? 'jpg';
+
+// A listing thumbnail made from a photo already in storage: fetched, then
+// reduced like any other thumbnail. (Copying the original instead would put a
+// full-size photograph behind every small column on the listing page.)
+export async function thumbnailFromUrl(url) {
+  const blob = await (await fetch(url)).blob();
+  return toWebp(new File([blob], 'thumb', { type: blob.type }), SIZES.thumbnail);
 }
 
 // Logos keep their format (transparency, vector); photos become WebP.

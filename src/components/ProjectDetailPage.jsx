@@ -112,14 +112,15 @@ export default function ProjectDetailPage() {
             lineHeight: 1.7,
           }}
         >
-          {/* The project's taxonomy, in the studio's order: name, location,
-              client, typology, area. A line the admin left empty is skipped,
-              except the area, which R4 always draws. */}
-          <p className="t-strong" style={{ fontSize: fs(17, 12) }}>
-            {project.name}
+          {/* The project's taxonomy, in the studio's order: name and location
+              on one line ("Rivalli Park – Mumbai, Maharashtra"), then client,
+              typology and area. A line the admin left empty is skipped, except
+              the area, which R4 always draws. */}
+          <p style={{ fontSize: fs(17, 12) }}>
+            <span className="t-strong">{project.name}</span>
+            {project.location && <span className="text-white/85"> – {project.location}</span>}
           </p>
           <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(10) }}>
-            {project.location && <p>{project.location}</p>}
             {project.client && <p>Client: {project.client}</p>}
             {project.typology && <p>Typology: {project.typology}</p>}
             <p>{areaLabel(project.areaSqft)}</p>
@@ -134,7 +135,7 @@ export default function ProjectDetailPage() {
 
       <main className="absolute" style={{ top: v(FRAME_TOP), left: u(EDGE_BAR + PANEL_W) }}>
         <div
-          className="relative select-none overflow-hidden bg-black/10"
+          className="relative select-none overflow-hidden"
           style={{
             width: `min(${u(FRAME_W)}, calc(100vw - ${u(EDGE_BAR * 2 + PANEL_W)}))`,
             height: v(FRAME_H),
@@ -149,8 +150,13 @@ export default function ProjectDetailPage() {
             style={{ width: `${Math.max(count, 1) * 100}%`, transform: `translateX(-${(100 / Math.max(count, 1)) * index}%)` }}
           >
             {images.map((src, i) => (
-              <div key={i} className="h-full" style={{ width: `${100 / count}%` }}>
-                <img src={src} alt={`${project?.name ?? 'Project'} ${i + 1}`} className="h-full w-full object-cover" draggable={false} />
+              // Each photograph is shown whole, as it was uploaded: scaled down
+              // to fit the frame if it is larger, never cropped to the frame's
+              // shape (which cut the top and bottom off every landscape shot)
+              // and never stretched past its own pixels (which is what made
+              // small ones look pixelated).
+              <div key={i} className="flex h-full items-center justify-center" style={{ width: `${100 / count}%` }}>
+                <img src={src} alt={`${project?.name ?? 'Project'} ${i + 1}`} className="max-h-full max-w-full object-contain" draggable={false} />
               </div>
             ))}
           </div>

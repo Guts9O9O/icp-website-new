@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { slugify } from '../../lib/slugify';
 import * as api from '../api';
-import { ACCEPT_PHOTOS, SIZES, previewUrl, toWebp } from '../images';
+import { ACCEPT_PHOTOS, MAX_UPLOAD_MB, SIZES, extensionOf, prepareProjectPhoto, previewUrl, thumbnailFromUrl, toWebp } from '../images';
 import ImageDrop from '../components/ImageDrop';
 import SortableGallery from '../components/SortableGallery';
 import RichTextEditor, { EDITOR_HINT } from '../components/RichTextEditor';
@@ -101,8 +101,8 @@ export default function ProjectEditPage() {
     setPreparing((n) => n + files.length);
     for (const file of files) {
       try {
-        const webp = await toWebp(file, SIZES.gallery);
-        setGallery((g) => [...g, { key: api.shortId(), file: webp, preview: previewUrl(webp), pending: true }]);
+        const photo = await prepareProjectPhoto(file);
+        setGallery((g) => [...g, { key: api.shortId(), file: photo, preview: previewUrl(photo), pending: true }]);
       } catch (e) {
         toast.error(`Could not read ${file.name}: ${errorMessage(e)}`);
       } finally {
@@ -191,7 +191,7 @@ export default function ProjectEditPage() {
       for (const [i, img] of items.entries()) {
         if (img.file) {
           setSaving(`Uploading photo ${i + 1} of ${items.length}…`);
-          uploaded.push({ ...img, path: await api.uploadMedia(`${folder}/gallery/${api.shortId()}.webp`, img.file), file: undefined, pending: false });
+          uploaded.push({ ...img, path: await api.uploadMedia(`${folder}/gallery/${api.shortId()}.${extensionOf(img.file)}`, img.file), file: undefined, pending: false });
         } else {
           uploaded.push(img);
         }
@@ -205,9 +205,10 @@ export default function ProjectEditPage() {
         setSaving('Uploading thumbnail…');
         thumbnail_path = await api.uploadMedia(thumbPath, thumbState.file);
       } else if (thumbState?.copyFrom) {
+        // Made from the gallery photo rather than a copy of it: the photo is
+        // the full-size original, and the listing only needs a preview.
         setSaving('Setting thumbnail…');
-        await api.removeMedia([thumbPath]).catch(() => {});
-        thumbnail_path = await api.copyMedia(thumbState.copyFrom, thumbPath);
+        thumbnail_path = await api.uploadMedia(thumbPath, await thumbnailFromUrl(api.mediaUrl(thumbState.copyFrom)));
       } else if (thumbState?.path) {
         thumbnail_path = thumbState.path;
       } else if (project?.thumbnail_path) {
@@ -339,7 +340,7 @@ export default function ProjectEditPage() {
 
           <Card className="p-6">
             <h2 className="mb-1 text-[16px] font-semibold">Gallery photos</h2>
-            <p className="mb-4 text-[13px] text-icp-slate/60">Drag photos to change their order. Large photos are optimised automatically.</p>
+            <p className="mb-4 text-[13px] text-icp-slate/60">Drag photos to change their order. Photos are kept exactly as uploaded — full size and quality, never cropped — up to {MAX_UPLOAD_MB} MB each.</p>
             <ImageDrop accept={ACCEPT_PHOTOS} onFiles={addPhotos} hint="JPG, PNG or HEIC · several at once is fine" />
             {preparing > 0 && (
               <p className="mt-3 flex items-center gap-2 text-[13px] text-icp-slate/70">
