@@ -22,13 +22,14 @@ const FRAME_H = 941;
 const CONTROLS_TOP = 1335;
 const AUTOPLAY_MS = 4000;
 
-// R4 writes the area as "Area 0000 Sq.ft./ Sq.Mt". The zeroes are the
+// R4 writes the area as "Area 0000 Sq.ft./ Sq.Mt"; the client asked for a colon
+// after the label, like the client, typology and year lines. The zeroes are the
 // designer's placeholder and stay until the studio fills the real figure in
 // from the admin, which is how the listing pages read too.
 function areaLabel(sqft) {
-  if (!sqft) return 'Area 0000 Sq.ft./ Sq.Mt';
+  if (!sqft) return 'Area: 0000 Sq.ft./ Sq.Mt';
   const sqm = Math.round(sqft * 0.092903);
-  return `Area ${sqft.toLocaleString('en-IN')} Sq.ft./ ${sqm.toLocaleString('en-IN')} Sq.Mt`;
+  return `Area: ${sqft.toLocaleString('en-IN')} Sq.ft./ ${sqm.toLocaleString('en-IN')} Sq.Mt`;
 }
 
 // Single project view with image carousel: /portfolio/:category/:slug
@@ -133,7 +134,7 @@ export default function ProjectDetailPage() {
             {project.client && <p>Client: {project.client}</p>}
             {project.typology && <p>Typology: {project.typology}</p>}
             <p>{areaLabel(project.areaSqft)}</p>
-            {project.year && <p>Project year: {project.year}</p>}
+            {project.year && <p>Year: {project.year}</p>}
           </div>
           {project.description && (
             <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(34) }}>
