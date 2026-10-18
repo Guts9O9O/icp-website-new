@@ -248,6 +248,7 @@ export default function ProjectEditPage() {
   }
 
   const siteUrl = `/portfolio/${form.category_slug}/${form.slug || '…'}`;
+  const bespoke = form.category_slug === 'bespoke-elements';
 
   return (
     <>
@@ -344,8 +345,21 @@ export default function ProjectEditPage() {
           </Card>
 
           <Card className="p-6">
-            <h2 className="mb-1 text-[16px] font-semibold">Gallery photos</h2>
-            <p className="mb-4 text-[13px] text-icp-slate/60">Drag photos to change their order. Photos are kept exactly as uploaded — full size and quality, never cropped — up to {MAX_UPLOAD_MB} MB each.</p>
+<h2 className="mb-1 text-[16px] font-semibold">Gallery photos</h2>
+            {bespoke && (
+              // Bespoke Elements shows its photos three at a time (R5 p6).
+              <div className="mb-4 flex items-start gap-4 rounded-md bg-[#f7f5f2] p-3">
+                <div className="grid h-16 w-24 shrink-0 gap-px border border-icp-mist bg-icp-mist text-[10px] text-icp-slate/70" style={{ gridTemplateColumns: '43fr 57fr', gridTemplateRows: '1fr 1fr' }}>
+                  <span className="flex items-center justify-center bg-white">1</span>
+                  <span className="col-start-2 row-span-2 row-start-1 flex items-center justify-center bg-white">3</span>
+                  <span className="flex items-center justify-center bg-white">2</span>
+                </div>
+                <p className="text-[13px] text-icp-slate/70">
+                  Bespoke Elements shows photos <b>three at a time</b>: 1 top left, 2 bottom left, 3 tall on the right; then the next three. Each row below is one set.
+                  Photos are never cropped, so they fill their place best at about <b>3:2 landscape</b> (1 and 2) and <b>square</b> (3).
+                </p>
+              </div>
+            )}
             <ImageDrop accept={ACCEPT_PHOTOS} onFiles={addPhotos} hint="JPG, PNG or HEIC · several at once is fine" />
             {preparing > 0 && (
               <p className="mt-3 flex items-center gap-2 text-[13px] text-icp-slate/70">
@@ -360,6 +374,7 @@ export default function ProjectEditPage() {
                   onRemove={removeImage}
                   onMakeThumb={makeThumb}
                   thumbKey={thumbKey}
+                  slots={bespoke ? ['Top left', 'Bottom left', 'Right'] : undefined}
                 />
               </div>
             )}

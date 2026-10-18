@@ -146,7 +146,8 @@ async def run(vw, vh, tag):
 
         # about hover panels; enquiry dropdown; portfolio hover
         await pg.goto(BASE + "/about"); await pg.wait_for_timeout(900)
-        await pg.hover("text=Prachi"); await pg.wait_for_timeout(900)
+        # Her strip of the group photo; the name in the band sits under it.
+        await pg.hover("[aria-label^='About Prachi']"); await pg.wait_for_timeout(900)
         ok("co-founder" in (await pg.inner_text("aside[data-panel='writeup']")).lower(), f"[{tag}] about hover shows write-up panel")
         await pg.goto(BASE + "/enquiry"); await pg.wait_for_timeout(900)
         await pg.select_option("select >> nth=0", "Other"); await pg.wait_for_timeout(200)
@@ -170,10 +171,15 @@ async def run(vw, vh, tag):
 
         srcs = await image_srcs("/portfolio/hospitality", 5)
         ok(len(srcs) == 5 and all("/media/projects/hospitality/" in s and "thumb.webp?v=" in s for s in srcs), f"[{tag}] 5 thumbnails from bucket with version param")
-        # /about also carries the "abou+ iC+P" lockup, which is a site asset
-        # rather than a team photo, so count only what comes from the bucket.
-        srcs = [s for s in await image_srcs("/about", 4) if "/media/team/" in s]
-        ok(len(srcs) == 3 and all("?v=" in s for s in srcs), f"[{tag}] team photos versioned ({len(srcs)} from the bucket)")
+        # /about (R5): one group photograph, loaded, and a strip for the studio
+        # plus one per person over it.
+        await pg.goto(BASE + "/about")
+        for _ in range(80):
+            state = await pg.evaluate("() => { const i = document.querySelector('img[alt^=\"The iC+P team\"]'); return [i ? i.naturalWidth : 0, document.querySelectorAll('[role=button][aria-label^=About]').length]; }")
+            if state[0] > 0 and state[1] >= 2:
+                break
+            await pg.wait_for_timeout(100)
+        ok(state[0] > 0 and state[1] >= 2, f"[{tag}] about: group photo loaded, {state[1]} strips")
         # no horizontal overflow
         await pg.goto(BASE + "/clients"); await pg.wait_for_timeout(900)
         sw = await pg.evaluate("document.documentElement.scrollWidth"); ok(sw <= vw, f"[{tag}] no horizontal overflow on clients ({sw}<= {vw})")

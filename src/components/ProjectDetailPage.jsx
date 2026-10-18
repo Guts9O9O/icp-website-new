@@ -22,6 +22,19 @@ const FRAME_H = 941;
 const CONTROLS_TOP = 1335;
 const AUTOPLAY_MS = 4000;
 
+// Bespoke Elements has its own composition (R5 p6): a white page, the panel at
+// 75% red, and each slide three photographs in a grid of mist rules — two
+// stacked on the left, one tall on the right — measured off R5:
+//   grid 304-1295 tall, from the panel to the right edge bar
+//   left column 747 / right column 987, the left split at half height
+// Photos fill it three at a time in the order the admin holds them.
+const BESPOKE = 'bespoke-elements';
+const SET_SIZE = 3;
+const GRID_TOP = 304;
+const GRID_H = 991;
+const GRID_COLS = '747fr 987fr';
+const RULE = 'border-icp-mist';
+
 // R4 writes the area as "Area 0000 Sq.ft./ Sq.Mt"; the client asked for a colon
 // after the label, like the client, typology and year lines. The zeroes are the
 // designer's placeholder and stay until the studio fills the real figure in
@@ -44,8 +57,14 @@ export default function ProjectDetailPage() {
     image: project?.thumbnail?.startsWith('http') ? project.thumbnail : undefined,
   });
 
+  const bespoke = categorySlug === BESPOKE;
   const images = project?.images ?? [];
-  const count = images.length;
+  // What the carousel steps through: one photograph at a time, or for
+  // Bespoke Elements a set of three.
+  const slides = bespoke
+    ? Array.from({ length: Math.ceil(images.length / SET_SIZE) }, (_, i) => images.slice(i * SET_SIZE, i * SET_SIZE + SET_SIZE))
+    : images.map((src) => [src]);
+  const count = slides.length;
 
   // Carousel position is remembered per project, so a new project starts at image 1.
   const [indexState, setIndexState] = useState({ slug, index: 0 });
@@ -92,7 +111,7 @@ export default function ProjectDetailPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
+    <div className={`relative min-h-screen font-brand ${bespoke ? 'bg-white text-icp-slate' : 'bg-icp-taupe text-icp-mist'}`}>
       <EdgeBars right="red" />
       {/* Only the left half of the nav is on the red panel; "Contact Us" is on
           the taupe, so it takes the taupe treatment — white, with its bar red
@@ -101,14 +120,14 @@ export default function ProjectDetailPage() {
         title="Portfolio"
         titleTo="/portfolio"
         crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }}
-        tone="dark"
+        tone={bespoke ? 'light' : 'dark'}
         leftTone="red"
       />
 
       {/* R4: a red panel down the left carrying the project's details, with
           the photography filling the rest of the page. */}
       <div
-        className="absolute bottom-0 top-0 bg-icp-red"
+        className={`absolute bottom-0 top-0 ${bespoke ? 'bg-icp-red/75' : 'bg-icp-red'}`}
         style={{ left: u(EDGE_BAR), width: u(PANEL_W) }}
       />
 
@@ -144,12 +163,12 @@ export default function ProjectDetailPage() {
         </div>
       )}
 
-      <main className="absolute" style={{ top: v(FRAME_TOP), left: u(EDGE_BAR + PANEL_W) }}>
+      <main className="absolute" style={{ top: v(bespoke ? GRID_TOP : FRAME_TOP), left: u(EDGE_BAR + PANEL_W) }}>
         <div
           className="relative select-none overflow-hidden"
           style={{
-            width: `min(${u(FRAME_W)}, calc(100vw - ${u(EDGE_BAR * 2 + PANEL_W)}))`,
-            height: v(FRAME_H),
+            width: bespoke ? `calc(100vw - ${u(EDGE_BAR * 2 + PANEL_W)})` : `min(${u(FRAME_W)}, calc(100vw - ${u(EDGE_BAR * 2 + PANEL_W)}))`,
+            height: v(bespoke ? GRID_H : FRAME_H),
             touchAction: 'pan-y',
           }}
           onPointerDown={onPointerDown}
@@ -160,16 +179,40 @@ export default function ProjectDetailPage() {
             className="flex h-full transition-transform duration-700 ease-in-out"
             style={{ width: `${Math.max(count, 1) * 100}%`, transform: `translateX(-${(100 / Math.max(count, 1)) * index}%)` }}
           >
-            {images.map((src, i) => (
-              // Each photograph is shown whole, as it was uploaded: scaled down
-              // to fit the frame if it is larger, never cropped to the frame's
-              // shape (which cut the top and bottom off every landscape shot)
-              // and never stretched past its own pixels (which is what made
-              // small ones look pixelated).
-              <div key={i} className="flex h-full items-center justify-center" style={{ width: `${100 / count}%` }}>
-                <img src={src} alt={`${project?.name ?? 'Project'} ${i + 1}`} className="max-h-full max-w-full object-contain" draggable={false} />
-              </div>
-            ))}
+            {slides.map((set, i) =>
+              bespoke ? (
+                <div
+                  key={i}
+                  className={`grid h-full border ${RULE}`}
+                  style={{ width: `${100 / count}%`, gridTemplateColumns: GRID_COLS, gridTemplateRows: '1fr 1fr' }}
+                >
+                  {[0, 1, 2].map((slot) => (
+                    <div
+                      key={slot}
+                      className={`flex min-h-0 min-w-0 items-center justify-center overflow-hidden ${slot === 0 ? `border-b border-r ${RULE}` : slot === 1 ? `border-r ${RULE}` : 'col-start-2 row-span-2 row-start-1'}`}
+                    >
+                      {set[slot] && (
+                        <img
+                          src={set[slot]}
+                          alt={`${project?.name ?? 'Project'} ${i * SET_SIZE + slot + 1}`}
+                          className="max-h-full max-w-full object-contain"
+                          draggable={false}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Each photograph is shown whole, as it was uploaded: scaled down
+                // to fit the frame if it is larger, never cropped to the frame's
+                // shape (which cut the top and bottom off every landscape shot)
+                // and never stretched past its own pixels (which is what made
+                // small ones look pixelated).
+                <div key={i} className="flex h-full items-center justify-center" style={{ width: `${100 / count}%` }}>
+                  <img src={set[0]} alt={`${project?.name ?? 'Project'} ${i + 1}`} className="max-h-full max-w-full object-contain" draggable={false} />
+                </div>
+              )
+            )}
           </div>
         </div>
       </main>
@@ -185,8 +228,9 @@ export default function ProjectDetailPage() {
             onSelect={setIndex}
             onPrev={() => setIndex((i) => (i - 1 + count) % count)}
             onNext={() => setIndex((i) => (i + 1) % count)}
-            label="Images"
-            itemLabel={(i) => `Image ${i + 1}`}
+            label={bespoke ? 'Sets of images' : 'Images'}
+            itemLabel={(i) => (bespoke ? `Set ${i + 1}` : `Image ${i + 1}`)}
+            onLight={bespoke}
           />
         </div>
       )}

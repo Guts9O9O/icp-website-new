@@ -14,6 +14,7 @@ export const {
   getProject,
   getAbout,
   getTeam,
+  getTeamPhoto,
   getClientGroups,
   getTestimonials,
   getSite,

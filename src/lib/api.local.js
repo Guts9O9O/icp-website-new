@@ -3,6 +3,7 @@
 import categories from '../data/categories';
 import projects from '../data/projects';
 import { about, team } from '../data/about';
+import { DEFAULT_TEAM_PHOTO } from './teamPhoto';
 import clientGroups from '../data/clients';
 import site from '../data/site';
 
@@ -30,6 +31,10 @@ export async function getProject(categorySlug, slug) {
 
 export async function getAbout() {
   return about;
+}
+
+export async function getTeamPhoto() {
+  return DEFAULT_TEAM_PHOTO;
 }
 
 export async function getTeam() {

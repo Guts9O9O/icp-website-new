@@ -3,6 +3,7 @@
 // unpublished rows from anonymous visitors; the explicit `published` filters
 // keep admin previews out of the public site when an admin is signed in.
 import { mediaUrl, supabase } from './supabase';
+import { DEFAULT_TEAM_PHOTO } from './teamPhoto';
 import { NOT_CLIENT_CATEGORIES } from '../data/clients';
 
 const bySortOrder = (a, b) => a.sort_order - b.sort_order;
@@ -90,6 +91,14 @@ async function getSetting(key) {
 
 export async function getAbout() {
   return getSetting('about');
+}
+
+// The About page's group photograph and its strips. Until the studio uploads
+// one of their own, the photograph supplied with R5 (shipped with the site).
+export async function getTeamPhoto() {
+  const saved = await getSetting('team_photo');
+  if (!saved?.path) return DEFAULT_TEAM_PHOTO;
+  return { path: mediaUrl(saved.path, saved.updatedAt), aspect: saved.aspect ?? DEFAULT_TEAM_PHOTO.aspect, splits: saved.splits ?? null };
 }
 
 export async function getTeam() {
