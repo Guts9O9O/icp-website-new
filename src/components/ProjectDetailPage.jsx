@@ -22,8 +22,9 @@ const FRAME_H = 941;
 const CONTROLS_TOP = 1335;
 const AUTOPLAY_MS = 4000;
 
-// Bespoke Elements has its own composition (R5 p6): a white page, the panel at
-// 75% red, and each slide three photographs in a grid of mist rules — two
+// Bespoke Elements has its own composition (R5 p6): a white page, the panel in
+// the same solid red as every project page (R5 drew it at 75%; the client
+// asked for it to match), and each slide three photographs in a grid of mist rules — two
 // stacked on the left, one tall on the right — measured off R5:
 //   grid 304-1295 tall, from the panel to the right edge bar
 //   left column 747 / right column 987, the left split at half height
@@ -127,7 +128,7 @@ export default function ProjectDetailPage() {
       {/* R4: a red panel down the left carrying the project's details, with
           the photography filling the rest of the page. */}
       <div
-        className={`absolute bottom-0 top-0 ${bespoke ? 'bg-icp-red/75' : 'bg-icp-red'}`}
+        className="absolute bottom-0 top-0 bg-icp-red"
         style={{ left: u(EDGE_BAR), width: u(PANEL_W) }}
       />
 
