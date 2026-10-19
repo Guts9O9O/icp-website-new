@@ -10,6 +10,8 @@ import { Button, Card, Field, Input, PageHeader, Select, Spinner, Toggle, errorM
 
 const EMPTY = { name: '', slug: '', category_slug: 'hospitality', location: '', client: '', typology: '', area_sqft: '', year: '', description: '', published: false };
 
+const BESPOKE = 'bespoke-elements';
+
 // Back to the category the project belongs to, which is where the studio came from.
 const listOf = (category) => (category ? `/admin/projects?category=${category}` : '/admin/projects');
 
@@ -144,7 +146,7 @@ export default function ProjectEditPage() {
     if (!form.name.trim()) return 'Please enter the project name.';
     if (!form.slug || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(form.slug)) return 'Link name can only contain lowercase letters, numbers and hyphens.';
     if (!form.category_slug) return 'Please choose a category.';
-    if (form.area_sqft !== '' && !(Number(form.area_sqft) >= 0)) return 'Area must be a number.';
+    if (form.category_slug !== BESPOKE && form.area_sqft !== '' && !(Number(form.area_sqft) >= 0)) return 'Area must be a number.';
     return null;
   };
 
@@ -162,7 +164,8 @@ export default function ProjectEditPage() {
         location: form.location.trim() || null,
         client: form.client.trim() || null,
         typology: form.typology.trim() || null,
-        area_sqft: form.area_sqft === '' ? null : Number(form.area_sqft),
+        // Bespoke pieces are objects, not spaces: they have no area.
+        area_sqft: form.category_slug === BESPOKE || form.area_sqft === '' ? null : Number(form.area_sqft),
         year: form.year.trim() || null,
         description: form.description.trim() || null,
         published: form.published,
@@ -248,7 +251,7 @@ export default function ProjectEditPage() {
   }
 
   const siteUrl = `/portfolio/${form.category_slug}/${form.slug || '…'}`;
-  const bespoke = form.category_slug === 'bespoke-elements';
+  const bespoke = form.category_slug === BESPOKE;
 
   return (
     <>
@@ -297,9 +300,12 @@ export default function ProjectEditPage() {
             </datalist>
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Area (sq. ft)">
-              <Input type="number" min="0" inputMode="numeric" value={form.area_sqft} onChange={set('area_sqft')} placeholder="e.g. 4500" />
-            </Field>
+            {/* No area for Bespoke Elements: furniture and lighting, not spaces. */}
+            {!bespoke && (
+              <Field label="Area (sq. ft)">
+                <Input type="number" min="0" inputMode="numeric" value={form.area_sqft} onChange={set('area_sqft')} placeholder="e.g. 4500" />
+              </Field>
+            )}
             <Field label="Project year">
               <Input value={form.year} onChange={set('year')} placeholder="e.g. 2024" />
             </Field>

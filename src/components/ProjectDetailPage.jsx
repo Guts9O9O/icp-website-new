@@ -153,7 +153,8 @@ export default function ProjectDetailPage() {
           <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(10) }}>
             {project.client && <p>Client: {project.client}</p>}
             {project.typology && <p>Typology: {project.typology}</p>}
-            <p>{areaLabel(project.areaSqft)}</p>
+            {/* Bespoke pieces have no area, so not even R4's placeholder. */}
+            {!bespoke && <p>{areaLabel(project.areaSqft)}</p>}
             {project.year && <p>Year: {project.year}</p>}
           </div>
           {project.description && (
