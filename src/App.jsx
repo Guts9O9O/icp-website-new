@@ -9,6 +9,7 @@ import ProjectDetailPage from './components/ProjectDetailPage';
 import EnquiryPage from './components/EnquiryPage';
 import TestimonialsPage from './components/TestimonialsPage';
 import MobileBlock from './components/MobileBlock';
+import BackgroundMusic from './components/chrome/BackgroundMusic';
 import { useMediaQuery } from './lib/useMediaQuery';
 import { MOBILE_QUERY } from './lib/units';
 
@@ -99,6 +100,9 @@ function PublicSite() {
        focusing something near its edge could shunt the whole page sideways. */
     <div className="relative overflow-clip">
       <ScrollToTop />
+      {/* Mounted once, outside the sliding pages, so the music carries on
+          from page to page instead of restarting with each one. */}
+      <BackgroundMusic />
 
       <div
         className="transition-transform duration-500 ease-in-out"

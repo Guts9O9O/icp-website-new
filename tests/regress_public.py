@@ -132,7 +132,8 @@ async def run(vw, vh, tag):
         dots = pg.locator("nav[aria-label='Images'] button[aria-current='true']")
         ok(await dots.count() == 1, f"[{tag}] carousel active dot after ArrowRight")
         await pg.click("header a:has-text('Hospitality')"); await pg.wait_for_timeout(700)
-        await pg.click("text=Aamby Valley"); await pg.wait_for_timeout(900)
+        # Any other project on the first page: the studio reorders them.
+        await pg.locator("main [role=link]").filter(has_not_text="Hotel Hilton").first.click(); await pg.wait_for_timeout(900)
         first_active = await pg.locator("nav[aria-label='Images'] div button").nth(0).get_attribute("aria-current")
         ok(first_active == "true", f"[{tag}] carousel starts at image 1 for a different project")
         # home then immediately another page (leave/enter race)
