@@ -15,7 +15,7 @@ const MENU_GAP = 150;
 const leftLinks = [
   { label: 'About Us', to: '/about' },
   { label: 'Portfolio', to: '/portfolio' },
-  { label: 'Clients', to: '/clients' },
+  { label: 'Our Clients', to: '/clients' },
 ];
 const rightLinks = [
   { label: 'Enquiry', to: '/enquiry' },

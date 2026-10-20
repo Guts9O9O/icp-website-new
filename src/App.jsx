@@ -67,6 +67,29 @@ function useOverlayTransition() {
   return { isHome, overlay: state.overlay, shown: state.shown };
 }
 
+// The studio asked for the site's photography not to be saved from the right-
+// click menu. The menu is off across the public site (but still offered in the
+// enquiry form's fields, where people paste), images cannot be dragged out to
+// the desktop, and on tablets a long press no longer offers "Save image" (the
+// `icp-protect` rules in index.css). None of this is in the admin.
+function useImageProtection() {
+  useEffect(() => {
+    const isField = (t) => t instanceof Element && t.closest('input, textarea, select, [contenteditable="true"]');
+    const onContextMenu = (e) => {
+      if (!isField(e.target)) e.preventDefault();
+    };
+    const onDragStart = (e) => {
+      if (e.target instanceof HTMLImageElement) e.preventDefault();
+    };
+    document.addEventListener('contextmenu', onContextMenu);
+    document.addEventListener('dragstart', onDragStart);
+    return () => {
+      document.removeEventListener('contextmenu', onContextMenu);
+      document.removeEventListener('dragstart', onDragStart);
+    };
+  }, []);
+}
+
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -94,11 +117,12 @@ export default function App() {
 
 function PublicSite() {
   const { isHome, overlay, shown } = useOverlayTransition();
+  useImageProtection();
 
   return (
     /* overflow-clip, not hidden: a hidden box is still scrollable in script, so
        focusing something near its edge could shunt the whole page sideways. */
-    <div className="relative overflow-clip">
+    <div className="icp-protect relative overflow-clip">
       <ScrollToTop />
       {/* Mounted once, outside the sliding pages, so the music carries on
           from page to page instead of restarting with each one. */}

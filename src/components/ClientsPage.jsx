@@ -147,7 +147,7 @@ function CategoryBlock({ group, rows, rowH, last }) {
 }
 
 export default function ClientsPage() {
-  useSeo({ title: 'Clients', description: 'Hospitality, developer, commercial and private clients of iConcepts + Partners, Mumbai.' });
+  useSeo({ title: 'Our Clients', description: 'Hospitality, developer, commercial and private clients of iConcepts + Partners, Mumbai.' });
   const { data } = useData(getClientGroups);
   const groups = useMemo(() => data ?? [], [data]);
   const portrait = useMediaQuery(PORTRAIT_QUERY);
@@ -168,7 +168,7 @@ export default function ClientsPage() {
       />
 
       <EdgeBars />
-      <SiteNav title="Clients" tone="red" />
+      <SiteNav title="Our Clients" tone="red" />
 
       <main
         // Follows the number of client categories rather than hard-coding four,
