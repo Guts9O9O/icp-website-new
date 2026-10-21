@@ -88,12 +88,16 @@ function Cell({ item, rowH, col, lastRow }) {
   if (!item) return <div className={border} style={{ minHeight: v(rowH) }} />;
 
   if (item.type === 'image') {
+    // The cell stretches with its row (a row grows when a client's text needs
+    // more room); the logo keeps a box of the standard row's size inside it,
+    // so every logo stays the size the studio set, whichever row it is in.
     return (
-      <div
-        className={`flex items-center justify-center [container-type:size] ${border}`}
-        style={{ height: v(rowH), minHeight: v(rowH), padding: u(30) }}
-      >
-        <Logo src={item.src} name={item.name} />
+      <div className={`flex items-center justify-center ${border}`} style={{ minHeight: v(rowH) }}>
+        {/* Less the cell's 1px rule, so the box — and the logo in it — is
+            exactly the size it had before rows could grow. */}
+        <div className="flex w-full items-center justify-center [container-type:size]" style={{ height: `calc(${v(rowH)} - 1px)`, padding: u(30) }}>
+          <Logo src={item.src} name={item.name} />
+        </div>
       </div>
     );
   }
@@ -117,21 +121,36 @@ function Cell({ item, rowH, col, lastRow }) {
   );
 }
 
-function CategoryBlock({ group, rows, rowH, last }) {
+function CategoryBlock({ group, rows, rowH, last, column, startRow }) {
   return (
     // The rule sits on the section, not on the heading, so it is one line from
     // the top of the heading to the foot of the grid rather than stopping where
     // the red band ends and starting again in a different colour below it.
-    <section className={last ? '' : CATEGORY_RULE}>
+    //
+    // Each category takes its rows from the page's grid (`subgrid`) rather
+    // than laying out its own: when a client's text needs a taller row — on a
+    // short screen the private residences' three and four lines outgrow the
+    // logo rows — the whole row grows in every category, and the rules still
+    // run straight across. Laid out on their own, that one column grew alone
+    // and its lines fell out of step with the rest.
+    <section
+      className={`grid ${last ? '' : CATEGORY_RULE}`}
+      style={{
+        gridColumn: column,
+        gridRow: `${startRow} / span ${rows + 1}`,
+        gridTemplateRows: 'subgrid',
+        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      }}
+    >
       <h2
         // R3 keeps the red bar unbroken around the headings: no rule above
         // them and none below, the red meeting the taupe directly.
-        className="flex items-center justify-center bg-icp-red text-center text-white"
+        className="col-span-2 flex items-center justify-center bg-icp-red text-center text-white"
         style={{ height: v(HEADER_H), fontSize: fs(24, 14) }}
       >
         {group.label}
       </h2>
-      <div className="grid grid-cols-2">
+      <>
         {Array.from({ length: rows * 2 }).map((_, i) => (
           <Cell
             key={i}
@@ -141,7 +160,7 @@ function CategoryBlock({ group, rows, rowH, last }) {
             lastRow={i >= (rows - 1) * 2}
           />
         ))}
-      </div>
+      </>
     </section>
   );
 }
@@ -152,12 +171,17 @@ export default function ClientsPage() {
   const groups = useMemo(() => data ?? [], [data]);
   const portrait = useMediaQuery(PORTRAIT_QUERY);
 
-  // Landscape: every block has the same number of rows so the grid lines run
-  // straight across. Portrait: each pair of blocks shares its row count.
-  const rowsFor = (index) => {
-    const pool = portrait ? groups.slice(index - (index % 2), index - (index % 2) + 2) : groups;
-    return Math.max(1, ...pool.map((g) => Math.ceil(g.items.length / 2)));
-  };
+  // The categories sit side by side, all of them in landscape and two at a
+  // time on a portrait tablet. Each band of them shares one set of rows: as
+  // many as its longest category needs, after a row for the headings.
+  const cols = Math.max(1, portrait ? Math.min(2, groups.length) : groups.length);
+  const bands = [];
+  for (let i = 0; i < groups.length; i += cols) {
+    const band = groups.slice(i, i + cols);
+    const rows = Math.max(1, ...band.map((g) => Math.ceil(g.items.length / 2)));
+    const startRow = bands.length ? bands[bands.length - 1].startRow + bands[bands.length - 1].rows + 1 : 1;
+    bands.push({ rows, startRow });
+  }
   const rowH = portrait ? ROW_H_PORTRAIT : ROW_H;
 
   return (
@@ -173,23 +197,28 @@ export default function ClientsPage() {
       <main
         // Follows the number of client categories rather than hard-coding four,
         // so a category added in the admin never drops onto a row of its own.
-        className="absolute grid tall:!grid-cols-2"
+        className="absolute grid"
         style={{
           top: v(GRID_TOP),
           left: u(EDGE_BAR),
           right: u(EDGE_BAR),
-          gridTemplateColumns: `repeat(${Math.max(1, groups.length)}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
         }}
       >
-        {groups.map((group, i) => (
-          <CategoryBlock
-            key={group.category}
-            group={group}
-            rows={rowsFor(i)}
-            rowH={rowH}
-            last={portrait ? i % 2 === 1 || i === groups.length - 1 : i === groups.length - 1}
-          />
-        ))}
+        {groups.map((group, i) => {
+          const band = bands[Math.floor(i / cols)];
+          return (
+            <CategoryBlock
+              key={group.category}
+              group={group}
+              rows={band.rows}
+              rowH={rowH}
+              column={(i % cols) + 1}
+              startRow={band.startRow}
+              last={i % cols === cols - 1 || i === groups.length - 1}
+            />
+          );
+        })}
       </main>
 
       <SiteFooter />
