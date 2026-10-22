@@ -4,6 +4,7 @@
 // keep admin previews out of the public site when an admin is signed in.
 import { mediaUrl, supabase } from './supabase';
 import { DEFAULT_TEAM_PHOTO } from './teamPhoto';
+import { FOOTER_DEFAULT } from '../data/site';
 import { NOT_CLIENT_CATEGORIES } from '../data/clients';
 
 const bySortOrder = (a, b) => a.sort_order - b.sort_order;
@@ -101,6 +102,20 @@ export async function getTeamPhoto() {
   return { path: mediaUrl(saved.path, saved.updatedAt), aspect: saved.aspect ?? DEFAULT_TEAM_PHOTO.aspect, splits: saved.splits ?? null };
 }
 
+// The footer's line, set in the admin. Every page has a footer (the home page
+// two at once), so it is fetched once per visit and shared; a failed fetch
+// falls back to the default rather than leaving the footer empty.
+let footerRequest = null;
+export function getFooter() {
+  footerRequest ??= getSetting('footer')
+    .then((f) => ({ ...FOOTER_DEFAULT, ...(f ?? {}) }))
+    .catch(() => {
+      footerRequest = null;
+      return FOOTER_DEFAULT;
+    });
+  return footerRequest;
+}
+
 export async function getTeam() {
   const rows = unwrap(
     await supabase.from('team_members').select('*').eq('published', true).order('sort_order')
@@ -113,17 +128,23 @@ export async function getClientGroups() {
     getCategories(),
     unwrap(await supabase.from('clients').select('*').eq('published', true).order('sort_order')),
   ]);
-  return categories.filter((c) => !NOT_CLIENT_CATEGORIES.includes(c.slug)).map((category) => ({
-    category: category.slug,
-    label: category.label,
-    items: clients
-      .filter((c) => c.category_slug === category.slug)
-      .map((c) =>
-        c.logo_path
-          ? { type: 'image', src: mediaUrl(c.logo_path), name: c.name }
-          : { type: 'text', text: c.text ?? c.name }
-      ),
-  }));
+  // A category takes a column only once it has a client to show: a portfolio
+  // category the studio adds does not turn up on Our Clients as an empty
+  // column (as Bespoke Elements once did) until a client is filed under it.
+  return categories
+    .filter((c) => !NOT_CLIENT_CATEGORIES.includes(c.slug))
+    .map((category) => ({
+      category: category.slug,
+      label: category.label,
+      items: clients
+        .filter((c) => c.category_slug === category.slug)
+        .map((c) =>
+          c.logo_path
+            ? { type: 'image', src: mediaUrl(c.logo_path), name: c.name }
+            : { type: 'text', text: c.text ?? c.name }
+        ),
+    }))
+    .filter((group) => group.items.length > 0);
 }
 
 export async function getTestimonials() {

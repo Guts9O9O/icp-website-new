@@ -67,11 +67,15 @@ export default function PortfolioPage() {
               }
             }}
           >
-            <img
-              src={item.image}
-              alt={item.label}
-              className={`absolute inset-0 h-full w-full object-cover ${item.slug === CHANDELIERS && !portrait ? 'object-bottom' : ''}`}
-            />
+            {/* A category the studio has just added may not have its photo
+                yet; the column is then plain taupe rather than a broken image. */}
+            {item.image && (
+              <img
+                src={item.image}
+                alt={item.label}
+                className={`absolute inset-0 h-full w-full object-cover ${item.slug === CHANDELIERS && !portrait ? 'object-bottom' : ''}`}
+              />
+            )}
             <div className="absolute inset-0 bg-icp-red/50 transition-transform duration-700 ease-in-out group-hover:-translate-x-full" />
             {idx < all.length - 1 && <div className="absolute inset-y-0 right-0 w-px bg-icp-mist/40" />}
             <div className="absolute inset-x-0 bottom-0 hidden h-px bg-icp-mist/40 tall:block" />

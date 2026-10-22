@@ -251,3 +251,17 @@ textarea {
   -webkit-touch-callout: none;
   user-select: none;
 }
+
+/* A page of the Our Clients carousel sliding in (ClientsPage.jsx). */
+@keyframes icp-page-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+@keyframes icp-page-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}

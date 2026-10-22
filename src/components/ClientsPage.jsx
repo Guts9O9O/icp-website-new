@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getClientGroups } from '../lib/api';
 import { useData } from '../lib/useData';
 import { useMediaQuery } from '../lib/useMediaQuery';
@@ -6,6 +6,7 @@ import { EDGE_BAR, PORTRAIT_QUERY, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
+import CarouselControls from './chrome/CarouselControls';
 import { useSeo } from '../lib/seo';
 import { Inline } from '../lib/richText';
 
@@ -17,6 +18,11 @@ const GRID_TOP = 253.57;
 const HEADER_H = 70;
 const ROW_H = 181.26;
 const ROW_H_PORTRAIT = 120;
+// R3's grid holds five rows. Past that the clients go on to further pages,
+// turned with the same Previous / Next as the other listings, on the line of
+// the footer mark (as the project listings place theirs).
+const ROWS_PER_PAGE = 5;
+const CONTROLS_TOP = 1418;
 
 // R4 draws this grid in two weights, measured off its page 7, and the
 // difference is most of what makes it read as a grid rather than a mesh:
@@ -171,13 +177,40 @@ export default function ClientsPage() {
   const groups = useMemo(() => data ?? [], [data]);
   const portrait = useMediaQuery(PORTRAIT_QUERY);
 
+  // Every category turns the page together: page 2 is each category's next
+  // five rows, so the grid keeps its shape and the rules stay straight.
+  const perPage = ROWS_PER_PAGE * 2;
+  const pageCount = Math.max(1, ...groups.map((g) => Math.ceil(g.items.length / perPage)));
+  const [pageState, setPage] = useState(0);
+  const page = Math.min(pageState, pageCount - 1);
+  const [direction, setDirection] = useState('next');
+  const go = (target) => {
+    if (target === page || target < 0 || target >= pageCount) return;
+    setDirection(target > page ? 'next' : 'prev');
+    setPage(target);
+  };
+  useEffect(() => {
+    if (pageCount < 2) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'ArrowRight') go(page + 1);
+      if (e.key === 'ArrowLeft') go(page - 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageCount]);
+  const shown = useMemo(
+    () => groups.map((g) => ({ ...g, items: g.items.slice(page * perPage, page * perPage + perPage) })),
+    [groups, page, perPage]
+  );
+
   // The categories sit side by side, all of them in landscape and two at a
   // time on a portrait tablet. Each band of them shares one set of rows: as
   // many as its longest category needs, after a row for the headings.
   const cols = Math.max(1, portrait ? Math.min(2, groups.length) : groups.length);
   const bands = [];
-  for (let i = 0; i < groups.length; i += cols) {
-    const band = groups.slice(i, i + cols);
+  for (let i = 0; i < shown.length; i += cols) {
+    const band = shown.slice(i, i + cols);
     const rows = Math.max(1, ...band.map((g) => Math.ceil(g.items.length / 2)));
     const startRow = bands.length ? bands[bands.length - 1].startRow + bands[bands.length - 1].rows + 1 : 1;
     bands.push({ rows, startRow });
@@ -197,15 +230,17 @@ export default function ClientsPage() {
       <main
         // Follows the number of client categories rather than hard-coding four,
         // so a category added in the admin never drops onto a row of its own.
+        key={page}
         className="absolute grid"
         style={{
           top: v(GRID_TOP),
+          animation: pageCount > 1 ? `${direction === 'next' ? 'icp-page-in-right' : 'icp-page-in-left'} 260ms ease-out` : undefined,
           left: u(EDGE_BAR),
           right: u(EDGE_BAR),
           gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
         }}
       >
-        {groups.map((group, i) => {
+        {shown.map((group, i) => {
           const band = bands[Math.floor(i / cols)];
           return (
             <CategoryBlock
@@ -215,11 +250,26 @@ export default function ClientsPage() {
               rowH={rowH}
               column={(i % cols) + 1}
               startRow={band.startRow}
-              last={i % cols === cols - 1 || i === groups.length - 1}
+              last={i % cols === cols - 1 || i === shown.length - 1}
             />
           );
         })}
       </main>
+
+      {pageCount > 1 && (
+        <div className="absolute left-0 right-0" style={{ top: v(CONTROLS_TOP) }}>
+          <CarouselControls
+            count={pageCount}
+            index={page}
+            onSelect={go}
+            onPrev={() => go(page - 1)}
+            onNext={() => go(page + 1)}
+            label="Pages of clients"
+            itemLabel={(i) => `Page ${i + 1}`}
+            endsDisabled
+          />
+        </div>
+      )}
 
       <SiteFooter />
     </div>

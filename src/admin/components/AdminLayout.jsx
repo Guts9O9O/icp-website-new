@@ -6,6 +6,7 @@ import { countNewEnquiries } from '../api';
 const links = [
   { to: '/admin/leads', label: 'Leads', badge: 'lead' },
   { to: '/admin/recruitment', label: 'Recruitment', badge: 'recruitment' },
+  { to: '/admin/portfolio', label: 'Portfolio' },
   { to: '/admin/projects', label: 'Projects' },
   { to: '/admin/team', label: 'Team' },
   { to: '/admin/clients', label: 'Clients' },

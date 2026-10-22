@@ -3,6 +3,7 @@ import * as api from '../api';
 import { Button, Card, Field, Input, PageHeader, Spinner, Textarea, errorMessage, useToast } from '../components/ui';
 import RichTextEditor, { EDITOR_HINT } from '../components/RichTextEditor';
 import { EMAIL } from '../../lib/enquiry';
+import { FOOTER_DEFAULT } from '../../data/site';
 
 const ABOUT_DEFAULT = { title: 'About iC+P', text: '' };
 const CONTACT_DEFAULT = {
@@ -21,13 +22,13 @@ export default function SettingsPage() {
   const toast = useToast();
   const [about, setAbout] = useState(null);
   const [contact, setContact] = useState(null);
-  const [categories, setCategories] = useState(null);
+  const [footer, setFooter] = useState(null);
   const [saving, setSaving] = useState('');
 
   useEffect(() => {
-    Promise.all([api.getSetting('about'), api.getSetting('contact'), api.listCategories()])
-      .then(([a, c, cats]) => {
-        setCategories(cats);
+    Promise.all([api.getSetting('about'), api.getSetting('contact'), api.getSetting('footer')])
+      .then(([a, c, f]) => {
+        setFooter({ ...FOOTER_DEFAULT, ...(f ?? {}) });
         setAbout({ ...ABOUT_DEFAULT, ...(a ?? {}) });
         setContact({ ...CONTACT_DEFAULT, ...(c ?? {}), socials: CONTACT_DEFAULT.socials.map((d) => ({ ...d, ...((c?.socials ?? []).find((s) => s.name === d.name) ?? {}) })) });
       })
@@ -47,11 +48,13 @@ export default function SettingsPage() {
     }
   };
 
-  const saveCategories = async () => {
-    setSaving('categories');
+  const saveFooter = async () => {
+    const copyright = footer.copyright.trim();
+    if (!copyright) return toast.error('Please enter the footer line.');
+    setSaving('footer');
     try {
-      await Promise.all(categories.map((c) => api.updateCategory(c.slug, { description: (c.description ?? '').trim() || null })));
-      toast.success('Category introductions saved.');
+      await api.setSetting('footer', { copyright });
+      toast.success('Footer saved — it shows on every page now.');
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {
@@ -86,11 +89,11 @@ export default function SettingsPage() {
     }
   };
 
-  if (!about || !contact || !categories) return <div className="flex justify-center py-16"><Spinner /></div>;
+  if (!about || !contact || !footer) return <div className="flex justify-center py-16"><Spinner /></div>;
 
   return (
     <>
-      <PageHeader title="Site text & contact" description="The About Us write-up, the introduction on each portfolio category page, and the details on the Enquiry page." />
+      <PageHeader title="Site text & contact" description="The About Us write-up, the footer, and the details on the Enquiry page. Portfolio categories and their introductions are under Portfolio." />
 
       <Card className="mb-6 space-y-4 p-6">
         <h2 className="text-[16px] font-semibold">About Us — studio write-up</h2>
@@ -104,19 +107,12 @@ export default function SettingsPage() {
       </Card>
 
       <Card className="mb-6 space-y-4 p-6">
-        <h2 className="text-[16px] font-semibold">Portfolio — category introductions</h2>
-        <p className="text-[13px] text-icp-slate/60">Shown in the red panel beside the projects on each category page.</p>
-        {categories.map((c, i) => (
-          <Field as="div" key={c.slug} label={c.label}>
-            <RichTextEditor
-              value={c.description ?? ''}
-              onChange={(text) => setCategories(categories.map((x, j) => (j === i ? { ...x, description: text } : x)))}
-              minHeight={150}
-            />
-          </Field>
-        ))}
+        <h2 className="text-[16px] font-semibold">Footer — on every page</h2>
+        <Field label="Line under the footer rule" hint="Shown at the foot of every page. Remember to update the year here each January.">
+          <Input value={footer.copyright} onChange={(e) => setFooter({ ...footer, copyright: e.target.value })} />
+        </Field>
         <div className="flex justify-end">
-          <Button variant="primary" onClick={saveCategories} disabled={saving === 'categories'}>{saving === 'categories' ? 'Saving…' : 'Save introductions'}</Button>
+          <Button variant="primary" onClick={saveFooter} disabled={saving === 'footer'}>{saving === 'footer' ? 'Saving…' : 'Save footer'}</Button>
         </div>
       </Card>
 

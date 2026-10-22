@@ -152,7 +152,7 @@ export default function ClientsPage() {
 
   return (
     <>
-      <PageHeader title="Clients" description="Logos shown on the Clients page, grouped by category (two columns each, in this order)." />
+      <PageHeader title="Clients" description="Logos on the Our Clients page, grouped by category: two columns each, in this order, five rows to a page and further pages after that. A category shows on the website once it has a client." />
       <div className="space-y-6">
         {categories.map((c) => {
           const group = rows.filter((r) => r.category_slug === c.slug);

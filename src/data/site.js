@@ -20,4 +20,10 @@ const site = {
   ],
 };
 
+// The footer's line under the rule, on every page. The studio edits it in
+// the admin (Site text & contact → Footer); this is what shows until they do.
+export const FOOTER_DEFAULT = {
+  copyright: 'Website designed by adiz Ⓒ 2026 iConcepts+Partners. All Rights Reserved',
+};
+
 export default site;

@@ -66,6 +66,21 @@ export async function updateCategory(slug, fields) {
   return unwrap(await supabase.from('categories').update(fields).eq('slug', slug).select('*').single());
 }
 
+export async function createCategory(fields) {
+  return unwrap(await supabase.from('categories').insert(fields).select('*').single());
+}
+
+// Only a category with no projects and no clients: both point at it.
+export async function deleteCategory(slug) {
+  unwrap(await supabase.from('categories').delete().eq('slug', slug));
+}
+
+// The order of the columns on the Portfolio page (and everywhere categories
+// are listed), as `sort_order`.
+export async function reorderCategories(slugs) {
+  await Promise.all(slugs.map(async (slug, i) => unwrap(await supabase.from('categories').update({ sort_order: i + 1 }).eq('slug', slug))));
+}
+
 // ---------------------------------------------------------------------------
 // Projects
 // ---------------------------------------------------------------------------

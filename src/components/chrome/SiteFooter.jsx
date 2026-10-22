@@ -1,6 +1,9 @@
 import { useLocation } from 'react-router';
 import { EDGE_BAR, FOOTER_H, FOOTER_MARK_H as LOGO_H, FOOTER_MARK_LIFT as LOGO_LIFT, u, v } from '../../lib/units';
 import LottieMark, { SIGNATURE_RULE_STOP, artAspect } from './LottieMark';
+import { getFooter } from '../../lib/api';
+import { useData } from '../../lib/useData';
+import { FOOTER_DEFAULT } from '../../data/site';
 
 // Artwork sizes from R3 (design px). LottieMark clips each animation to its
 // own artwork, so these are the sizes of what is actually drawn.
@@ -30,6 +33,7 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
   // never rebuilt. Keying the signature to the route makes it draw itself
   // again on arrival at every page, including a return to home.
   const { pathname } = useLocation();
+  const { data: footer } = useData(getFooter);
   const mist = tone === 'mist';
   const signature = mist ? 'signatureMist' : 'signature';
   const logoWidth = LOGO_H * artAspect('shortLogo');
@@ -55,7 +59,8 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
         className="t-body absolute inset-x-0 text-center leading-none text-icp-mist"
         style={{ top: v(32) }}
       >
-        Website designed by adiz Ⓒ 2026 iConcepts+Partners. All Rights Reserved
+        {/* Set in the admin (Site text & contact → Footer). */}
+        {(footer ?? FOOTER_DEFAULT).copyright}
       </p>
 
       {showLogo && (

@@ -83,7 +83,7 @@ async def run(vw, vh, tag):
         # direct loads. The enquiry page is matched on the domain rather than
         # one address: the studio edits their contact details from the admin,
         # and the suite should not fail when they do.
-        checks = [("/", "iconcepts + partners"), ("/about", "about us"), ("/clients", "hegde house"), ("/portfolio", "bespoke elements"),
+        checks = [("/", "iconcepts + partners"), ("/about", "about us"), ("/clients", "our clients"), ("/portfolio", "bespoke elements"),
                   ("/portfolio/hospitality", "hotel hilton"), ("/portfolio/commercial", "commercial"),
                   ("/portfolio/hospitality/hotel-hilton", "sq.ft./"), ("/enquiry", "@icp.firm.in")]
         for path, text in checks:

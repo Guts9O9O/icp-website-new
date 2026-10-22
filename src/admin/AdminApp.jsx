@@ -9,6 +9,7 @@ import EnquiriesPage from './pages/EnquiriesPage';
 import LoginPage from './pages/LoginPage';
 import ProjectEditPage from './pages/ProjectEditPage';
 import ProjectsListPage from './pages/ProjectsListPage';
+import PortfolioAdminPage from './pages/PortfolioAdminPage';
 import SettingsPage from './pages/SettingsPage';
 import TeamPage from './pages/TeamPage';
 import TestimonialsPage from './pages/TestimonialsPage';
@@ -40,6 +41,7 @@ export default function AdminApp() {
               }
             >
               <Route index element={<Navigate to="projects" replace />} />
+              <Route path="portfolio" element={<PortfolioAdminPage />} />
               <Route path="projects" element={<ProjectsListPage />} />
               <Route path="projects/:id" element={<ProjectEditPage />} />
               <Route path="team" element={<TeamPage />} />
