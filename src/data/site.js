@@ -26,4 +26,10 @@ export const FOOTER_DEFAULT = {
   copyright: 'Website designed by adiz Ⓒ 2026 iConcepts+Partners. All Rights Reserved',
 };
 
+// The photograph behind the home page (and the phone notice). The studio
+// replaces it in the admin (Site text & contact → Home page photo).
+export const HOME_DEFAULT = {
+  image: '/images/Cover Page.jpg.png',
+};
+
 export default site;

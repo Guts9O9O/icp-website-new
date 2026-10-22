@@ -16,6 +16,7 @@ export const {
   getTeam,
   getTeamPhoto,
   getFooter,
+  getHome,
   getClientGroups,
   getTestimonials,
   getSite,

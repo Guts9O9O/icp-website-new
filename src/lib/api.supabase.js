@@ -4,7 +4,7 @@
 // keep admin previews out of the public site when an admin is signed in.
 import { mediaUrl, supabase } from './supabase';
 import { DEFAULT_TEAM_PHOTO } from './teamPhoto';
-import { FOOTER_DEFAULT } from '../data/site';
+import { FOOTER_DEFAULT, HOME_DEFAULT } from '../data/site';
 import { NOT_CLIENT_CATEGORIES } from '../data/clients';
 
 const bySortOrder = (a, b) => a.sort_order - b.sort_order;
@@ -114,6 +114,19 @@ export function getFooter() {
       return FOOTER_DEFAULT;
     });
   return footerRequest;
+}
+
+// The home page photo, set in the admin; the original until one is uploaded.
+// Cached like the footer: the home page stays mounted under every other page.
+let homeRequest = null;
+export function getHome() {
+  homeRequest ??= getSetting('home')
+    .then((h) => (h?.imagePath ? { image: mediaUrl(h.imagePath, h.updatedAt) } : HOME_DEFAULT))
+    .catch(() => {
+      homeRequest = null;
+      return HOME_DEFAULT;
+    });
+  return homeRequest;
 }
 
 export async function getTeam() {

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { EDGE_BAR, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/units';
 import { useMediaQuery } from '../lib/useMediaQuery';
+import { getHome } from '../lib/api';
+import { useData } from '../lib/useData';
 import EdgeBars from './chrome/EdgeBars';
 import SiteFooter from './chrome/SiteFooter';
 import LottieMark, { artAspect } from './chrome/LottieMark';
@@ -109,6 +111,8 @@ function BrandMark() {
 
 export default function HomePage() {
   useSeo();
+  const { data: home } = useData(getHome);
+  const [coverLoaded, setCoverLoaded] = useState(false);
   const [panel, setPanel] = useState(null);
   // Touch screens have no hover, and a tap fires a synthetic mouseenter right
   // before its click — so on those devices hover handlers are disabled and the
@@ -121,7 +125,18 @@ export default function HomePage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-icp-slate font-brand text-icp-mist">
-      <img src="/images/Cover Page.jpg.png" alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" />
+      {/* The studio's photo (admin → Site text & contact → Home page photo).
+          Drawn once the setting is known and faded in as it loads, so the
+          old photo never flashes up before a replacement. */}
+      {home && (
+        <img
+          src={home.image}
+          alt=""
+          onLoad={() => setCoverLoaded(true)}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${coverLoaded ? 'opacity-100' : 'opacity-0'}`}
+          loading="eager"
+        />
+      )}
       <div className="absolute inset-0 bg-icp-slate/55" />
 
       <EdgeBars />

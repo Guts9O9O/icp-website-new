@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import * as api from '../api';
 import { Button, Card, Field, Input, PageHeader, Spinner, Textarea, errorMessage, useToast } from '../components/ui';
 import RichTextEditor, { EDITOR_HINT } from '../components/RichTextEditor';
+import HomePhotoCard from '../components/HomePhotoCard';
 import { EMAIL } from '../../lib/enquiry';
 import { FOOTER_DEFAULT } from '../../data/site';
 
@@ -93,7 +94,8 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Site text & contact" description="The About Us write-up, the footer, and the details on the Enquiry page. Portfolio categories and their introductions are under Portfolio." />
+      <PageHeader title="Site text & contact" description="The home page photo, the About Us write-up, the footer, and the details on the Enquiry page. Portfolio categories and their introductions are under Portfolio." />
+      <HomePhotoCard toast={toast} />
 
       <Card className="mb-6 space-y-4 p-6">
         <h2 className="text-[16px] font-semibold">About Us — studio write-up</h2>

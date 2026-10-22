@@ -4,7 +4,7 @@ import categories from '../data/categories';
 import projects from '../data/projects';
 import { about, team } from '../data/about';
 import { DEFAULT_TEAM_PHOTO } from './teamPhoto';
-import { FOOTER_DEFAULT } from '../data/site';
+import { FOOTER_DEFAULT, HOME_DEFAULT } from '../data/site';
 import clientGroups from '../data/clients';
 import site from '../data/site';
 
@@ -32,6 +32,10 @@ export async function getProject(categorySlug, slug) {
 
 export async function getAbout() {
   return about;
+}
+
+export async function getHome() {
+  return HOME_DEFAULT;
 }
 
 export async function getFooter() {
