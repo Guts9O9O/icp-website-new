@@ -52,6 +52,16 @@ export default function TestimonialsPage() {
               <span className="text-white">{current.author}</span>
               {current.company && <span className="text-icp-mist"> · {current.company}</span>}
             </figcaption>
+            {/* The author's own signature, when the studio has added one
+                (admin → Testimonials), as it was uploaded. */}
+            {current.signature && (
+              <img
+                src={current.signature}
+                alt={`Signature of ${current.author}`}
+                className="object-contain"
+                style={{ marginTop: v(36), maxHeight: v(150), maxWidth: u(420) }}
+              />
+            )}
           </figure>
         ) : null}
       </main>

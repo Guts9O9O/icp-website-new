@@ -120,7 +120,7 @@ export default function ProjectDetailPage() {
       <SiteNav
         title="Portfolio"
         titleTo="/portfolio"
-        crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}` }}
+        crumb={{ label: category?.label ?? '', to: `/portfolio/${categorySlug}`, back: true }}
         tone={bespoke ? 'light' : 'dark'}
         leftTone="red"
       />

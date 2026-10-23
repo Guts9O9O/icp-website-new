@@ -151,8 +151,8 @@ async def run(vw, vh, tag):
         await pg.hover("[aria-label^='About Prachi']"); await pg.wait_for_timeout(900)
         ok("co-founder" in (await pg.inner_text("aside[data-panel='writeup']")).lower(), f"[{tag}] about hover shows write-up panel")
         await pg.goto(BASE + "/enquiry"); await pg.wait_for_timeout(900)
-        await pg.select_option("select >> nth=0", "Other"); await pg.wait_for_timeout(200)
-        ok(await pg.locator("select").count() == 1, f"[{tag}] enquiry: 'Other' hides second dropdown")
+        await pg.select_option("select >> nth=0", "Collaboration"); await pg.wait_for_timeout(200)
+        ok(await pg.locator("select").count() == 1, f"[{tag}] enquiry: 'Collaboration' hides second dropdown")
 
         # images from bucket, versioned thumbnails
         async def image_srcs(path, expected):

@@ -31,6 +31,10 @@ t('kind: Staff Recruitment -> recruitment, everything else -> lead', () => {
 });
 t('unknown subject rejected', () => assert.equal(validate({ ...good, subject: 'Hack' }).ok, false));
 t('detail must belong to the subject', () => assert.equal(validate({ ...good, subject: 'Staff Recruitment', detail: 'Hospitality' }).ok, false));
+t('"Collaboration" is a lead with no detail', () => {
+  const r = validate({ ...good, subject: 'Collaboration', detail: 'anything' });
+  assert.equal(r.ok, true); assert.equal(r.entry.detail, ''); assert.equal(r.entry.kind, 'lead');
+});
 t('"Other" needs no detail and clears it', () => {
   const r = validate({ ...good, subject: 'Other', detail: 'anything' });
   assert.equal(r.ok, true); assert.equal(r.entry.detail, '');

@@ -1,5 +1,7 @@
-import { Link } from 'react-router';
-import { EDGE_BAR, NAV_BAR_H, NAV_TOP, u, v } from '../../lib/units';
+import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { EDGE_BAR, NAV_BAR_H, NAV_TOP, fs, u, v } from '../../lib/units';
 
 // Client feedback (2026-10): the bars and dividers should be as tall as the
 // page title's capitals and sit on their baseline, rather than running taller
@@ -21,6 +23,68 @@ const bar = { width: u(EDGE_BAR), height: v(NAV_BAR_H) };
 // than a rule.
 const divider = { width: `max(1px, ${u(2)})`, height: v(NAV_BAR_H) };
 
+// The crumb on a project page (client, Oct 2026). It keeps the category's
+// name, but over it the pointer turns into a "Back" tag, and a click goes back
+// one page — to the listing as it was left, on the same page of thumbnails.
+// Opened straight from a link, with no page of the site behind it, it opens
+// the category instead. The tag is drawn rather than set as a cursor image,
+// so it is in the brand face and sharp on every screen; touch screens, with
+// no pointer to replace, just follow the link.
+function BackCrumb({ to, className, style, children }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const tag = useRef(null);
+  const [shown, setShown] = useState(false);
+  const place = (e) => {
+    if (tag.current) tag.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+  };
+  return (
+    <>
+      <Link
+        to={to}
+        className={`${className} cursor-none`}
+        style={style}
+        onPointerEnter={(e) => {
+          if (e.pointerType !== 'mouse') return;
+          place(e);
+          setShown(true);
+        }}
+        onPointerMove={place}
+        onPointerLeave={() => setShown(false)}
+        onClick={(e) => {
+          setShown(false);
+          // A new tab, or nothing of the site to go back to: the plain link.
+          if (location.key === 'default' || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          e.preventDefault();
+          navigate(-1);
+        }}
+      >
+        {children}
+      </Link>
+      {createPortal(
+        <div ref={tag} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[100] font-brand">
+          <span
+            data-back-cursor
+            // Hung just under the pointer rather than centred on it, so the
+            // category's name stays in view: the client asked for the name
+            // to stay, and only the pointer to say "Back".
+            className={`flex origin-top -translate-x-1/2 items-center rounded-full bg-icp-paper uppercase text-icp-red shadow-[0_2px_12px_rgba(0,0,0,0.25)] transition-[opacity,transform] duration-200 ease-out ${
+              shown ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
+            }`}
+            style={{ fontSize: fs(17, 11), letterSpacing: '0.16em', gap: '0.55em', padding: '0.6em 1.05em 0.6em 0.95em', marginTop: '1.1em' }}
+          >
+            <svg viewBox="0 0 16 12" width="1.15em" height="0.85em" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 6H1.5M6 1.5 1.5 6 6 10.5" />
+            </svg>
+            Back
+          </span>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
 /**
  * Top nav shared by every inner page (R3):
  *   left  — [mist bar] Home | Title | crumb
@@ -29,7 +93,7 @@ const divider = { width: `max(1px, ${u(2)})`, height: v(NAV_BAR_H) };
  */
 export default function SiteNav({
   title,
-  crumb, // { label, to } — e.g. the category on portfolio pages
+  crumb, // { label, to, back } — e.g. the category on portfolio pages; `back` makes it go back a page
   rightTitle, // page title shown on the right, e.g. "Enquiry"
   titleTo, // makes the page title a link — the way back up from a category
   leftLabel = 'Home',
@@ -107,13 +171,23 @@ export default function SiteNav({
         {crumb && (
           <>
             <span className={`t-title transition-colors ${left.divider}`} style={{ ...divider, marginLeft: u(24) }} />
-            <Link
-              to={crumb.to}
-              className={`t-nav transition-colors ${left.crumbText} ${left.crumbHover}`}
-              style={{ marginLeft: u(18) }}
-            >
-              {crumb.label}
-            </Link>
+            {crumb.back ? (
+              <BackCrumb
+                to={crumb.to}
+                className={`t-nav transition-colors ${left.crumbText} ${left.crumbHover}`}
+                style={{ marginLeft: u(18) }}
+              >
+                {crumb.label}
+              </BackCrumb>
+            ) : (
+              <Link
+                to={crumb.to}
+                className={`t-nav transition-colors ${left.crumbText} ${left.crumbHover}`}
+                style={{ marginLeft: u(18) }}
+              >
+                {crumb.label}
+              </Link>
+            )}
           </>
         )}
       </div>

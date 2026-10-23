@@ -4,7 +4,7 @@
 // The client edits this from the admin (Site text & contact).
 export const about = {
   title: 'About iC+P',
-  text: `ABOUT US
+  text: `DESIGN TEAM
 
 iConcepts + Partners (iC+P) is a Multidisciplinary Design Studio founded in 2007, with Interior Design at its core and an evolving practice across Architecture, Product Design and Bespoke Elements.
 

@@ -11,7 +11,8 @@ function enquiryMock(env) {
   const SUBJECTS = {
     'Design Request': ['Hospitality', 'Builders & Developers', 'Commercial', 'Private Residence'],
     'Staff Recruitment': ['Interior Designer', '3D Developer', 'Graphics Designer'],
-    Other: [],
+    Collaboration: [],
+    Other: [], // still accepted, as the live script does
   };
   const kindOf = (subject) => (subject === 'Staff Recruitment' ? 'recruitment' : 'lead');
 

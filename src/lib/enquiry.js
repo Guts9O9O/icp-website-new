@@ -11,8 +11,14 @@ const ENDPOINT = import.meta.env.VITE_ENQUIRY_ENDPOINT || '/api/enquiry';
 export const SUBJECTS = {
   'Design Request': ['Hospitality', 'Builders & Developers', 'Commercial', 'Private Residence'],
   'Staff Recruitment': ['Interior Designer', '3D Developer', 'Graphics Designer'],
-  Other: [],
+  Collaboration: [], // was "Other" until October 2026
 };
+
+// The subjects an older copy of the email script knows by another name. The
+// script lives at Google and is redeployed by hand, so until it is, it turns
+// "Collaboration" away as an unknown subject; sendEnquiry then sends the
+// enquiry again under the old name rather than losing it.
+const LEGACY_SUBJECT = { Collaboration: 'Other' };
 
 export const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -25,12 +31,7 @@ export function validateEnquiry(form) {
   return errors;
 }
 
-export async function sendEnquiry(form) {
-  const payload = {
-    ...form,
-    page: window.location.href,
-    userAgent: navigator.userAgent,
-  };
+async function post(payload) {
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -38,7 +39,18 @@ export async function sendEnquiry(form) {
     redirect: 'follow',
   });
   if (!res.ok) throw new Error(`Request failed (${res.status})`);
-  const data = await res.json();
+  return res.json();
+}
+
+export async function sendEnquiry(form) {
+  const payload = {
+    ...form,
+    page: window.location.href,
+    userAgent: navigator.userAgent,
+  };
+  let data = await post(payload);
+  const legacy = LEGACY_SUBJECT[form.subject];
+  if (!data.ok && legacy && /subject/i.test(data.error || '')) data = await post({ ...payload, subject: legacy });
   if (!data.ok) throw new Error(data.error || 'Could not send your enquiry.');
   return data;
 }

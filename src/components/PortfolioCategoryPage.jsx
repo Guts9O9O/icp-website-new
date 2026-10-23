@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { getCategory, getProjects } from '../lib/api';
 import RichText, { richTextPlain } from '../lib/richText';
 import { useData } from '../lib/useData';
@@ -50,10 +50,13 @@ export default function PortfolioCategoryPage() {
     description: richTextPlain(category?.description).split(/\n\s*\n/)[0] || undefined,
   });
 
-  // Page number is remembered per category, so switching category starts at page 1.
-  const [pageState, setPageState] = useState({ category: categorySlug, page: 0 });
-  const page = pageState.category === categorySlug ? pageState.page : 0;
-  const setPage = (n) => setPageState({ category: categorySlug, page: n });
+  // The page of thumbnails lives in the address (?page=2), so going back from a
+  // project — the crumb's "Back", or the browser's — returns to the page it was
+  // opened from rather than the first. Turning pages replaces the entry instead
+  // of adding one, so Back still leaves the listing in one step.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedPage = Math.max(0, (parseInt(searchParams.get('page'), 10) || 1) - 1);
+  const setPage = (n) => setSearchParams(n > 0 ? { page: String(n + 1) } : {}, { replace: true });
   const [exiting, setExiting] = useState(false);
   const [direction, setDirection] = useState('next');
   const [slideKey, setSlideKey] = useState(0);
@@ -117,6 +120,7 @@ export default function PortfolioCategoryPage() {
 
   const list = projects ?? [];
   const pageCount = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const page = projects ? Math.min(requestedPage, pageCount - 1) : requestedPage;
   const visible = list.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   const go = (target) => {
@@ -194,8 +198,12 @@ export default function PortfolioCategoryPage() {
               className={`relative flex w-fit transition-all duration-[160ms] ease-in ${
                 exiting ? (direction === 'next' ? '-translate-x-6 opacity-0' : 'translate-x-6 opacity-0') : 'translate-x-0 opacity-100'
               }`}
+              // At least R4's height, but free to grow: on a small screen a
+              // name that wraps to three lines needs more room than R4 drew,
+              // and with a fixed height that room came out of its photograph,
+              // so the photos and names stood at different heights.
               style={{
-                height: v(COL_H),
+                minHeight: v(COL_H),
                 animation: exiting ? undefined : `${direction === 'next' ? 'icpSlideInRight' : 'icpSlideInLeft'} 200ms ease-out forwards`,
               }}
             >
@@ -212,7 +220,7 @@ export default function PortfolioCategoryPage() {
                   }}
                 >
                   <div className="absolute inset-y-0 left-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
-                  <div className="overflow-hidden bg-black/10" style={{ height: v(PHOTO_H) }}>
+                  <div className="shrink-0 overflow-hidden bg-black/10" style={{ height: v(PHOTO_H) }}>
                     {project.thumbnail ? (
                       <img
                         src={project.thumbnail}
@@ -221,10 +229,21 @@ export default function PortfolioCategoryPage() {
                       />
                     ) : null}
                   </div>
-                  <div className="w-full bg-icp-red" style={{ height: v(RULE_H) }} />
+                  <div className="w-full shrink-0 bg-icp-red" style={{ height: v(RULE_H) }} />
+                  {/* Every name starts on the same line under the rule, however
+                      many lines it or its neighbours wrap to. */}
                   <div
-                    className="flex flex-1 flex-col items-center justify-center text-center"
-                    style={{ fontSize: fs(14, 11), lineHeight: 1.7, letterSpacing: '0.02em' }}
+                    className="flex flex-1 flex-col items-center justify-start break-words text-center"
+                    style={{
+                      fontSize: fs(14, 11),
+                      lineHeight: 1.6,
+                      letterSpacing: '0.02em',
+                      paddingTop: v(24),
+                      paddingBottom: v(20),
+                      paddingLeft: u(8),
+                      paddingRight: u(8),
+                      hyphens: 'auto',
+                    }}
                   >
                     {/* The name carries `t-strong` rather than a weight: the
                         brand face is Segoe UI Light and has no bold cut. */}

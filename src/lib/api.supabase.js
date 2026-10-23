@@ -164,7 +164,7 @@ export async function getTestimonials() {
   const rows = unwrap(
     await supabase.from('testimonials').select('*').eq('published', true).order('sort_order')
   );
-  return rows.map((t) => ({ id: t.id, quote: t.quote, author: t.author, company: t.company }));
+  return rows.map((t) => ({ id: t.id, quote: t.quote, author: t.author, company: t.company, signature: mediaUrl(t.signature_path) }));
 }
 
 export async function getSite() {

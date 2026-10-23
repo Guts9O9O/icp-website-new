@@ -3,7 +3,7 @@
  *
  * A Google Apps Script web app running in the studio's own Google account.
  * The website posts each form submission here. Depending on the subject the
- * enquiry is a LEAD (Design Request, Other) or a RECRUITMENT application
+ * enquiry is a LEAD (Design Request, Collaboration) or a RECRUITMENT application
  * (Staff Recruitment), and each kind has its own Google Sheet, its own
  * notification address and its own page in the website's admin panel.
  *
@@ -37,7 +37,8 @@ var LIMITS = {
 var SUBJECTS = {
   'Design Request': ['Hospitality', 'Builders & Developers', 'Commercial', 'Private Residence'],
   'Staff Recruitment': ['Interior Designer', '3D Developer', 'Graphics Designer'],
-  Other: [],
+  Collaboration: [], // the website's "Other" became "Collaboration" in October 2026
+  Other: [], // still accepted, for any page or sheet that sends the old name
 };
 
 var KINDS = {

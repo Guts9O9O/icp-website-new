@@ -24,8 +24,8 @@ async def main():
         await selects.nth(0).select_option("Staff Recruitment"); await pg.wait_for_timeout(400)
         opts = await selects.nth(1).locator("option").all_text_contents()
         ok(any("Interior Designer" in o for o in opts), f"Staff Recruitment swaps in the role list ({len(opts)} options)")
-        await selects.nth(0).select_option("Other"); await pg.wait_for_timeout(400)
-        ok(await pg.locator("form select").count() == 1, "'Other' hides the second dropdown")
+        await selects.nth(0).select_option("Collaboration"); await pg.wait_for_timeout(400)
+        ok(await pg.locator("form select").count() == 1, "'Collaboration' hides the second dropdown")
         await selects.nth(0).select_option("Design Request"); await pg.wait_for_timeout(400)
 
         # submit empty -> complains, does not post
