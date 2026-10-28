@@ -11,7 +11,7 @@ import TestimonialsPage from './components/TestimonialsPage';
 import MobileBlock from './components/MobileBlock';
 import BackgroundMusic from './components/chrome/BackgroundMusic';
 import { useMediaQuery } from './lib/useMediaQuery';
-import { MOBILE_QUERY } from './lib/units';
+import { MOBILE_QUERY, isPhoneScreen } from './lib/units';
 
 // Admin panel is loaded only when someone opens /admin.
 const AdminApp = lazy(() => import('./admin/AdminApp'));
@@ -100,7 +100,7 @@ function ScrollToTop() {
 
 export default function App() {
   const location = useLocation();
-  const isMobile = useMediaQuery(MOBILE_QUERY);
+  const isMobile = useMediaQuery(MOBILE_QUERY) || isPhoneScreen();
   if (location.pathname.startsWith('/admin')) {
     return (
       <Suspense fallback={null}>

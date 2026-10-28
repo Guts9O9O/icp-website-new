@@ -3,7 +3,8 @@ import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import { getCategory, getProjects } from '../lib/api';
 import RichText, { richTextPlain } from '../lib/richText';
 import { useData } from '../lib/useData';
-import { EDGE_BAR, FOOTER_H, FOOTER_MARK_H, FOOTER_MARK_LIFT, NAV_BAR_H, NAV_TOP, fs, u, v } from '../lib/units';
+import { EDGE_BAR, FADE_FOOT, PANEL_TEXT_BOTTOM, PANEL_TEXT_TOP, fs, u, v } from '../lib/units';
+import { useMoreBelow } from '../lib/useMoreBelow';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
@@ -25,6 +26,15 @@ const PHOTO_TOP = 43;
 const PHOTO_H = 620; // client: the thumbnails should stand taller than R3's 509
 const RULE_H = 4.8; // R4 p9 measures 4.79
 const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
+// The names and places under the photographs have a readable floor, so on a
+// short screen they take far more of the column than R4 drew — on a tablet,
+// two or three lines each — and ran down into Previous / Next. The row now
+// stops this far above the controls, and the photographs give up height to
+// keep it there (never below PHOTO_MIN_H). A screen with room keeps R4's
+// photographs and columns exactly.
+const CONTROLS_CLEAR = `max(${v(60)}, 16px)`;
+const PHOTO_MIN_H = 300;
+const ROW_MAX_H = `calc(${v(CONTROLS_TOP - COL_TOP)} - ${CONTROLS_CLEAR})`;
 
 // The segment write-up panel takes the empty space beside the thumbnails. The
 // client asked for it to run the whole height of the page, under the nav row,
@@ -34,9 +44,6 @@ const CONTROLS_TOP = 1418; // R3 lines these up with the footer mark
 // in the panel's bottom-left corner, so a long write-up ran on behind it.
 const PANEL_PAD = 60;
 const MIN_PANEL_W = 300; // CSS px: below this the write-up is unreadable
-const TEXT_TOP = NAV_TOP + NAV_BAR_H + 34;
-const FADE_FOOT = 'linear-gradient(to bottom, #000 calc(100% - 56px), transparent)';
-const TEXT_BOTTOM = `calc(${v(FOOTER_H + FOOTER_MARK_LIFT + 30)} + ${u(FOOTER_MARK_H)})`;
 
 // Project listing for one portfolio category: /portfolio/:category
 export default function PortfolioCategoryPage() {
@@ -104,17 +111,7 @@ export default function PortfolioCategoryPage() {
   // A long write-up on a short screen scrolls inside the panel. While there is
   // more below, its foot fades out, so the last visible line does not read as
   // the end of the text; at the bottom the fade lifts.
-  const textRef = useRef(null);
-  const [moreBelow, setMoreBelow] = useState(false);
-  const checkMore = () => {
-    const el = textRef.current;
-    setMoreBelow(Boolean(el) && el.scrollHeight - el.scrollTop - el.clientHeight > 4);
-  };
-  useEffect(() => {
-    checkMore();
-    window.addEventListener('resize', checkMore);
-    return () => window.removeEventListener('resize', checkMore);
-  }, [showPanel, panelW, category?.description]);
+  const [textRef, moreBelow] = useMoreBelow();
 
   if (!categoryLoading && !category) return <Navigate to="/portfolio" replace />;
 
@@ -137,7 +134,7 @@ export default function PortfolioCategoryPage() {
   return (
     // #66594d, the taupe of the project pages, as the client asked for every
     // page of the portfolio's projects (it had been the pale paper).
-    <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
+    <div className="relative min-h-page bg-icp-taupe font-brand text-icp-mist">
       <style>{slideStyles}</style>
       <EdgeBars right="red" />
       {/* The trail ends in the category, as the client asked: Home and
@@ -161,11 +158,10 @@ export default function PortfolioCategoryPage() {
         >
           <div
             ref={textRef}
-            onScroll={checkMore}
             className="scroll-slim absolute inset-x-0 overflow-y-auto"
             style={{
-              top: v(TEXT_TOP),
-              bottom: TEXT_BOTTOM,
+              top: v(PANEL_TEXT_TOP),
+              bottom: PANEL_TEXT_BOTTOM,
               ...(moreBelow ? { WebkitMaskImage: FADE_FOOT, maskImage: FADE_FOOT } : null),
             }}
           >
@@ -195,23 +191,30 @@ export default function PortfolioCategoryPage() {
           ) : (
             <div
               key={slideKey}
-              className={`relative flex w-fit transition-all duration-[160ms] ease-in ${
+              className={`relative grid w-fit content-start transition-all duration-[160ms] ease-in ${
                 exiting ? (direction === 'next' ? '-translate-x-6 opacity-0' : 'translate-x-6 opacity-0') : 'translate-x-0 opacity-100'
               }`}
-              // At least R4's height, but free to grow: on a small screen a
-              // name that wraps to three lines needs more room than R4 drew,
-              // and with a fixed height that room came out of its photograph,
-              // so the photos and names stood at different heights.
+              // One set of rows shared by every column (each column is a
+              // `subgrid` of it), so the photographs all stand the same height
+              // and every name starts on the same line, however many lines it
+              // or its neighbours wrap to. The height is the room above the
+              // controls: the names' row takes what its longest entry needs,
+              // and the photographs' row the rest, up to R4's height.
               style={{
-                minHeight: v(COL_H),
+                height: ROW_MAX_H,
+                gridTemplateColumns: `repeat(${visible.length}, ${u(COL_W)})`,
+                // `min-content`, not `auto`: an auto row is sized from its
+                // cells' min-height, and the photographs then split the spare
+                // room with the names rather than leaving them what they need.
+                gridTemplateRows: `${v(PHOTO_TOP)} minmax(${v(PHOTO_MIN_H)}, ${v(PHOTO_H)}) ${v(RULE_H)} min-content`,
                 animation: exiting ? undefined : `${direction === 'next' ? 'icpSlideInRight' : 'icpSlideInLeft'} 200ms ease-out forwards`,
               }}
             >
-              {visible.map((project) => (
+              {visible.map((project, idx) => (
                 <div
                   key={project.id}
-                  className="group relative flex cursor-pointer flex-col"
-                  style={{ width: u(COL_W), paddingTop: v(PHOTO_TOP) }}
+                  className="group relative grid cursor-pointer"
+                  style={{ gridRow: '1 / -1', gridTemplateRows: 'subgrid' }}
                   onClick={() => navigate(`/portfolio/${categorySlug}/${project.slug}`)}
                   role="link"
                   tabIndex={0}
@@ -220,7 +223,13 @@ export default function PortfolioCategoryPage() {
                   }}
                 >
                   <div className="absolute inset-y-0 left-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
-                  <div className="shrink-0 overflow-hidden bg-black/10" style={{ height: v(PHOTO_H) }}>
+                  {/* The row's closing rule, on the last column rather than
+                      the row: the row runs on below the columns, to the
+                      controls, and its rule ran on with it. */}
+                  {idx === visible.length - 1 && (
+                    <div className="absolute inset-y-0 right-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
+                  )}
+                  <div className="min-h-0 overflow-hidden bg-black/10" style={{ gridRow: 2 }}>
                     {project.thumbnail ? (
                       <img
                         src={project.thumbnail}
@@ -229,12 +238,14 @@ export default function PortfolioCategoryPage() {
                       />
                     ) : null}
                   </div>
-                  <div className="w-full shrink-0 bg-icp-red" style={{ height: v(RULE_H) }} />
-                  {/* Every name starts on the same line under the rule, however
-                      many lines it or its neighbours wrap to. */}
+                  <div className="w-full bg-icp-red" style={{ gridRow: 3 }} />
+                  {/* At least the room R4 leaves under the rule, so a column
+                      with short names still runs R4's full height. */}
                   <div
-                    className="flex flex-1 flex-col items-center justify-start break-words text-center"
+                    className="flex flex-col items-center justify-start break-words text-center"
                     style={{
+                      gridRow: 4,
+                      minHeight: v(COL_H - PHOTO_TOP - PHOTO_H - RULE_H),
                       fontSize: fs(14, 11),
                       lineHeight: 1.6,
                       letterSpacing: '0.02em',
@@ -254,7 +265,6 @@ export default function PortfolioCategoryPage() {
                   </div>
                 </div>
               ))}
-              <div className="absolute inset-y-0 right-0 bg-icp-mist" style={{ width: `max(1px, ${u(1.5)})` }} />
             </div>
           )}
         </div>

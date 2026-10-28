@@ -37,7 +37,7 @@ export default function PortfolioPage() {
   const portrait = useMediaQuery(PORTRAIT_QUERY);
 
   return (
-    <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
+    <div className="relative min-h-page bg-icp-taupe font-brand text-icp-mist">
       <EdgeBars />
       <SiteNav />
 
@@ -56,7 +56,7 @@ export default function PortfolioPage() {
         {list.map((item, idx, all) => (
           <div
             key={item.slug}
-            className="group relative cursor-pointer overflow-hidden"
+            className="group relative cursor-pointer overflow-hidden [container-type:inline-size]"
             role="button"
             tabIndex={0}
             onClick={() => open(item.slug)}
@@ -80,9 +80,13 @@ export default function PortfolioPage() {
             {idx < all.length - 1 && <div className="absolute inset-y-0 right-0 w-px bg-icp-mist/40" />}
             <div className="absolute inset-x-0 bottom-0 hidden h-px bg-icp-mist/40 tall:block" />
             <div className="absolute inset-0 flex items-center justify-center">
+              {/* Never wider than its column allows (8.5cqw holds an
+                  eleven-letter word, HOSPITALITY, with room either side): the
+                  column clips, so a word too wide for it lost its ends. Two
+                  words that need two lines split evenly. */}
               <p
                 className="text-center uppercase text-white drop-shadow-md"
-                style={{ fontSize: fs(38, 18), paddingLeft: u(16), paddingRight: u(16), lineHeight: 1.15 }}
+                style={{ fontSize: `min(${fs(38, 18)}, 8.5cqw)`, paddingLeft: u(16), paddingRight: u(16), lineHeight: 1.15, textWrap: 'balance' }}
               >
                 {item.label}
               </p>

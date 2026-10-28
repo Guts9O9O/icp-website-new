@@ -3,7 +3,9 @@ import { Navigate, useParams } from 'react-router';
 import { getCategory, getProject } from '../lib/api';
 import RichText, { richTextPlain } from '../lib/richText';
 import { useData } from '../lib/useData';
-import { EDGE_BAR, fs, u, v } from '../lib/units';
+import { EDGE_BAR, FADE_FOOT, PANEL_TEXT_BOTTOM, PANEL_TEXT_TOP, PORTRAIT_QUERY, fs, u, v } from '../lib/units';
+import { useMediaQuery } from '../lib/useMediaQuery';
+import { useMoreBelow } from '../lib/useMoreBelow';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
@@ -16,6 +18,7 @@ import { useSeo } from '../lib/seo';
 const PANEL_W = 800;
 const TEXT_LEFT = 131; // the write-up's left edge inside the panel
 const TEXT_TOP = 555;
+const TEXT_TOP_PORTRAIT = 230; // a portrait tablet's panel is narrow and tall: start nearer the nav
 const FRAME_TOP = 328;
 const FRAME_W = 1747;
 const FRAME_H = 941;
@@ -78,6 +81,8 @@ export default function ProjectDetailPage() {
       }),
     [slug]
   );
+  const portrait = useMediaQuery(PORTRAIT_QUERY);
+  const [textRef, moreBelow] = useMoreBelow();
   const startX = useRef(0);
   const dragging = useRef(false);
 
@@ -112,7 +117,7 @@ export default function ProjectDetailPage() {
   };
 
   return (
-    <div className={`relative min-h-screen font-brand ${bespoke ? 'bg-white text-icp-slate' : 'bg-icp-taupe text-icp-mist'}`}>
+    <div className={`relative min-h-page font-brand ${bespoke ? 'bg-white text-icp-slate' : 'bg-icp-taupe text-icp-mist'}`}>
       <EdgeBars right="red" />
       {/* Only the left half of the nav is on the red panel; "Contact Us" is on
           the taupe, so it takes the taupe treatment — white, with its bar red
@@ -132,36 +137,49 @@ export default function ProjectDetailPage() {
         style={{ left: u(EDGE_BAR), width: u(PANEL_W) }}
       />
 
+      {/* The write-up stays on the panel, between the nav and the footer's
+          iC+P mark. It used to start at R4's line and simply run on, so on a
+          laptop or tablet a long one went down through the mark, the footer
+          and off the screen. Now R4's line is where it starts only while it
+          has room: a longer one rises to meet the nav first, and past that
+          it scrolls, its foot fading while there is more to read. */}
       {project && (
         <div
-          className="absolute text-white tall:static tall:px-[calc(60*var(--u))] tall:pt-[calc(200*var(--v))]"
+          ref={textRef}
+          className="scroll-slim absolute overflow-y-auto text-white"
           style={{
-            left: u(EDGE_BAR + TEXT_LEFT),
-            top: v(TEXT_TOP),
-            width: u(PANEL_W - TEXT_LEFT - 60),
-            lineHeight: 1.7,
+            left: u(EDGE_BAR),
+            width: u(PANEL_W),
+            top: v(PANEL_TEXT_TOP),
+            bottom: PANEL_TEXT_BOTTOM,
+            ...(moreBelow ? { WebkitMaskImage: FADE_FOOT, maskImage: FADE_FOOT } : null),
           }}
         >
-          {/* The project's taxonomy, in the studio's order: name and location
-              on one line ("Rivalli Park – Mumbai, Maharashtra"), then client,
-              typology, area and year. A line the admin left empty is skipped,
-              except the area, which R4 always draws. */}
-          <p style={{ fontSize: fs(17, 12) }}>
-            <span className="t-strong">{project.name}</span>
-            {project.location && <span className="text-white/85"> – {project.location}</span>}
-          </p>
-          <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(10) }}>
-            {project.client && <p>Client: {project.client}</p>}
-            {project.typology && <p>Typology: {project.typology}</p>}
-            {/* Bespoke pieces have no area, so not even R4's placeholder. */}
-            {!bespoke && <p>{areaLabel(project.areaSqft)}</p>}
-            {project.year && <p>Year: {project.year}</p>}
-          </div>
-          {project.description && (
-            <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(34) }}>
-              <RichText text={project.description} tone="dark" />
+          <div className="flex min-h-full flex-col" style={{ paddingLeft: u(TEXT_LEFT), paddingRight: u(60) }}>
+            <div className="min-h-0 shrink" style={{ flexBasis: v((portrait ? TEXT_TOP_PORTRAIT : TEXT_TOP) - PANEL_TEXT_TOP) }} />
+            <div className="shrink-0" style={{ lineHeight: 1.7, paddingBottom: v(30) }}>
+              {/* The project's taxonomy, in the studio's order: name and location
+                  on one line ("Rivalli Park – Mumbai, Maharashtra"), then client,
+                  typology, area and year. A line the admin left empty is skipped,
+                  except the area, which R4 always draws. */}
+              <p style={{ fontSize: fs(17, 12) }}>
+                <span className="t-strong">{project.name}</span>
+                {project.location && <span className="text-white/85"> – {project.location}</span>}
+              </p>
+              <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(10) }}>
+                {project.client && <p>Client: {project.client}</p>}
+                {project.typology && <p>Typology: {project.typology}</p>}
+                {/* Bespoke pieces have no area, so not even R4's placeholder. */}
+                {!bespoke && <p>{areaLabel(project.areaSqft)}</p>}
+                {project.year && <p>Year: {project.year}</p>}
+              </div>
+              {project.description && (
+                <div className="text-white/85" style={{ fontSize: fs(15, 11), marginTop: v(34) }}>
+                  <RichText text={project.description} tone="dark" />
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 

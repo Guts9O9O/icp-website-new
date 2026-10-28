@@ -22,9 +22,26 @@ export const FOOTER_H = 90; // rule to bottom of page, so the rule lands on R3's
 // keep clear of it.
 export const FOOTER_MARK_H = 61;
 export const FOOTER_MARK_LIFT = 51;
+// Where the text in a full-height side panel stops: above the footer's iC+P
+// mark, which sits in the panel's bottom-left corner. Below the nav is
+// PANEL_TEXT_TOP (design px from the top).
+export const PANEL_TEXT_TOP = NAV_TOP + NAV_BAR_H + 34;
+export const PANEL_TEXT_BOTTOM = `calc(${v(FOOTER_H + FOOTER_MARK_LIFT + 30)} + ${u(FOOTER_MARK_H)})`;
+// The foot of a panel's text fades while there is more to scroll to, so the
+// last visible line does not read as the end of the text (useMoreBelow).
+export const FADE_FOOT = 'linear-gradient(to bottom, #000 calc(100% - 56px), transparent)';
 
 // Media queries shared by CSS (index.css / tailwind `tall:`) and JS.
 export const PORTRAIT_QUERY = '(orientation: portrait) and (max-width: 1100px)';
-// Phones: narrow screens, or touch devices held sideways (short and wide).
-export const MOBILE_QUERY = '(max-width: 699px), ((pointer: coarse) and (max-height: 500px))';
+// Phones get MobileBlock: a window narrower than any tablet, or a touch device
+// whose screen is phone-sized — its shorter side under 600 CSS px, Android's
+// own line between phone and tablet. The line was 700px, which also caught
+// tablets held upright (a Xiaomi Pad is about 686px wide that way round). And
+// it is the screen that is measured, not the window: a phone held sideways
+// was caught by "short and wide", which a tablet's window also becomes when
+// its keyboard opens, swapping the enquiry form for the block mid-typing.
+export const MOBILE_QUERY = '(max-width: 599px)';
+export const PHONE_SCREEN = 600;
+export const isPhoneScreen = () =>
+  window.matchMedia('(pointer: coarse)').matches && Math.min(window.screen.width, window.screen.height) < PHONE_SCREEN;
 export const NO_HOVER_QUERY = '(hover: none)';

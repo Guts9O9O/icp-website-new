@@ -3,7 +3,7 @@ import { getSite } from '../lib/api';
 import { SUBJECTS, sendEnquiry, validateEnquiry } from '../lib/enquiry';
 import { useData } from '../lib/useData';
 import { useMediaQuery } from '../lib/useMediaQuery';
-import { PORTRAIT_QUERY, fs, u, v } from '../lib/units';
+import { EDGE_BAR, PORTRAIT_QUERY, fs, u, v } from '../lib/units';
 import EdgeBars from './chrome/EdgeBars';
 import SiteNav from './chrome/SiteNav';
 import SiteFooter from './chrome/SiteFooter';
@@ -36,11 +36,20 @@ const fieldClass =
 const PORTRAIT = { formTop: 300, fieldH: 46, rowGap: 22, textareaH: 110 };
 const LANDSCAPE = { formTop: FORM_TOP, fieldH: FIELD_H, rowGap: ROW_GAP, textareaH: 158 };
 
-const fieldStyle = (m) => ({ height: v(m.fieldH), paddingLeft: u(16), paddingRight: u(16), fontSize: fs(18, 13) });
+// Fields never stand shorter than FIELD_MIN CSS px. At R3's proportions a
+// short screen drew them 15-18px tall — on a tablet, too small to tap, and the
+// dropdowns cut off the foot of their own text. Each row keeps R3's pitch
+// (field + gap), so what a field gains comes out of the gap below it and the
+// form is no taller; screens with room keep R3's sizes exactly.
+const FIELD_MIN = 28;
+const TEXTAREA_MIN = 56;
+const fieldH = (m) => `max(${v(m.fieldH)}, ${FIELD_MIN}px)`;
+const rowGap = (m) => `max(calc(${v(m.fieldH + m.rowGap)} - ${fieldH(m)}), 8px)`;
+const fieldStyle = (m) => ({ height: fieldH(m), paddingLeft: u(16), paddingRight: u(16), fontSize: fs(18, 13) });
 
 function Row({ label, children, align = 'center', gap }) {
   return (
-    <div className={`flex ${align === 'start' ? 'items-start' : 'items-center'}`} style={{ marginBottom: v(gap) }}>
+    <div className={`flex ${align === 'start' ? 'items-start' : 'items-center'}`} style={{ marginBottom: gap }}>
       <label className="t-strong shrink-0 text-icp-taupe" style={{ width: u(LABEL_W), fontSize: fs(18, 13) }}>
         {label}
       </label>
@@ -57,7 +66,9 @@ function Select({ value, onChange, options, style, field }) {
       <select
         value={value}
         onChange={onChange}
-        className={`${fieldClass} appearance-none`}
+        // `block`: inline, the select sat on a text line taller than itself,
+        // and the arrow box (sized to the wrapper) hung below the field.
+        className={`${fieldClass} block appearance-none`}
         style={{ ...field, paddingRight: u(70) }}
       >
         {options.map((o) => (
@@ -127,6 +138,7 @@ export default function EnquiryPage() {
   const portrait = useMediaQuery(PORTRAIT_QUERY);
   const m = portrait ? PORTRAIT : LANDSCAPE;
   const field = fieldStyle(m);
+  const gap = rowGap(m);
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState({ state: 'idle' }); // idle | sending | sent | error
@@ -180,13 +192,13 @@ export default function EnquiryPage() {
     ) : null;
 
   return (
-    <div className="relative min-h-screen bg-icp-paper font-brand">
+    <div className="relative min-h-page bg-icp-paper font-brand">
       <EdgeBars />
       <SiteNav rightTitle="Enquiry" tone="light" />
 
       <main className="absolute left-0 right-0 tall:flex tall:flex-col" style={{ top: v(m.formTop), paddingLeft: u(FORM_LEFT) }}>
         <form onSubmit={onSubmit} className="absolute tall:static" style={{ left: u(FORM_LEFT) }} noValidate>
-          <Row label="Subject" gap={m.rowGap}>
+          <Row label="Subject" gap={gap}>
             <Select
               value={form.subject}
               onChange={setSubject}
@@ -199,18 +211,18 @@ export default function EnquiryPage() {
             )}
           </Row>
 
-          <Row label="Your Name" gap={m.rowGap}>
+          <Row label="Your Name" gap={gap}>
             <span className="relative flex-1">
               <input className={`${fieldClass} ${errors.name ? '!border-icp-red' : ''}`} style={field} value={form.name} onChange={set('name')} autoComplete="name" aria-invalid={!!errors.name} />
               {errorText('name')}
             </span>
           </Row>
 
-          <Row label="Company Name" gap={m.rowGap}>
+          <Row label="Company Name" gap={gap}>
             <input className={fieldClass} style={field} value={form.company} onChange={set('company')} autoComplete="organization" />
           </Row>
 
-          <Row label="Email Address" gap={m.rowGap}>
+          <Row label="Email Address" gap={gap}>
             <span className="relative flex-1">
               <input className={`${fieldClass} ${errors.email ? '!border-icp-red' : ''}`} style={field} type="email" value={form.email} onChange={set('email')} autoComplete="email" aria-invalid={!!errors.email} />
               {errorText('email')}
@@ -218,7 +230,7 @@ export default function EnquiryPage() {
           </Row>
 
           <Row
-            gap={m.rowGap}
+            gap={gap}
             label={
               <span className="flex" style={{ gap: u(48) }}>
                 <span>Zip Code</span>
@@ -244,7 +256,7 @@ export default function EnquiryPage() {
             />
           </Row>
 
-          <Row label="" gap={m.rowGap}>
+          <Row label="" gap={gap}>
             <input
               className={`${fieldClass} text-center`}
               style={field}
@@ -255,11 +267,11 @@ export default function EnquiryPage() {
             />
           </Row>
 
-          <Row label="Requirement" align="start" gap={m.rowGap}>
+          <Row label="Requirement" align="start" gap={gap}>
             <span className="relative flex-1">
               <textarea
                 className={`${fieldClass} resize-none ${errors.requirement ? '!border-icp-red' : ''}`}
-                style={{ ...field, height: v(m.textareaH), paddingTop: v(12) }}
+                style={{ ...field, height: `max(${v(m.textareaH)}, ${TEXTAREA_MIN}px)`, paddingTop: v(12) }}
                 value={form.requirement}
                 onChange={set('requirement')}
                 aria-invalid={!!errors.requirement}
@@ -301,7 +313,16 @@ export default function EnquiryPage() {
         {site && (
           <div
             className="t-strong absolute text-icp-taupe tall:static tall:mt-[calc(40*var(--v))] tall:grid tall:grid-cols-2 tall:gap-x-[calc(40*var(--u))]"
-            style={{ left: u(1525), top: v(187), fontSize: fs(18, 13), lineHeight: 1.5, width: portrait ? u(LABEL_W + FIELD_W) : undefined }}
+            // `right` keeps a long address line off the right edge bar: with
+            // only `left` set, the block was free to run to the screen edge.
+            style={{
+              left: u(1525),
+              right: portrait ? undefined : u(EDGE_BAR + 60),
+              top: v(187),
+              fontSize: fs(18, 13),
+              lineHeight: 1.5,
+              width: portrait ? u(LABEL_W + FIELD_W) : undefined,
+            }}
           >
             <div className="flex items-center" style={{ gap: u(42), marginBottom: v(portrait ? 20 : 34) }}>
               <ContactIcon src="/images/icons/Mobile.png" alt="" />
@@ -334,7 +355,11 @@ export default function EnquiryPage() {
               src={MAP_EMBED}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="tall:col-span-2"
+              // Last on a portrait tablet, where the block is two columns: the
+              // social links then share the address's row instead of taking
+              // one of their own, which on a narrow tablet ran them down onto
+              // the footer's iC+P mark.
+              className="tall:order-last tall:col-span-2"
               style={{
                 marginLeft: u(ICON_W + ICON_GAP),
                 width: u(710),

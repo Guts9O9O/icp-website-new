@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getClientGroups } from '../lib/api';
 import { useData } from '../lib/useData';
 import { useMediaQuery } from '../lib/useMediaQuery';
@@ -23,6 +23,10 @@ const ROW_H_PORTRAIT = 120;
 // the footer mark (as the project listings place theirs).
 const ROWS_PER_PAGE = 5;
 const CONTROLS_TOP = 1418;
+// How far above the controls the grid has to stop (design px, and CSS px at
+// the least).
+const CONTROLS_CLEAR = 40;
+const CONTROLS_CLEAR_MIN = 12;
 
 // R4 draws this grid in two weights, measured off its page 7, and the
 // difference is most of what makes it read as a grid rather than a mesh:
@@ -179,7 +183,19 @@ export default function ClientsPage() {
 
   // Every category turns the page together: page 2 is each category's next
   // five rows, so the grid keeps its shape and the rules stay straight.
-  const perPage = ROWS_PER_PAGE * 2;
+  // Five rows a page fit a desktop. On a short screen the private residences'
+  // rows grow — three to seven lines of text in a narrow column — and five
+  // rows ran on under the footer. So a page holds as many rows as fit above
+  // the controls: measured before the page is drawn, and again whenever the
+  // grid changes size, starting from five on every resize.
+  const mainRef = useRef(null);
+  const [rowsFit, setRowsFit] = useState(ROWS_PER_PAGE);
+  useEffect(() => {
+    const reset = () => setRowsFit(ROWS_PER_PAGE);
+    window.addEventListener('resize', reset);
+    return () => window.removeEventListener('resize', reset);
+  }, []);
+  const perPage = rowsFit * 2;
   const pageCount = Math.max(1, ...groups.map((g) => Math.ceil(g.items.length / perPage)));
   const [pageState, setPage] = useState(0);
   const page = Math.min(pageState, pageCount - 1);
@@ -203,6 +219,19 @@ export default function ClientsPage() {
     () => groups.map((g) => ({ ...g, items: g.items.slice(page * perPage, page * perPage + perPage) })),
     [groups, page, perPage]
   );
+  useLayoutEffect(() => {
+    const main = mainRef.current;
+    if (!main) return undefined;
+    const check = () => {
+      const pageH = main.offsetParent?.clientHeight ?? window.innerHeight;
+      const limit = (CONTROLS_TOP / 1600) * pageH - Math.max((CONTROLS_CLEAR / 1600) * pageH, CONTROLS_CLEAR_MIN);
+      if (main.offsetTop + main.offsetHeight > limit) setRowsFit((r) => (r > 1 ? r - 1 : r));
+    };
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(main);
+    return () => observer.disconnect();
+  }, [shown, rowsFit]);
 
   // The categories sit side by side, all of them in landscape and two at a
   // time on a portrait tablet. Each band of them shares one set of rows: as
@@ -218,7 +247,7 @@ export default function ClientsPage() {
   const rowH = portrait ? ROW_H_PORTRAIT : ROW_H;
 
   return (
-    <div className="relative min-h-screen bg-icp-taupe font-brand text-icp-mist">
+    <div className="relative min-h-page bg-icp-taupe font-brand text-icp-mist">
       <div
         className="absolute top-0 bg-icp-red"
         style={{ left: u(EDGE_BAR), right: u(EDGE_BAR), height: v(GRID_TOP + HEADER_H) }}
@@ -228,6 +257,7 @@ export default function ClientsPage() {
       <SiteNav title="Our Clients" tone="red" />
 
       <main
+        ref={mainRef}
         // Follows the number of client categories rather than hard-coding four,
         // so a category added in the admin never drops onto a row of its own.
         key={page}

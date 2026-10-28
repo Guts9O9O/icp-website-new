@@ -10,7 +10,7 @@ export default function MobileBlock() {
   const { data: home } = useData(getHome); // the home page photo, as set in the admin
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-icp-slate px-8 text-center font-brand text-icp-mist">
+    <div className="relative flex min-h-page flex-col items-center justify-center overflow-hidden bg-icp-slate px-8 text-center font-brand text-icp-mist">
       {home && <img src={home.image} alt="" className="absolute inset-0 h-full w-full object-cover" />}
       <div className="absolute inset-0 bg-icp-slate/70" />
       <div className="absolute inset-y-0 left-0 w-2 bg-icp-red" />

@@ -137,8 +137,10 @@ export default function BackgroundMusic() {
         aria-label={on ? 'Background music on — turn off' : 'Background music off — turn on'}
         title={on ? 'Turn the music off' : 'Turn the music on'}
         className={`icp-eq t-body fixed z-50 flex items-center leading-none text-icp-mist transition-opacity hover:opacity-70 ${playing ? 'is-playing' : ''}`}
-        // On the footer's copyright line, under the iC+P mark.
-        style={{ left: u(EDGE_BAR + GAP), top: `calc(100vh - ${v(FOOTER_H - 32)})`, gap: u(12) }}
+        // On the footer's copyright line, under the iC+P mark. Measured from
+        // the visible height (--page-h): from `100vh` it sat below the bottom
+        // of a tablet's screen, out of sight.
+        style={{ left: u(EDGE_BAR + GAP), top: `calc(var(--page-h) - ${v(FOOTER_H - 32)})`, gap: u(12) }}
       >
         <span className="flex items-end" style={{ height: '0.9em', gap: 'max(2px, calc(3 * var(--u)))' }} aria-hidden="true">
           {[0, 1, 2, 3].map((i) => (

@@ -18,6 +18,12 @@ export default {
           paper: '#ebe9e6', // the light page background R3 labels on About
         },
       },
+      // `min-h-page`: the visible height of the screen (index.css --page-h).
+      // Use it rather than `min-h-screen`, which on a tablet is taller than
+      // what can be seen.
+      minHeight: {
+        page: 'var(--page-h)',
+      },
       fontFamily: {
         brand: ['"Segoe UI Light"', '"Segoe UI"', 'system-ui', 'sans-serif'],
       },

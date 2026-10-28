@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { EDGE_BAR, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/units';
+import { EDGE_BAR, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, PORTRAIT_QUERY, fs, u, v } from '../lib/units';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { getHome } from '../lib/api';
 import { useData } from '../lib/useData';
@@ -119,12 +119,13 @@ export default function HomePage() {
   // tap alone toggles a panel; tapping outside closes it.
   const noHover = useMediaQuery(NO_HOVER_QUERY);
   const hoverable = !noHover;
+  const portrait = useMediaQuery(PORTRAIT_QUERY);
   const openLeft = () => setPanel('left');
   const openRight = () => setPanel('right');
   const close = (side) => () => setPanel((p) => (p === side ? null : p));
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-icp-slate font-brand text-icp-mist">
+    <div className="relative min-h-page overflow-hidden bg-icp-slate font-brand text-icp-mist">
       {/* The studio's photo (admin → Site text & contact → Home page photo).
           Drawn once the setting is known and faded in as it loads, so the
           old photo never flashes up before a replacement. */}
@@ -187,8 +188,13 @@ export default function HomePage() {
       <Panel side="left" links={leftLinks} open={panel === 'left'} onEnter={openLeft} onLeave={close('left')} hoverable={hoverable} />
       <Panel side="right" links={rightLinks} open={panel === 'right'} onEnter={openRight} onLeave={close('right')} hoverable={hoverable} />
 
-      <main className="relative z-10 flex min-h-screen items-center justify-center" onClick={() => setPanel(null)}>
-        <BrandMark />
+      <main className="relative z-10 flex min-h-page items-center justify-center" onClick={() => setPanel(null)}>
+        {/* On a portrait tablet a menu panel is wider than the room beside
+            the logo, so its links landed on the wordmark. The logo steps
+            back while a panel is open there; landscape has room for both. */}
+        <div className="transition-opacity duration-500" style={{ opacity: portrait && panel ? 0.15 : 1 }}>
+          <BrandMark />
+        </div>
       </main>
 
       <SiteFooter showLogo={false} tone="mist" />

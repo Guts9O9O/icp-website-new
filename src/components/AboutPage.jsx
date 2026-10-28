@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getAbout, getTeam, getTeamPhoto } from '../lib/api';
 import RichText from '../lib/richText';
 import { useData } from '../lib/useData';
-import { EDGE_BAR, FOOTER_H, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, fs, u, v } from '../lib/units';
+import { EDGE_BAR, FADE_FOOT, NAV_BAR_H, NAV_TOP, NO_HOVER_QUERY, PANEL_TEXT_BOTTOM, fs, u, v } from '../lib/units';
+import { useMoreBelow } from '../lib/useMoreBelow';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { DEFAULT_TEAM_PHOTO, TEAM_LAYOUT, splitsFor, teamGeometry } from '../lib/teamPhoto';
 import EdgeBars from './chrome/EdgeBars';
@@ -37,6 +38,8 @@ const WRITEUP_W = 650;
 // A panel narrower than this cannot be read, so on a narrow screen the
 // write-up takes the whole width instead.
 const MIN_PANEL_PX = 320;
+// The band's names never shrink below this share of their size to fit.
+const BAND_FIT_MIN = 0.6;
 
 export default function AboutPage() {
   useSeo({
@@ -78,8 +81,9 @@ export default function AboutPage() {
   const [pinned, setPinned] = useState(false);
   const active = zones.find((z) => z.id === activeId);
   const isOpen = Boolean(active);
-  const [panels, setPanels] = useState({ left: 0, right: 0 });
+  const [panels, setPanels] = useState({ left: 0, right: 0, narrow: false });
   const zoneRefs = useRef({});
+  const [writeupRef, writeupMore] = useMoreBelow();
   const closeTimer = useRef(null);
 
   // A grace period before closing, so the pointer can cross from the strip into
@@ -88,6 +92,15 @@ export default function AboutPage() {
   const openZone = (id) => {
     cancelClose();
     setActiveId(id);
+  };
+  // Hover opens a strip only where its panel fits beside it. Where the panel
+  // would cover the whole page (a narrow window), opening it for a passing
+  // pointer put the page under it until Close was clicked, so there it waits
+  // for a click.
+  const hoverOpen = (id) => {
+    const el = zoneRefs.current[id];
+    if (el && el.getBoundingClientRect().left < MIN_PANEL_PX) return;
+    openZone(id);
   };
   const scheduleClose = () => {
     cancelClose();
@@ -120,6 +133,7 @@ export default function AboutPage() {
       const rect = el.getBoundingClientRect();
       const narrow = rect.left < MIN_PANEL_PX;
       setPanels({
+        narrow,
         left: narrow ? window.innerWidth : Math.max(0, rect.left),
         right: narrow ? 0 : Math.max(0, window.innerWidth - rect.right),
       });
@@ -129,10 +143,57 @@ export default function AboutPage() {
     return () => window.removeEventListener('resize', update);
   }, [activeId, geo]);
 
-  const bandLabel = { fontSize: `max(11px, ${m(16)})`, letterSpacing: '0.06em' };
+  // Each name stays on one line in its strip. The strips are narrow on a
+  // short screen and the text has a readable floor, so a long name could not
+  // fit: "Archna SHINGHAL" broke in two and hung out of the band (in Roboto,
+  // the face Android draws for Segoe UI, it is wider still). When any name
+  // outgrows its strip the whole row steps down together, so the names stay
+  // one size.
+  const rootRef = useRef(null);
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+    const fit = () => {
+      root.style.setProperty('--band-fit', '1');
+      let scale = 1;
+      root.querySelectorAll('[data-band-label]').forEach((cell) => {
+        const text = cell.querySelector('[data-band-text]');
+        const css = getComputedStyle(cell);
+        const room = cell.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight);
+        const need = text?.getBoundingClientRect().width ?? 0;
+        if (need > room && room > 0) scale = Math.min(scale, room / need);
+      });
+      root.style.setProperty('--band-fit', String(Math.max(BAND_FIT_MIN, scale)));
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(root);
+    document.fonts?.ready.then(fit);
+    return () => observer.disconnect();
+  }, [zones]);
+
+  const bandLabel = {
+    fontSize: `calc(var(--band-fit, 1) * max(11px, ${m(16)}))`,
+    letterSpacing: '0.06em',
+    whiteSpace: 'nowrap',
+    paddingLeft: `max(4px, ${m(12)})`,
+    paddingRight: `max(4px, ${m(12)})`,
+  };
+
+  // The strips sit above the write-up panel so a pointer can move straight
+  // from one person to the next. Without a pointer that only gets in the way:
+  // on a touch screen the text over a strip could not be scrolled (the strip
+  // took the swipe) and tapping it switched person. Nor can it work when the
+  // panel spans the whole width, with every strip under the text. There the
+  // panel goes on top, and when it covers everything it carries a Close.
+  const panelOnTop = isOpen && (!hoverable || panels.narrow);
+  const activeIndex = zones.findIndex((z) => z.id === activeId);
+  // A name under the panel only showed through the write-up as a faint
+  // ghost behind its lines, so while the panel covers it, it steps out.
+  const covered = (i) => isOpen && (panels.narrow || i < activeIndex);
 
   return (
-    <div className="relative min-h-screen bg-icp-paper font-brand" style={{ '--m': PAGE_SCALE }} onClick={dismiss}>
+    <div ref={rootRef} className="relative min-h-page bg-icp-paper font-brand" style={{ '--m': PAGE_SCALE }} onClick={dismiss}>
       <EdgeBars />
       <SiteNav title="About Us" tone={isOpen ? 'dark' : 'light'} />
 
@@ -165,19 +226,27 @@ export default function AboutPage() {
         className="pointer-events-none absolute z-20 bg-icp-red/75"
         style={{ left: u(EDGE_BAR), right: u(EDGE_BAR), top: Y(TEAM_LAYOUT.bandTop), height: m(TEAM_LAYOUT.bandH) }}
       />
-      {zones.map((z) => (
+      {zones.map((z, i) => (
         <div
           key={`label-${z.id}`}
-          className="pointer-events-none absolute z-20 flex items-center justify-center text-center text-white"
-          style={{ left: X(z.left), width: m(z.width), top: Y(TEAM_LAYOUT.bandTop), height: m(TEAM_LAYOUT.bandH), ...bandLabel }}
+          data-band-label
+          className="pointer-events-none absolute z-20 flex items-center justify-center text-center text-white transition-opacity duration-700"
+          style={{
+            left: X(z.left),
+            width: m(z.width),
+            top: Y(TEAM_LAYOUT.bandTop),
+            height: m(TEAM_LAYOUT.bandH),
+            opacity: covered(i) ? 0 : 1,
+            ...bandLabel,
+          }}
         >
           {z.member && <span className="absolute inset-y-0 left-0 bg-white" style={{ width: 'max(1px, calc(1.5 * var(--m)))' }} />}
           {z.member ? (
-            <span>
+            <span data-band-text>
               {z.member.firstName} <span className="t-strong uppercase">{z.member.lastName}</span>
             </span>
           ) : (
-            <span>Design TEAM</span>
+            <span data-band-text>Design TEAM</span>
           )}
         </div>
       ))}
@@ -189,7 +258,8 @@ export default function AboutPage() {
         onClick={(e) => e.stopPropagation()}
         data-panel="writeup"
         className={[
-          'fixed inset-y-0 left-0 z-[35] bg-icp-red/75 text-white', // above the footer marks, below the edge bars/nav
+          // above the footer marks, below the edge bars/nav; above the strips when panelOnTop
+          `fixed inset-y-0 left-0 ${panelOnTop ? 'z-[37]' : 'z-[35]'} bg-icp-red/75 text-white`,
           'transition-transform duration-700 ease-in-out',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
@@ -197,10 +267,18 @@ export default function AboutPage() {
       >
         {/* The panel fills the height, but only this inner band scrolls, and it
             starts below the nav. Scrolling the whole panel ran the write-up up
-            underneath "Home | About Us", which is what made the two collide. */}
+            underneath "Home | About Us", which is what made the two collide.
+            It stops above the footer's iC+P mark, as the category panel does,
+            and while there is more below its foot fades: run down to the
+            footer rule, the studio's write-up looked cut off mid-sentence. */}
         <div
+          ref={writeupRef}
           className="scroll-slim absolute inset-x-0 overflow-y-auto"
-          style={{ top: v(NAV_TOP + NAV_BAR_H + 30), bottom: v(FOOTER_H) }}
+          style={{
+            top: v(NAV_TOP + NAV_BAR_H + 30),
+            bottom: PANEL_TEXT_BOTTOM,
+            ...(writeupMore ? { WebkitMaskImage: FADE_FOOT, maskImage: FADE_FOOT } : null),
+          }}
         >
           <div
             className="flex min-h-full flex-col justify-center"
@@ -233,6 +311,19 @@ export default function AboutPage() {
             )}
           </div>
         </div>
+        {panelOnTop && panels.narrow && (
+          <button
+            type="button"
+            onClick={dismiss}
+            className="absolute flex items-center uppercase text-white/90 transition-colors hover:text-white"
+            style={{ top: v(NAV_TOP + NAV_BAR_H + 30), right: u(EDGE_BAR + 60), fontSize: fs(13, 11), letterSpacing: '0.16em', gap: '0.6em' }}
+          >
+            Close
+            <svg viewBox="0 0 12 12" width="0.9em" height="0.9em" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true">
+              <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" />
+            </svg>
+          </button>
+        )}
       </aside>
 
       {/* Right panel: dims everything to the right of the open strip. */}
@@ -265,15 +356,20 @@ export default function AboutPage() {
             top: Y(TEAM_LAYOUT.photoTop),
             height: m(TEAM_LAYOUT.bandTop + TEAM_LAYOUT.bandH - TEAM_LAYOUT.photoTop),
           }}
-          onMouseEnter={hoverable ? () => openZone(z.id) : undefined}
+          onMouseEnter={hoverable ? () => hoverOpen(z.id) : undefined}
           onMouseLeave={hoverable ? scheduleClose : undefined}
           onFocus={hoverable ? () => openZone(z.id) : undefined}
           onBlur={hoverable ? scheduleClose : undefined}
           onClick={(e) => {
             // Hover devices open on hover and pin on click, so a long write-up
             // can be read and scrolled without holding the pointer still. Touch
-            // devices have no hover, so the tap does the opening.
+            // devices have no hover, so the tap does the opening, and a second
+            // tap on the same person closes it again.
             e.stopPropagation();
+            if (!hoverable && activeId === z.id) {
+              dismiss();
+              return;
+            }
             openZone(z.id);
             setPinned(true);
           }}
