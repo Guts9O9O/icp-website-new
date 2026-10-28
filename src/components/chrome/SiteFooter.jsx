@@ -55,9 +55,15 @@ export default function SiteFooter({ showLogo = true, tone = 'red' }) {
         }}
       />
 
+      {/* Kept clear of the signature, which hangs across this line on the
+          right (and, mirrored, of the sound toggle on the left). The studio
+          sets this text in the admin; a longer line on a portrait tablet ran
+          under the signature, so it wraps instead. Only there is the line
+          narrow enough to wrap, so only there does it get room between lines,
+          taken back from `top` so the first line stays put. */}
       <p
-        className="t-body absolute inset-x-0 text-center leading-none text-icp-mist"
-        style={{ top: v(32) }}
+        className="t-body absolute text-center leading-none text-icp-mist tall:leading-[1.25] tall:[--wrap-lift:0.125em]"
+        style={{ top: `calc(${v(32)} - var(--wrap-lift, 0em))`, left: u(GAP + SIG_W), right: u(GAP + SIG_W), textWrap: 'balance' }}
       >
         {/* Set in the admin (Site text & contact → Footer). */}
         {(footer ?? FOOTER_DEFAULT).copyright}

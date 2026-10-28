@@ -1,6 +1,6 @@
 # Browser tests
 
-Four Playwright suites that drive a real browser against a running site. They
+Playwright suites that drive a real browser against a running site. They
 check behaviour and pixels, not implementation, so they work equally well
 against `npm run dev`, a production preview, or the deployed URL.
 
@@ -29,7 +29,24 @@ BASE=... python tests/test_form.py
 
 # the admin panel: signs in, lists content, signs out. Changes nothing.
 ENVFILE=.env.admin.local BASE=... python tests/cloud_admin_login.py
+
+# layout on every screen: 33 desktop, laptop, tablet (both ways up) and phone
+# sizes, every page. FONT=roboto draws it as an Android tablet does.
+python tests/test_layout.py
+FONT=roboto python tests/test_layout.py
+ENGINE=webkit ONLY=ipad python tests/test_layout.py     # Safari's engine, iPads
+ONLY=xiaomi ROUTES=about,cat-hospitality python tests/test_layout.py
+SWEEP=1 SHOTS=0 python tests/test_layout.py             # 49 in-between sizes
+
+# turning a tablet with a page open (Chromium only)
+python tests/test_rotation.py
+
+# desktop unchanged: the live site against BASE, pixel by pixel
+BASE=http://localhost:4173 python tests/compare_desktop.py
 ```
+
+For the layout suites against live data, a production build is fastest:
+`npm run build && npx vite preview` (port 4173), then `BASE=http://localhost:4173`.
 
 `npm run test:enquiry` is separate — it checks the Apps Script's own rules in
 Node, with no browser and no network.
@@ -42,11 +59,23 @@ Node, with no browser and no network.
 | `test_animations.py` | 44 | Every mark reaches a settled state; the footer logo opens and closes; the signature draws on each page |
 | `test_form.py` | 11 | Subject/detail dropdowns, refusal of empty and malformed input, honeypot, map |
 | `cloud_admin_login.py` | 9 | Auth gate, wrong password, sign-in, content listed, menu sections |
+| `test_layout.py` | 796 views | Every page and state (menus open, About panels, page 2s, long write-ups) at 33 sizes; `layout_audit.js` does the checking |
+| `test_rotation.py` | 60 views | Xiaomi, iPad Air and Galaxy Tab S7 turned to portrait and back on ten pages |
+| `compare_desktop.py` | 18 pairs | Live vs BASE at 2048x1100 and 1920x945; % of pixels changed and where |
 
 ## Things these suites learned the hard way
 
 Worth knowing before changing them, because each of these produced a false
 result at some point:
+
+- **Desktop testing hid every tablet bug.** The client's Android tablet shows
+  about 1096x546 of page, in Roboto (Android has no Segoe UI), and counts
+  `100vh` as ~96px taller than what it shows. None of that appears at desktop
+  sizes in Segoe UI, so test short landscape, portrait and `FONT=roboto`.
+- **A tablet is told from a phone by its screen**, not its window. Playwright's
+  `set_viewport_size` also sets `screen` to the window size, which makes any
+  short window a "phone"; `test_layout.py` sets `screen` per size and
+  `test_rotation.py` turns the tablet through the DevTools protocol.
 
 - **The home page stays mounted** under the sliding overlay, so most pages have
   two of everything — two footers, two navs, four `<aside>` elements. Selectors

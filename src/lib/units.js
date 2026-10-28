@@ -42,6 +42,17 @@ export const PORTRAIT_QUERY = '(orientation: portrait) and (max-width: 1100px)';
 // its keyboard opens, swapping the enquiry form for the block mid-typing.
 export const MOBILE_QUERY = '(max-width: 599px)';
 export const PHONE_SCREEN = 600;
-export const isPhoneScreen = () =>
-  window.matchMedia('(pointer: coarse)').matches && Math.min(window.screen.width, window.screen.height) < PHONE_SCREEN;
+// Some browsers report the window as the screen (Brave, and Firefox's
+// fingerprinting protection), which makes a tablet showing its toolbar look
+// phone-sized. No phone shows a window this big — even the largest are under
+// about 400px tall held sideways — so a window this size is a tablet whatever
+// the screen says.
+const TABLET_WINDOW = { short: 460, long: 950 };
+export const isPhoneScreen = () => {
+  if (!window.matchMedia('(pointer: coarse)').matches) return false;
+  const short = Math.min(window.innerWidth, window.innerHeight);
+  const long = Math.max(window.innerWidth, window.innerHeight);
+  if (short >= TABLET_WINDOW.short && long >= TABLET_WINDOW.long) return false;
+  return Math.min(window.screen.width, window.screen.height) < PHONE_SCREEN;
+};
 export const NO_HOVER_QUERY = '(hover: none)';
